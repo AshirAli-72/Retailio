@@ -33,6 +33,10 @@ namespace E_Invoice_system.Pages
             public int[] StatusCounts { get; set; } = Array.Empty<int>();
             public string[] TrendLabels { get; set; } = Array.Empty<string>();
             public int[] TrendData { get; set; } = Array.Empty<int>();
+            public List<invoices> RecentInvoices { get; set; } = new List<invoices>();
+            public int SaleCount { get; set; }
+            public int ReturnCount { get; set; }
+            public int LowStockCount { get; set; }
         }
 
         public IEnumerable<invoices> RecentInvoices { get; set; } = new List<invoices>();
@@ -44,29 +48,37 @@ namespace E_Invoice_system.Pages
         public int[] StatusCounts { get; set; } = Array.Empty<int>();
         public string[] TrendLabels { get; set; } = Array.Empty<string>();
         public int[] TrendData { get; set; } = Array.Empty<int>();
+        public int SaleCount { get; set; }
+        public int ReturnCount { get; set; }
+        public int LowStockCount { get; set; }
         public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            // Simple session check - MUST BE FIRST to allow redirection even if DB is slow
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
                 return RedirectToPage("/Account/Login");
             }
 
-            // Prime currency symbol for the dashboard
             await _currencyService.GetSymbolAsync();
+
+            const string cacheKey = "Dashboard_Stats";
+            if (_cache.TryGetValue(cacheKey, out DashboardStats? cachedStats) && cachedStats != null)
+            {
+                PopulateFromStats(cachedStats);
+                return Page();
+            }
 
             try
             {
-                _context.Database.SetCommandTimeout(60); 
-                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var sw = Stopwatch.StartNew();
 
-                // LIVE: Statistics (Fetched fresh as requested)
-                TotalInvoices = await _context.invoices.AsNoTracking().CountAsync();
-                TotalCustomers = await _context.customers.AsNoTracking().CountAsync();
-                TotalProducts = await _context.products_services.AsNoTracking().CountAsync();
-                TotalSales = await _context.sales.AsNoTracking()
+                // Live Stats
+                var stats = new DashboardStats();
+                stats.TotalInvoices = await _context.invoices.AsNoTracking().CountAsync();
+                stats.TotalCustomers = await _context.customers.AsNoTracking().CountAsync();
+                stats.TotalProducts = await _context.products_services.AsNoTracking().CountAsync();
+                stats.TotalSales = await _context.sales.AsNoTracking()
                     .Where(s => s.total_price > 0)
                     .SumAsync(s => (decimal?)s.total_price) ?? 0;
 
@@ -76,20 +88,19 @@ namespace E_Invoice_system.Pages
                     .Select(g => new { Status = g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                StatusLabels = invoiceStatusData.Select(x => x.Status).ToArray();
-                StatusCounts = invoiceStatusData.Select(x => x.Count).ToArray();
+                stats.StatusLabels = invoiceStatusData.Select(x => x.Status).ToArray();
+                stats.StatusCounts = invoiceStatusData.Select(x => x.Count).ToArray();
 
+                // Optimized Trend Query: Only fetch last 7 days from DB
                 var startDate = DateTime.Today.AddDays(-6);
-                var allInvoices = await _context.invoices.AsNoTracking().ToListAsync();
-                var trendResults = allInvoices
-                    .Where(inv => {
-                        if (DateTime.TryParseExact(inv.date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var dt))
-                            return dt >= startDate;
-                        return false;
-                    })
-                    .GroupBy(inv => DateTime.ParseExact(inv.date, "yyyy-MM-dd", null).Date)
+                var startDateStr = startDate.ToString("yyyy-MM-dd");
+
+                var trendResultsFromDb = await _context.invoices
+                    .AsNoTracking()
+                    .Where(inv => inv.date != null && inv.date.CompareTo(startDateStr) >= 0)
+                    .GroupBy(inv => inv.date)
                     .Select(g => new { Date = g.Key, Count = g.Count() })
-                    .ToList();
+                    .ToListAsync();
 
                 var trendLabelsList = new List<string>();
                 var trendDataList = new List<int>();
@@ -97,20 +108,34 @@ namespace E_Invoice_system.Pages
                 for (int i = 6; i >= 0; i--)
                 {
                     var targetDate = DateTime.Today.AddDays(-i);
+                    var targetDateStr = targetDate.ToString("yyyy-MM-dd");
                     trendLabelsList.Add(targetDate.ToString("MMM dd"));
-                    var countEntry = trendResults.FirstOrDefault(r => r.Date == targetDate);
+                    
+                    var countEntry = trendResultsFromDb.FirstOrDefault(r => r.Date == targetDateStr);
                     trendDataList.Add(countEntry?.Count ?? 0);
                 }
 
-                TrendLabels = trendLabelsList.ToArray();
-                TrendData = trendDataList.ToArray();
+                stats.TrendLabels = trendLabelsList.ToArray();
+                stats.TrendData = trendDataList.ToArray();
 
-                // LIVE: Recent Invoices (Fast query, stay fresh)
-                RecentInvoices = await _context.invoices
+                // Recent Invoices (limit to 4)
+                stats.RecentInvoices = await _context.invoices
                     .AsNoTracking()
-                    .OrderByDescending(i => i.date)
+                    .OrderByDescending(i => i.id)
                     .Take(4)
                     .ToListAsync();
+
+                // Sale vs Return Counts
+                stats.SaleCount = await _context.sales.AsNoTracking().CountAsync(s => !s.is_returned);
+                stats.ReturnCount = await _context.sales.AsNoTracking().CountAsync(s => s.is_returned);
+
+                // Low Stock Count
+                stats.LowStockCount = await _context.stock_details.AsNoTracking()
+                    .CountAsync(s => s.quantity <= s.stock_alert);
+
+                // Cache for 30 seconds
+                _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(30));
+                PopulateFromStats(stats);
 
                 _logger.LogInformation("Dashboard load completed in {ms}ms", sw.ElapsedMilliseconds);
             }
@@ -121,6 +146,22 @@ namespace E_Invoice_system.Pages
             }
 
             return Page();
+        }
+
+        private void PopulateFromStats(DashboardStats stats)
+        {
+            TotalInvoices = stats.TotalInvoices;
+            TotalCustomers = stats.TotalCustomers;
+            TotalProducts = stats.TotalProducts;
+            TotalSales = stats.TotalSales;
+            StatusLabels = stats.StatusLabels;
+            StatusCounts = stats.StatusCounts;
+            TrendLabels = stats.TrendLabels;
+            TrendData = stats.TrendData;
+            RecentInvoices = stats.RecentInvoices;
+            SaleCount = stats.SaleCount;
+            ReturnCount = stats.ReturnCount;
+            LowStockCount = stats.LowStockCount;
         }
     }
 }

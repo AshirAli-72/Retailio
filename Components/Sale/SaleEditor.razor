@@ -9,37 +9,52 @@
     <!-- PRODUCT CANVAS (LEFT) -->
     <div class="product-canvas">
         <div class="canvas-header">
-            <div class="canvas-header-top">
-                <h3 class="canvas-title">Sales Transaction</h3>
-                <div class="search-bar-v2-container" style="display: flex; gap: 8px; flex: 1; align-items: center;">
-                    <div class="search-bar-v2" style="flex: 1;">
-                        <i class="ph-magnifying-glass search-icon" style="color: @(searchType == "receipt" ? "var(--primary)" : "var(--text-muted)")"></i>
-                        <input type="text" class="search-input" 
-                               placeholder="@(searchType == "receipt" ? "Scan receipt barcode" : "Scan item barcode")"
-                               @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchKeyUp" />
+            <div class="canvas-header-top" style="justify-content: flex-start; gap: 24px;">
+                <h3 class="canvas-title" style="margin: 0; white-space: nowrap;">Sales Transaction</h3>
+                
+                <div class="search-bar-v2" style="flex: 1; max-width: 800px;">
+                    <i class="ph-magnifying-glass"></i>
+                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")" 
+                           @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
+                </div>
+
+                <div class="scan-dropdown-wrapper">
+                    <button type="button" class="btn-scan-type-v3" @onclick="ToggleScanMenu" @onclick:stopPropagation>
+                        <i class="ph-magnifying-glass"></i>
+                        <span>Scan Item</span>
+                        <i class="ph-caret-down"></i>
+                    </button>
+                    <div class="scan-type-menu @(showScanMenu ? "show" : "")" style="right: 0; left: auto;">
+                        <div class="scan-type-item @(searchType == "item" ? "active" : "")" @onclick='() => SetSearchType("item")'>
+                            <i class="ph-barcode"></i> Scan Barcode
+                        </div>
+                        <div class="scan-type-item @(searchType == "receipt" ? "active" : "")" @onclick='() => SetSearchType("receipt")'>
+                            <i class="ph-receipt"></i> Scan Receipt
+                        </div>
                     </div>
                 </div>
-                <div class="search-type-wrapper" style="min-width: 150px;">
-                    <div class="select-wrapper-v2">
-                        <i class="ph-magnifying-glass" style="font-size: 1.25rem;"></i>
-                        <select class="search-type-select" @bind="searchType">
-                            <option value="item">Scan Item</option>
-                            <option value="receipt">Scan Receipt</option>
-                        </select>
-                        <i class="ph-caret-down" style="margin-left: auto;"></i>
-                    </div>
-                </div>
-                <div class="quick-actions-v2">
+                
+                <div class="quick-actions-v2" style="margin-left: auto;">
                     <button type="button" class="btn-action-round" @onclick='ResetComponent' title="Clean Form"><i class="ph-arrows-clockwise"></i></button>
                     <button type="button" class="btn-action-round" @onclick="ToggleFullScreen" title="Full Screen"><i class="ph-corners-out"></i></button>
                     <a href="/Sale/Index" class="btn-action-round back" title="Back to List"><i class="ph-arrow-left"></i></a>
                 </div>
             </div>
-            <div class="category-tabs-v2">
-                <div class="tab-item @(selectedCategory == "all" ? "active" : "")" @onclick='() => FilterByCategory("all")'>All</div>
-                <div class="tab-item @(selectedCategory == "Foods" ? "active" : "")" @onclick='() => FilterByCategory("Foods")'>Products</div>
-                <div class="tab-item @(selectedCategory == "Beverages" ? "active" : "")" @onclick='() => FilterByCategory("Beverages")'>Services</div>
-            </div>
+        </div>
+
+        <div class="category-tabs-v2">
+            <div class="tab-item @(productTypeFilter == "All" && selectedCategory == "all" ? "active" : "")" @onclick='() => { productTypeFilter = "All"; SetCategory("all"); }'>All</div>
+            <div class="tab-item @(productTypeFilter == "Product" ? "active" : "")" @onclick='() => SetProductType("Product")'>Products</div>
+            <div class="tab-item @(productTypeFilter == "Service" ? "active" : "")" @onclick='() => SetProductType("Service")'>Services</div>
+            
+            @if (allProducts.Any(p => p.Category != "Foods" && p.Category != "Beverages"))
+            {
+                <div style="width: 2px; height: 24px; background: #e2e8f0; margin: 0 10px;"></div>
+                @foreach (var cat in allProducts.Where(p => p.Category != "Foods" && p.Category != "Beverages").Select(p => p.Category).Distinct().Where(c => !string.IsNullOrEmpty(c)))
+                {
+                    <div class="tab-item @(selectedCategory == cat ? "active" : "")" @onclick='() => SetCategory(cat!)'>@cat</div>
+                }
+            }
         </div>
 
         <div class="product-grid-v2">
@@ -63,27 +78,28 @@
                 }
                 @foreach (var p in filteredProducts)
                 {
-                    <div class="product-card-v2" @onclick="() => AddToSale(p)">
-                        <div class="card-image">
+                    <div class="product-card-v2 reveal-up @(p.Stock <= 0 ? "out-of-stock" : "")" @onclick="() => AddToSale(p)">
+                        <div class="card-img-wrap">
+                            @if (p.Stock <= 0)
+                            {
+                                <div class="out-of-stock-overlay">Out of Stock</div>
+                            }
                             @if (!string.IsNullOrEmpty(p.Image))
                             {
                                 <img src="/product-images/@System.IO.Path.GetFileName(p.Image)" alt="Product" />
                             }
                             else
                             {
-                                <div class="image-placeholder">
-                                    <i class="@(p.IsService ? "ph-wrench" : "ph-cube-transparent")" style="font-size:3rem;color:#cbd5e1;"></i>
-                                </div>
+                                <i class="@(p.IsService ? "ph-wrench" : "ph-cube-transparent")" style="font-size:2.5rem;color:#cbd5e1;"></i>
                             }
                         </div>
-                        <div class="card-info">
+                        <div class="card-content">
                             <h4 class="card-name">@p.Name</h4>
-                            <div class="card-price-row">
-                                <span class="price-tag">@CurrencyService.GetSymbol()@p.Price.ToString("N2")</span>
-                                @if (p.Discount > 0)
-                                {
-                                    <span class="discount-pill">@CurrencyService.GetSymbol()@p.Discount.ToString("N2")</span>
-                                }
+                            <div class="card-footer-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div class="price-tag">@FormatCurrency(p.Price)</div>
+                                <div class="stock-badge @(p.Stock <= 5 ? "low-stock" : "")" style="font-size: 0.75rem; font-weight: 700; color: @(p.Stock <= 0 ? "#ef4444" : (p.Stock <= 5 ? "#f97316" : "#64748b"))">
+                                    Stock: @p.Stock
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -93,89 +109,74 @@
     </div>
 
     <!-- CHECKOUT PANEL (RIGHT) -->
-    <div class="checkout-center">
-        <div class="checkout-form">
-            <div class="checkout-header">
-                @if (transMode == "return")
-                {
-                    <div class="return-warning-banner" style="display: flex;"><i class="ph-warning"></i> RETURN MODE ACTIVE</div>
-                }
-                <div class="checkout-header-main">
-                    <div>
-                        <h3 class="order-detail-title">Order Detail</h3>
-                        <div class="item-count-badge">@saleItems.Count item@(saleItems.Count != 1 ? "s" : "") selected</div>
-                    </div>
-                    <div class="checkout-header-actions">
-                        <div class="mode-toggle-v2 compact">
-                            <div class="toggle-pill">
-                                <button type="button" class="toggle-item @(transMode == "sale" ? "active" : "")" @onclick='() => SetTransMode("sale")'>Sale</button>
-                                <button type="button" class="toggle-item @(transMode == "return" ? "active" : "")" @onclick='() => SetTransMode("return")'>Return</button>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-clear-v2" @onclick="ClearSaleItems" title="Clear Order">
-                            <i class="ph-trash"></i>
-                        </button>
-                    </div>
-                </div>
+    <div class="checkout-panel-v2">
+        <div class="checkout-header-v2">
+            <div>
+                <h2>Order Detail</h2>
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">@saleItems.Count item@(saleItems.Count != 1 ? "s" : "") selected</div>
             </div>
-
-            <!-- Customer Selector -->
-            <div class="customer-selector-v2" @onclick:stopPropagation>
-                <div class="select-wrapper-v2" style="flex: 1;">
-                    <i class="ph-user-circle" style="font-size: 1.25rem;"></i>
-                    <div class="customer-search-container" style="flex: 1; position: relative;">
-                        <input type="text" class="customer-search-input" placeholder="Search Customer..." 
-                               style="border: none; background: transparent; width: 100%; outline: none; font-weight: 600;"
-                               @bind="customerSearchQuery" @bind:event="oninput" @bind:after="FilterCustomers"
-                               @onfocus="OnCustomerSearchFocus" 
-                               @onclick:stopPropagation />
-                        
-                        @if (showCustomerDropdown)
-                        {
-                            <div class="customer-dropdown-results shadow-luxury show">
-                                @foreach (var c in filteredCustomersList)
-                                {
-                                    <div class="customer-result-item" @onclick="() => SelectCustomer(c)" @onclick:stopPropagation>
-                                        <div class="cust-avatar">@(string.IsNullOrEmpty(c.name) ? "?" : c.name[0].ToString().ToUpper())</div>
-                                        <div class="cust-info-main">
-                                            <span class="cust-name">@c.name</span>
-                                            @if (!string.IsNullOrEmpty(c.contact))
-                                            {
-                                                <span class="cust-details">@c.contact</span>
-                                            }
-                                        </div>
-                                        <i class="ph-check select-icon"></i>
-                                    </div>
-                                }
-                                @if (!filteredCustomersList.Any())
-                                {
-                                    <div class="customer-result-item" style="cursor:default;color:var(--text-muted);justify-content:center;" @onclick:stopPropagation>
-                                        <i class="ph-user-minus" style="font-size:1.2rem;margin-right:8px;"></i> No customers found
-                                    </div>
-                                }
-                            </div>
-                        }
+            <div style="display:flex; gap: 8px;">
+                <div class="mode-toggle-v2">
+                    <div class="toggle-pill">
+                        <button type="button" class="tab-item @(transMode == "sale" ? "active" : "")" style="padding: 6px 16px; font-size: 0.8rem;" @onclick='() => SetTransMode("sale")'>Sale</button>
+                        <button type="button" class="tab-item @(transMode == "return" ? "active" : "")" style="padding: 6px 16px; font-size: 0.8rem;" @onclick='() => SetTransMode("return")'>Return</button>
                     </div>
-                    <i class="ph-caret-down"></i>
                 </div>
-                <button type="button" @onclick="() => showAddCustomerModal = true" class="btn-add-customer">
-                    <i class="ph-plus-circle"></i><span>New Customer</span>
+                <button type="button" class="btn-action-round" style="color:var(--danger); background: #fee2e2; border:none;" @onclick="ClearSaleItems">
+                    <i class="ph-trash"></i>
                 </button>
             </div>
+        </div>
+
+        @if (transMode == "return")
+        {
+            <div style="margin: 0 24px 12px; padding: 10px; background: #fee2e2; color: #991b1b; border-radius: 12px; font-weight: 700; font-size: 0.75rem; text-align: center;">
+                <i class="ph-warning"></i> RETURN MODE ACTIVE
+            </div>
+        }
+
+        <!-- Customer Selector -->
+        <div class="customer-selector-v2">
+            <div class="select-wrapper-v2">
+                <i class="ph-user-circle"></i>
+                <div style="flex: 1; position: relative;">
+                    <input type="text" class="customer-search-input" placeholder="Search Customer..." 
+                           @bind="customerSearchQuery" @bind:event="oninput" @bind:after="FilterCustomers"
+                           @onfocus="OnCustomerSearchFocus" 
+                           @onclick:stopPropagation />
+                    
+                    @if (showCustomerDropdown)
+                    {
+                        <div class="customer-dropdown-results shadow-luxury show" @onclick:stopPropagation style="left: -40px; width: calc(100% + 40px); border: none; box-shadow: var(--shadow-lift);">
+                            @foreach (var c in filteredCustomersList)
+                            {
+                                <div class="customer-result-item" @onclick="() => SelectCustomer(c)" @onclick:stopPropagation>
+                                    <span class="cust-name">@c.name</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <i class="ph-caret-down" @onclick="ToggleCustomerDropdown" @onclick:stopPropagation style="cursor: pointer;"></i>
+            </div>
+            <button type="button" @onclick="() => showAddCustomerModal = true" class="btn-add-customer">
+                <i class="ph-plus-circle" style="font-size: 1.25rem;"></i>
+            </button>
+        </div>
 
             <!-- Items List -->
             <div class="checkout-items-v2">
                 @foreach (var item in saleItems)
                 {
-                    <div class="item-v2">
+                    <div class="item-v2 reveal-up">
                         <div class="item-v2-img">
                             @if (!string.IsNullOrEmpty(item.image))
                             {
-                                <img src="/product-images/@System.IO.Path.GetFileName(item.image)" />
+                                <img src="/product-images/@System.IO.Path.GetFileName(item.image)" alt="item" />
                             }
                             else
                             {
-                                <i class="ph-package" style="font-size:1.5rem;color:#cbd5e1;"></i>
+                                <i class="ph-package" style="font-size:1.5rem;color:#cbd5e1; display: flex; align-items: center; justify-content: center; height: 100%;"></i>
                             }
                         </div>
                         <div class="item-v2-info">
@@ -196,7 +197,7 @@
                             </div>
                         </div>
                         <div class="item-total-info">
-                            <div class="price-sub">@CurrencyService.GetSymbol()@item.total_price.ToString("N2")</div>
+                            @FormatCurrency(item.total_price)
                         </div>
                         <i class="ph-trash btn-remove-item" @onclick="() => RemoveItem(item)"></i>
                     </div>
@@ -204,10 +205,9 @@
 
                 @if (!saleItems.Any())
                 {
-                    <div class="empty-state-v2" style="display: flex;">
-                        <div class="empty-glow"></div>
+                    <div class="empty-state-v2">
                         <i class="ph-shopping-cart-simple"></i>
-                        <p>Bag is empty</p>
+                        <p style="font-weight:700;">Bag is empty</p>
                     </div>
                 }
             </div>
@@ -218,16 +218,6 @@
                     <div class="summary-line"><span>Subtotal</span><span>@FormatCurrency(totalSub)</span></div>
                     <div class="summary-line" style="color:var(--success);"><span>Discount</span><span>@FormatCurrency(totalDisc)</span></div>
                     
-                    @if (!string.IsNullOrEmpty(stockAlert))
-                    {
-                        <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(5, 150, 105, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(5, 150, 105, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-                            <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <i class="ph-check-circle" style="font-size: 1.25rem;"></i>
-                            </div>
-                            <span style="flex: 1;">@stockAlert</span>
-                        </div>
-                    }
-
                     <div class="grand-total-row">
                         <div class="total-label">Grand Total</div>
                         <div class="total-value">@FormatCurrency(currentTotal)</div>
@@ -239,7 +229,7 @@
             </div>
         </div>
     </div>
-</div>
+
 
 <!-- PAYMENT MODAL -->
 @if (showPaymentModal)
@@ -275,38 +265,35 @@
                 <div class="summary-box-web">
                     <div class="summary-web-line">
                         <span style="color:var(--text-muted);font-weight:600;">Total Amount Due</span>
-                        <span style="font-weight:700;">@FormatCurrency(currentTotal)</span>
+                        <span style="font-weight:800; color: var(--text-main);">@FormatCurrency(currentTotal)</span>
                     </div>
                     <div class="summary-web-line" style="margin-top:8px;">
                         <span style="color:var(--text-muted);font-weight:600;">Total Tendered</span>
-                        <span style="font-weight:700;">@FormatCurrency(tenderedAmount ?? 0)</span>
+                        <span style="font-weight:800; color: var(--text-main);">@FormatCurrency(tenderedAmount ?? 0)</span>
                     </div>
                     @{
                         var change = (tenderedAmount ?? 0) - Math.Abs(currentTotal);
                         <div class="summary-web-line grand">
                             <span>Change Due</span>
-                            <span style="color: @(change >= 0 ? "#22c55e" : "#ef4444")">@FormatCurrency(Math.Abs(change))</span>
+                            <span style="color: @(change >= 0 ? "var(--success)" : "var(--danger)")">@FormatCurrency(Math.Abs(change))</span>
                         </div>
                     }
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding:12px 16px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
-                        <label style="font-weight:600;color:var(--text-main);cursor:pointer;display:flex;align-items:center;gap:8px;">
-                            <i class="ph-printer" style="font-size:1.2rem;color:var(--primary);"></i> Print Receipt
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding:12px 16px;background:var(--surface);border-radius:14px;box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                        <label style="font-weight:800;color:var(--text-main);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.9rem;">
+                            <i class="ph-printer" style="font-size:1.25rem;color:var(--primary);"></i> Print Receipt
                         </label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" @bind="shouldPrintReceipt">
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <input type="checkbox" style="width:20px;height:20px;cursor:pointer;accent-color:var(--primary);" @bind="shouldPrintReceipt" />
                     </div>
                 </div>
                 <div style="margin-top:auto;">
-                    <p style="font-size:.75rem;color:var(--text-muted);text-align:center;margin-bottom:24px;line-height:1.5;">
+                    <p style="font-size:.8rem;color:var(--text-muted);text-align:center;margin-bottom:24px;line-height:1.5;font-weight:600;">
                         By completing this order, you agree to generate an official invoice and update stock levels.
                     </p>
-                    <div style="display:flex;gap:16px;">
+                    <div style="display:flex;gap:12px;">
                         <button type="button" class="btn-confirm-web cancel" style="flex:1;" @onclick="() => showPaymentModal = false">Cancel</button>
                         <button type="button" class="btn-confirm-web confirm @(isSubmitting ? "processing" : "")" style="flex:1;" @onclick="SubmitSale" disabled="@isSubmitting">
-                            @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> <span>Processing...</span> }
-                            else { <span>Complete Order</span> <i class="ph-check-circle"></i> }
+                            @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
+                            else { <span>Complete Order</span> }
                         </button>
                     </div>
                 </div>
@@ -315,55 +302,52 @@
     </div>
 }
 
-<!-- ADD CUSTOMER MODAL -->
 @if (showAddCustomerModal)
 {
     <div class="modal-overlay show" style="display: flex;">
-        <div class="payment-card" style="max-width:900px;width:95%;flex-direction:column;overflow-y:auto;max-height:90vh;padding:40px;">
-            <div class="dashboard-panel">
-                <div class="page-header">
-                    <h1 class="page-title-large">Add New Customer</h1>
-                    <button type="button" class="btn-secondary" @onclick="() => showAddCustomerModal = false">
-                        <i class="ph-arrow-left"></i> Back
-                    </button>
+        <div class="customer-modal-v3">
+            <div class="c-modal-header">
+                <div class="c-modal-title">
+                    <i class="ph-user-plus-bold" style="color: #BC1823; font-size: 1.5rem;"></i>
+                    <span>Add New Customer</span>
                 </div>
-                <div class="form-wrapper form-layout-left-wide">
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            <h3 class="form-section-title"><i class="ph-users form-icon-primary"></i> Customer Information</h3>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" class="form-control" @bind="newCustomer.name" placeholder="Enter customer's full name" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Contact Number</label>
-                            <input type="text" class="form-control" @bind="newCustomer.contact" placeholder="Enter contact number" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" class="form-control" @bind="newCustomer.email" placeholder="Enter email address" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Address</label>
-                            <textarea class="form-control" rows="3" @bind="newCustomer.address" placeholder="Enter physical address"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <select class="form-control" @bind="newCustomer.status">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-actions-sticky" style="display:flex;gap:16px;margin-top:32px;">
-                        <button type="button" class="btn-confirm-web" style="flex:1;background:#991b1b;color:#fff;border:none;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);" @onclick="() => showAddCustomerModal = false">Cancel</button>
-                        <button type="button" class="btn-confirm-web" style="flex:1;background:#166534;color:#fff;border:none;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);" @onclick="SaveNewCustomer">
-                            <i class="ph-check"></i> Save Customer
-                        </button>
-                    </div>
+                <button type="button" class="c-modal-close" @onclick="() => showAddCustomerModal = false"><i class="ph-x"></i></button>
+            </div>
 
+            <div class="c-modal-body">
+                <div class="c-form-group">
+                    <label>Full Name</label>
+                    <input type="text" @bind="newCustomer.name" placeholder="Enter customer's full name" />
                 </div>
+                <div class="c-form-group">
+                    <label>Contact Number</label>
+                    <input type="text" @bind="newCustomer.contact" placeholder="Enter contact number" />
+                </div>
+                <div class="c-form-group">
+                    <label>Email Address</label>
+                    <input type="email" @bind="newCustomer.email" placeholder="Enter email address" />
+                </div>
+                <div class="c-form-group">
+                    <label>Address</label>
+                    <textarea rows="3" @bind="newCustomer.address" placeholder="Enter physical address"></textarea>
+                </div>
+                <div class="c-form-group">
+                    <label>Status</label>
+                    <div class="c-select-wrapper">
+                        <select @bind="newCustomer.status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <i class="ph-caret-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="c-modal-footer">
+                <button type="button" class="btn-c-cancel" @onclick="() => showAddCustomerModal = false">Cancel</button>
+                <button type="button" class="btn-c-save" @onclick="SaveNewCustomer">
+                    <i class="ph-check-bold"></i> Save Customer
+                </button>
             </div>
         </div>
     </div>
@@ -440,7 +424,7 @@
         }
     </div>
 
-</div>
+    </div>
 
 
 @code {
@@ -451,7 +435,9 @@
     private List<SaleItem> saleItems = new();
 
     private string searchQuery = "";
-    private string searchType = "item";
+    private string searchType = "item"; // item or receipt
+    private bool showScanMenu = false;
+    private string productTypeFilter = "All"; // All, Product, or Service
     private string selectedCategory = "all";
     private string transMode = "sale";
     private string? customerSearchQuery;
@@ -505,7 +491,8 @@
                     x.p.id, x.p.prod_name, x.p.pic, x.p.barcode,
                     x.p.expiry_date, x.p.prod_state, x.p.unit, x.p.size, x.p.item_type,
                     x.p.category_id, x.p.brand_id,
-                    sale_price = x.stock != null ? x.stock.sale_price : 0
+                    sale_price = x.stock != null ? x.stock.sale_price : 0,
+                    stock_qty = x.stock != null ? x.stock.quantity : 0
                 })
                 .OrderByDescending(p => p.id)
                 .Take(50) 
@@ -520,7 +507,7 @@
             currentStore = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
 
             allProducts = prodsData.Select(p => {
-                decimal stock = p.size ?? 999999;
+                decimal stock = Math.Max(0, p.stock_qty);
                 bool isSvc = p.item_type == "Service";
                 return new ProductDisplay { 
                     Id = p.id, Name = p.prod_name ?? "", Price = p.sale_price, Discount = 0, 
@@ -531,6 +518,7 @@
             
             filteredProducts = allProducts;
             filteredCustomersList = allCustomersList;
+            ApplyFilters();
 
             // Optional: simulate network delay briefly for skeleton testing if desired
             // await Task.Delay(500);
@@ -546,12 +534,54 @@
         }
     }
 
-    private void FilterByCategory(string cat)
+    private void ApplyFilters()
+    {
+        var query = allProducts.AsEnumerable();
+
+        // 1. Product/Service Type Filter
+        if (productTypeFilter != "All") {
+            bool isSvc = productTypeFilter == "Service";
+            query = query.Where(p => p.IsService == isSvc);
+        }
+
+        // 2. Category Filter
+        if (selectedCategory != "all") {
+            query = query.Where(p => p.Category == selectedCategory);
+        }
+        
+        // 3. Search Filter (if any)
+        if (!string.IsNullOrEmpty(searchQuery) && searchType == "item") {
+            var s = searchQuery.ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(s) || (p.Barcode != null && p.Barcode.ToLower() == s));
+        }
+
+        filteredProducts = query.ToList();
+    }
+
+    private void SetCategory(string cat)
     {
         selectedCategory = cat;
-        if (cat == "all") filteredProducts = allProducts;
-        else filteredProducts = allProducts.Where(p => p.Category == cat).ToList();
+        ApplyFilters();
     }
+
+    private void SetProductType(string type)
+    {
+        productTypeFilter = type;
+        selectedCategory = "all"; // Reset category when switching types
+        ApplyFilters();
+    }
+
+    private void ToggleScanMenu() => showScanMenu = !showScanMenu;
+
+    private void SetSearchType(string type)
+    {
+        searchType = type;
+        showScanMenu = false;
+        searchQuery = "";
+        ApplyFilters();
+    }
+
+    private void HandleSearchEnter(KeyboardEventArgs e) => HandleSearchKeyUp(e);
 
     private void HandleSearchKeyUp(KeyboardEventArgs e)
     {
@@ -565,14 +595,14 @@
         }
 
         if (searchType == "item") {
-            var query = searchQuery.ToLower();
-            filteredProducts = allProducts.Where(p => p.Name.ToLower().Contains(query) || (p.Barcode != null && p.Barcode.ToLower() == query)).ToList();
+            ApplyFilters();
             
+            var query = searchQuery.ToLower();
             var exact = allProducts.FirstOrDefault(p => p.Barcode != null && p.Barcode.ToLower() == query);
             if (exact != null) {
                 AddToSale(exact);
                 searchQuery = "";
-                filteredProducts = allProducts;
+                ApplyFilters();
             }
         } else if (e.Key == "Enter" && searchType == "receipt") {
             _ = LoadFromReceipt(searchQuery);
@@ -625,7 +655,12 @@
 
     private void ClearSaleItems() { saleItems.Clear(); }
 
-    private void CloseDropdowns() { showCustomerDropdown = false; }
+    private void CloseDropdowns() { showCustomerDropdown = false; showScanMenu = false; }
+    
+    private void ToggleCustomerDropdown() {
+        showCustomerDropdown = !showCustomerDropdown;
+        if (showCustomerDropdown) FilterCustomers();
+    }
 
     private void SetTransMode(string mode) {
         transMode = mode;
@@ -729,8 +764,13 @@
 
             // OPTIMIZED: Batch fetch all products in the sale at once instead of N times in loop
             var productNames = saleItems.Select(i => i.prod_name_service).Distinct().ToList();
-            var productsToUpdate = await context.products_services
+            var productsInSale = await context.products_services
                 .Where(p => productNames.Contains(p.prod_name))
+                .ToListAsync();
+            
+            var barcodesInSale = productsInSale.Select(p => p.barcode).Where(b => b != null).ToList();
+            var stocksToUpdate = await context.stock_details
+                .Where(s => barcodesInSale.Contains(s.item_barcode))
                 .ToListAsync();
 
             foreach (var item in saleItems) {
@@ -776,15 +816,35 @@
                     context.sales.Add(sale);
                 }
                 
-                // OPTIMIZED: Use cached product lookup
+                // OPTIMIZED: Use cached stock lookup
                 try {
-                    var prod = productsToUpdate.FirstOrDefault(p => p.prod_name == item.prod_name_service);
-                    if (prod != null) {
-                        if (prod.size.HasValue) {
-                            var newQty = (int)(prod.size.Value - item.qty);
-                            prod.size = newQty;
-                            if (newQty <= 0) prod.status = "Disabled";
-                            context.products_services.Update(prod);
+                    var prod = productsInSale.FirstOrDefault(p => p.prod_name == item.prod_name_service);
+                    if (prod != null && prod.barcode != null) {
+                        var stock = stocksToUpdate.FirstOrDefault(s => s.item_barcode == prod.barcode);
+                        if (stock != null) {
+                            var newQty = stock.quantity - item.qty;
+                            
+                            // CRITICAL: Check inventory before allowing sale
+                            if (transMode == "sale" && newQty < 0) {
+                                throw new Exception($"Insufficient stock for {item.prod_name_service}. Available: {stock.quantity}");
+                            }
+                            
+                            var oldQty = stock.quantity;
+                            stock.quantity = newQty;
+                            context.stock_details.Update(stock);
+
+                            // Log History
+                            context.stock_histories.Add(new StockHistory {
+                                date = DateTime.Now.ToString("yyyy-MM-dd"),
+                                old_quantity = oldQty,
+                                new_quantity = newQty,
+                                old_purchase_price = stock.pur_price,
+                                new_purchase_price = stock.pur_price,
+                                old_sale_price = stock.sale_price,
+                                new_sale_price = stock.sale_price,
+                                remarks = transMode.ToUpper(),
+                                product_id = prod.id
+                            });
                         }
                     }
                 } catch (Exception ex) { 
@@ -802,10 +862,14 @@
             var billNo = orderBillNo;
             var mode = transMode;
             
+            // CAPTURE a copy of items for receipt before clearing
+            var receiptItemsCopy = saleItems.ToList();
+            
             ResetComponent();
 
             if (shouldPrint) {
                 try {
+                    await Task.Delay(500); 
                     if (mode != "return") {
                         await JSRuntime.InvokeVoidAsync("renderBarcode", "rcptBarcodeSvg", billNo);
                     }
@@ -814,6 +878,10 @@
                     Console.WriteLine("Print Error: " + jsEx.Message);
                 }
             }
+            
+            // FINALLY clear items after printing is triggered
+            saleItems.Clear();
+            StateHasChanged();
         } catch (Exception ex) { 
             string errMessage = ex.Message;
             if (ex.InnerException != null) errMessage += " | " + ex.InnerException.Message;
@@ -826,7 +894,6 @@
 
     private void ResetComponent()
     {
-        saleItems.Clear();
         transMode = "sale";
         selectedCustomer = null;
         customerSearchQuery = "";

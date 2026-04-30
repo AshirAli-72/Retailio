@@ -4,6 +4,22 @@
     ViewData["Title"] = "Dashboard";
 }
 
+@if (Model.LowStockCount > 0)
+{
+    <div style="margin-bottom: 2rem; padding: 1.25rem; background: #fff7ed; border-left: 4px solid #f97316; border-radius: 12px; display: flex; align-items: center; gap: 1rem; border: 1px solid #ffedd5;">
+        <div style="background: #ffedd5; color: #f97316; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="ph-warning-bold" style="font-size: 1.5rem;"></i>
+        </div>
+        <div style="flex: 1;">
+            <div style="font-weight: 700; color: #9a3412; margin-bottom: 0.25rem;">Stock Alert</div>
+            <p style="margin: 0; color: #c2410c; font-size: 0.9rem;">There are <strong>@Model.LowStockCount</strong> products running low on stock. Please check your inventory.</p>
+        </div>
+        <a asp-page="/Product/Index" style="background: white; border: 1px solid #fed7aa; color: #9a3412; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem;">
+            View Products
+        </a>
+    </div>
+}
+
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
     <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-light); border-left: 4px solid var(--primary); border-radius: 12px; display: flex; align-items: center; gap: 1rem; border: 1px solid var(--border);">
@@ -60,8 +76,8 @@
 
 <div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
     <div class="card card-no-padding" style="overflow: hidden; border-radius: 20px;">
-        <div class="card-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <h3 class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Recent Invoices</h3>
+        <div class="card-header">
+            <h3 class="card-title">Recent Invoices</h3>
             <a asp-page="/Invoice/Index" class="btn-view-all">
                 View All <i class="ph-arrow-right"></i>
             </a>
@@ -109,30 +125,22 @@
         </div>
     </div>
 
-    <div class="card" style="padding: 1.5rem; border-radius: 20px;">
-        <div class="card-header" style="margin-bottom: 1.5rem;">
-            <h3 class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Quick Actions</h3>
+    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
+        <div class="card-header">
+            <h3 class="card-title">Sale vs Return Analysis</h3>
         </div>
-        
-        <div style="display: grid; gap: 1rem;">
-            <a asp-page="/Invoice/Create" class="btn-primary" style="justify-content: center; padding: 1rem; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(188, 24, 35, 0.2);">
-                <i class="ph-file-plus" style="font-size: 1.25rem;"></i> Generate Invoice
-            </a>
-            <a asp-page="/Customer/Create" class="btn-secondary" style="justify-content: center; padding: 1rem; border-radius: 12px;">
-                <i class="ph-user-plus" style="font-size: 1.25rem;"></i> Add Customer
-            </a>
-            <a asp-page="/Product/Index" class="btn-secondary" style="justify-content: center; padding: 1rem; border-radius: 12px;">
-                <i class="ph-package" style="font-size: 1.25rem;"></i> Manage Products
-            </a>
-            
-            <div style="background: var(--primary-glow); padding: 1.25rem; border-radius: 16px; margin-top: 1rem; border: 1px solid var(--border);">
-                <div style="font-weight: 800; font-size: 0.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">System Health</div>
-                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; color: var(--success); font-weight: 600;">
-                    <span style="display: flex; position: relative; width: 10px; height: 10px;">
-                        <span style="position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 50%; background: #10b981; opacity: 0.75; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
-                        <span style="position: relative; display: inline-flex; border-radius: 50%; height: 10px; width: 10px; background: #10b981;"></span>
-                    </span>
-                    System Active
+        <div style="padding: 1.5rem; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 100%; height: 260px;">
+                <canvas id="saleReturnChart"></canvas>
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; gap: 2rem; width: 100%; justify-content: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Sales (@Model.SaleCount)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #BC1823; box-shadow: 0 0 8px rgba(188, 24, 35, 0.4);"></span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Returns (@Model.ReturnCount)</span>
                 </div>
             </div>
         </div>
@@ -140,18 +148,18 @@
 </div>
 
 <div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
-    <div class="card" style="padding: 1.5rem; border-radius: 20px;">
-        <div class="card-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <h3 class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Invoices Trend</h3>
+    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
+        <div class="card-header">
+            <h3 class="card-title">Invoices Trend</h3>
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Last 7 Days</div>
         </div>
         <div style="height: 300px;">
             <canvas id="trendChart"></canvas>
         </div>
     </div>
-    <div class="card" style="padding: 1.5rem; border-radius: 20px;">
-        <div class="card-header" style="margin-bottom: 1.5rem;">
-            <h3 class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 700;">Invoice Status</h3>
+    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
+        <div class="card-header">
+            <h3 class="card-title">Invoice Status</h3>
         </div>
         <div style="height: 300px; display: flex; justify-content: center; align-items: center;">
             <canvas id="statusChart"></canvas>
@@ -280,6 +288,45 @@
                                     color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim()
                                 }
                             }
+                        }
+                    }
+                });
+            }
+
+            // Sale vs Return Pie Chart
+            const saleReturnChartEl = document.getElementById('saleReturnChart');
+            if (saleReturnChartEl) {
+                const existingSaleReturn = Chart.getChart(saleReturnChartEl);
+                if (existingSaleReturn) existingSaleReturn.destroy();
+
+                new Chart(saleReturnChartEl.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sales', 'Returns'],
+                        datasets: [{
+                            data: [@Model.SaleCount, @Model.ReturnCount],
+                            backgroundColor: ['#10b981', '#BC1823'],
+                            hoverOffset: 15,
+                            borderWidth: 0,
+                            borderRadius: 10,
+                            spacing: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                padding: 12,
+                                bodyFont: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
                         }
                     }
                 });

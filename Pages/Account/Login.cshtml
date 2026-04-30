@@ -42,18 +42,18 @@
                 {
                     var isError = TempData["Error"] != null;
                     var msg     = TempData["Success"] ?? TempData["Error"];
-                    var bg      = isError ? "rgba(220,38,38,0.92)" : "rgba(5,150,105,0.92)";
-                    var borderColor = isError ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.3)";
+                    var bg      = isError ? "#dc2626" : "#065f46"; // Solid Colors
+                    var borderColor = isError ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.2)";
                     var icon    = isError ? "ph-warning-circle" : "ph-check-circle";
                     var progressColor = isError ? "#fca5a5" : "#6ee7b7";
                     var textColor = "#ffffff";
 
                     <div id="loginFlasher" style="position:fixed;top:24px;right:24px;z-index:10000;
                          min-width:320px;max-width:450px;padding:16px 20px;border-radius:16px;
-                         background:@bg;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+                         background:@bg;
                          border:1px solid @borderColor;font-size:.9rem;font-weight:600;
                          display:flex;align-items:flex-start;gap:12px;
-                         box-shadow:0 12px 32px @(isError ? "rgba(220,38,38,0.4)" : "rgba(5,150,105,0.4)"), 0 4px 12px rgba(0,0,0,.15);
+                         box-shadow:0 12px 32px @(isError ? "rgba(220,38,38,0.4)" : "rgba(6, 78, 59, 0.4)"), 0 4px 12px rgba(0,0,0,.15);
                          animation:slideInRight .5s cubic-bezier(.16,1,.3,1);
                          overflow:hidden;">
                         <div style="width:40px;height:40px;background:rgba(255,255,255,0.25);
@@ -64,7 +64,7 @@
                             <div style="font-weight:700;font-size:.95rem;margin-bottom:4px;color:@textColor;">@(isError ? "Error" : "Success")</div>
                             <div style="font-weight:500;opacity:1;font-size:.85rem;color:@textColor;">@msg</div>
                         </div>
-                        <div style="position:absolute;bottom:0;left:0;height:4px;background:@progressColor;
+                        <div style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,0.5);
                                     border-radius:0 0 16px 16px;animation:progressShrink 3s linear forwards;"></div>
                     </div>
                 }

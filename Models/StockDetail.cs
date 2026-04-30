@@ -25,6 +25,9 @@ namespace E_Invoice_system.Models
         [Column("whole_sale_price")]
         public decimal whole_sale_price { get; set; }
 
+        [Column("stock_alert")]
+        public decimal stock_alert { get; set; }
+
         [Column("date_of_manafacture")]
         public string? date_of_manafacture { get; set; }
 

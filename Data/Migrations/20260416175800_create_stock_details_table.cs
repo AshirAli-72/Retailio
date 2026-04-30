@@ -22,6 +22,7 @@ namespace E_Invoice_system.Data.Migrations
                     pur_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     sale_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     whole_sale_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    stock_alert = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     date_of_manafacture = table.Column<DateTime>(type: "datetime2", nullable: true),
                     date_of_expiry = table.Column<DateTime>(type: "datetime2", nullable: true),
                     total_pur_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)

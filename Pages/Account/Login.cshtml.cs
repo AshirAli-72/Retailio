@@ -28,6 +28,13 @@ namespace E_Invoice_system.Pages.Account
 
         private async Task LoadLogoAsync()
         {
+            // Check cache first for high performance
+            if (_cache.TryGetValue("StoreLogoSrc", out string? cachedLogo) && !string.IsNullOrEmpty(cachedLogo))
+            {
+                LogoSrc = cachedLogo;
+                return;
+            }
+
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             try
             {
@@ -38,6 +45,8 @@ namespace E_Invoice_system.Pages.Account
                 if (store != null && !string.IsNullOrEmpty(store.LogoPath))
                 {
                     LogoSrc = "/store-logo/" + Path.GetFileName(store.LogoPath);
+                    // Cache the result for 1 hour
+                    _cache.Set("StoreLogoSrc", LogoSrc, TimeSpan.FromHours(1));
                 }
             }
             catch
@@ -76,22 +85,16 @@ namespace E_Invoice_system.Pages.Account
                 var inputEmail = Email.Trim();
                 var inputPass = Password.Trim();
 
+                // Optimized: Fetch user and role in a single database round-trip
+                // Removed .ToLower() to allow index usage (assuming CI collation)
                 var user = await _context.users
+                    .Include(u => u.Role)
                     .AsNoTracking()
-                    .Where(u => u.email != null && u.email.ToLower() == inputEmail.ToLower() && u.password == inputPass)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync(u => u.email == inputEmail && u.password == inputPass);
 
                 if (user != null)
                 {
-                    string roleTitle = "User";
-                    if (user.role_id > 0)
-                    {
-                        var role = await _context.roles.FindAsync(user.role_id);
-                        if (role != null)
-                        {
-                            roleTitle = role.RoleTitle;
-                        }
-                    }
+                    string roleTitle = user.Role?.RoleTitle ?? "User";
 
                     HttpContext.Session.SetString("UserName", user.email ?? "User");
                     HttpContext.Session.SetString("UserRole", roleTitle);
@@ -109,7 +112,7 @@ namespace E_Invoice_system.Pages.Account
             }
             catch (Exception)
             {
-                ModelState.AddModelError(string.Empty, "Unable to connect. Please check your internet connection and try again.");
+                ModelState.AddModelError(string.Empty, "Local database error. Please ensure SQLEXPRESS is running.");
             }
             
             await LoadLogoAsync();
