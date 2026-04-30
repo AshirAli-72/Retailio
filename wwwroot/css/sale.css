@@ -73,51 +73,33 @@
     align-items: center;
 }
 
-/* --- Search Mode Bar --- */
-.search-mode-wrap {
-    height: 46px;
-    min-height: 46px;
-}
-
-.search-mode-tab {
+.search-bar-v2 {
+    background: var(--surface-alt);
+    border-radius: var(--radius-pill);
+    height: 52px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 16px;
-    height: 100%;
-    border: none;
+    flex: 1;
+    padding: 0 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-bar-v2:focus-within {
+    background: var(--surface);
+    box-shadow: 0 0 0 4px var(--primary-glow), var(--shadow-premium);
+}
+
+.search-bar-v2 i { color: var(--text-muted); font-size: 1.2rem; }
+.search-bar-v2 input {
     background: transparent;
-    color: var(--text-muted);
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    border-right: 1px solid #e2e8f0;
-}
-
-.search-mode-tab i {
+    border: none;
+    flex: 1;
     font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    color: var(--text-main);
+    padding: 0 12px;
 }
-
-.search-mode-tab:hover {
-    background: rgba(188, 24, 35, 0.05);
-    color: var(--primary);
-}
-
-.search-mode-tab.active {
-    background: var(--primary);
-    color: white;
-}
-
-.search-mode-tab.active:hover {
-    background: var(--primary-dark, #a01020);
-}
-
-.search-mode-wrap:focus-within {
-    box-shadow: 0 0 0 3px var(--primary-glow), var(--shadow-soft);
-}
-
 
 /* --- Category Tabs --- */
 .category-tabs-v2 {
@@ -340,15 +322,25 @@
 }
 
 .manual-price-input {
-    width: 80px;
+    width: 100px;
     border: none;
     background: rgba(188, 24, 35, 0.05);
     border-radius: 6px;
-    padding: 2px 6px;
+    padding: 4px 8px;
     font-weight: 800;
     color: var(--primary);
     outline: none;
     display: inline-block;
+}
+
+/* Hide number input spinners */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+    -moz-appearance: textfield;
 }
 
 .item-v2-controls {
@@ -1217,4 +1209,14 @@ textarea.form-control { height: auto; padding: 16px; }
     .cart-panel-header-v2 { flex-wrap: wrap; gap: 8px; }
     .trans-mode-toggle { flex-wrap: nowrap; }
     .trans-btn { padding: 6px 12px; font-size: 0.78rem; }
+}
+
+/* ══════════════════════════════════════════════════════
+   SALE TERMINAL — PRINT STYLES
+   ══════════════════════════════════════════════════════ */
+@media print {
+    body * { visibility: hidden !important; }
+    #thermalReceipt, #thermalReceipt * { visibility: visible !important; }
+    #thermalReceipt { position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; }
+    .pos-container-v2, .sidebar, .top-bar, .modal-overlay { display: none !important; }
 }

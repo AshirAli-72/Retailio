@@ -127,7 +127,7 @@ namespace E_Invoice_system.Pages
 
                 // Sale vs Return Counts
                 stats.SaleCount = await _context.sales.AsNoTracking().CountAsync(s => !s.is_returned);
-                stats.ReturnCount = await _context.sales.AsNoTracking().CountAsync(s => s.is_returned);
+                stats.ReturnCount = await _context.returns.AsNoTracking().CountAsync();
 
                 // Low Stock Count
                 stats.LowStockCount = await _context.stock_details.AsNoTracking()
