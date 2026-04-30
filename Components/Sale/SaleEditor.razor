@@ -382,13 +382,14 @@
             {
                 <tr>
                     <td class="col-prod">@item.prod_name_service</td>
-                    <td class="col-qty">@Math.Abs(item.qty)</td>
-                    <td class="col-price">@item.price.ToString("N0")</td>
-                    <td class="col-amt">@((item.price * Math.Abs(item.qty)).ToString("N0"))</td>
+                    <td class="col-qty" style="text-align: center;">@Math.Abs(item.qty)</td>
+                    <td class="col-price" style="text-align: right;">@item.price.ToString("N0")</td>
+                    <td class="col-amt" style="text-align: right;">@((item.price * Math.Abs(item.qty)).ToString("N0"))</td>
                 </tr>
             }
         </tbody>
     </table>
+    <hr class="rcpt-hr-double">
 
     <div class="rcpt-totals">
         <div class="rcpt-total-line"><span>SUB TOTAL</span><span>@CurrencyService.GetSymbol()@Math.Abs(totalSub).ToString("N0")</span></div>
@@ -414,12 +415,13 @@
 
     <div class="rcpt-bottom">
         <div class="rcpt-bottom-left">
-            <div class="rcpt-date">Generated on @DateTime.Now.ToString("dd-MM-yyyy h:mm:ss tt")</div>
+            <div class="rcpt-date">Generated on @DateTime.Now.ToString("dd/MM/yyyy h:mm:ss tt")</div>
         </div>
         @if (transMode != "return")
         {
             <div class="rcpt-barcode-wrap">
-                <svg id="rcptBarcodeSvg"></svg>
+                <svg id="rcptBarcodeSvg" style="height: 40px;"></svg>
+                <div style="font-size: 0.75rem; font-weight: 700; margin-top: 2px;">SALE @orderBillNo.Replace("SALE_", "")</div>
             </div>
         }
     </div>
