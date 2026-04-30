@@ -300,3 +300,33 @@
     }
 }
 
+
+/* ══════════════════════════════════════════════════════
+   INVOICE — SCREEN RESPONSIVE BREAKPOINTS
+   ══════════════════════════════════════════════════════ */
+@media screen and (max-width: 900px) {
+    #invoiceViewWrapper { padding: 12px; }
+    .invoice-paper { width: 100%; min-height: auto; }
+    .invoice-header { padding: 16px 20px 8px 20px; }
+    .invoice-addresses { padding: 16px 20px; gap: 20px; }
+    .status-bar { padding: 0 20px 12px 20px; flex-wrap: wrap; gap: 12px; }
+    .invoice-table-container { padding: 0 12px 8px 12px; }
+    .invoice-footer { padding: 16px 20px; grid-template-columns: 1fr; }
+    .top-left-pattern { width: 180px; height: 120px; }
+    .top-right-pattern { width: 140px; height: 100px; }
+}
+
+@media screen and (max-width: 600px) {
+    .invoice-paper { border-radius: 0; box-shadow: none; }
+    .invoice-addresses { grid-template-columns: 1fr; gap: 12px; }
+    .invoice-title { font-size: 22px; }
+    .invoice-header { flex-wrap: wrap; gap: 10px; }
+    .logo-container { width: 100px; }
+    .status-bar { gap: 8px; }
+    .total-row { gap: 12px; }
+    .total-label { width: auto; }
+    .total-val { width: auto; }
+    .grand-label { font-size: 13px; }
+    .grand-val { font-size: 15px; }
+    .invoice-footer { grid-template-columns: 1fr; gap: 16px; }
+}

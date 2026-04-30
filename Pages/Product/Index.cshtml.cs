@@ -25,11 +25,16 @@ namespace E_Invoice_system.Pages.Product
         public int TotalCount { get; set; }
 
         public IList<ProductService> Products { get; set; } = default!;
+        public string? UserName { get; set; }
+        public string? UserEmail { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
+
+            UserName = HttpContext.Session.GetString("UserName");
+            UserEmail = HttpContext.Session.GetString("UserEmail");
 
             await _currencyService.GetSymbolAsync();
 

@@ -12,25 +12,36 @@
             <div class="canvas-header-top" style="justify-content: flex-start; gap: 24px;">
                 <h3 class="canvas-title" style="margin: 0; white-space: nowrap;">Sales Transaction</h3>
                 
-                <div class="search-bar-v2" style="flex: 1; max-width: 800px;">
-                    <i class="ph-magnifying-glass"></i>
-                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")" 
-                           @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
-                </div>
-
-                <div class="scan-dropdown-wrapper">
-                    <button type="button" class="btn-scan-type-v3" @onclick="ToggleScanMenu" @onclick:stopPropagation>
-                        <i class="ph-magnifying-glass"></i>
-                        <span>Scan Item</span>
-                        <i class="ph-caret-down"></i>
+                <div class="search-mode-wrap" style="flex: 1; display: flex; align-items: center; gap: 0; max-width: 700px; background: var(--surface-alt); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-soft);">
+                    <!-- Mode Toggle Tabs -->
+                    <button type="button"
+                        class="search-mode-tab @(searchType == "item" ? "active" : "")"
+                        @onclick='() => SetSearchType("item")'
+                        title="Search by item name or barcode">
+                        <i class="ph-barcode"></i>
+                        <span>Item</span>
                     </button>
-                    <div class="scan-type-menu @(showScanMenu ? "show" : "")" style="right: 0; left: auto;">
-                        <div class="scan-type-item @(searchType == "item" ? "active" : "")" @onclick='() => SetSearchType("item")'>
-                            <i class="ph-barcode"></i> Scan Barcode
-                        </div>
-                        <div class="scan-type-item @(searchType == "receipt" ? "active" : "")" @onclick='() => SetSearchType("receipt")'>
-                            <i class="ph-receipt"></i> Scan Receipt
-                        </div>
+                    <button type="button"
+                        class="search-mode-tab @(searchType == "receipt" ? "active" : "")"
+                        @onclick='() => SetSearchType("receipt")'
+                        title="Load items from a previous receipt">
+                        <i class="ph-receipt"></i>
+                        <span>Receipt</span>
+                    </button>
+                    <!-- Divider -->
+                    <div style="width:1px; height:24px; background: #e2e8f0; flex-shrink:0;"></div>
+                    <!-- Input -->
+                    <div style="flex:1; display:flex; align-items:center; padding: 0 14px; gap: 8px;">
+                        <i class="ph-magnifying-glass" style="color: var(--text-muted); font-size: 1.1rem; flex-shrink:0;"></i>
+                        <input type="text"
+                               style="border:none; background:transparent; outline:none; width:100%; font-size:0.95rem; font-weight:600; color:var(--text-main);"
+                               placeholder="@(searchType == "item" ? "Type item name or scan barcode..." : "Type or scan receipt number (e.g. SALE_1)...")"
+                               @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
+                        @if (!string.IsNullOrEmpty(searchQuery))
+                        {
+                            <i class="ph-x" style="color:var(--text-muted); cursor:pointer; font-size:1rem; flex-shrink:0;"
+                               @onclick="() => { searchQuery = string.Empty; ApplyFilters(); }"></i>
+                        }
                     </div>
                 </div>
                 
@@ -732,6 +743,11 @@
         isSubmitting = true;
         try {
             using var context = DbFactory.CreateDbContext();
+            
+            // Get Current User ID
+            var user = await context.users.AsNoTracking().FirstOrDefaultAsync(u => u.username == UserName);
+            int? currentUserId = user?.id;
+
             int nextIdNum = 1;
             var prefix = transMode == "return" ? "RETURN_" : "SALE_";
             
@@ -843,7 +859,8 @@
                                 old_sale_price = stock.sale_price,
                                 new_sale_price = stock.sale_price,
                                 remarks = transMode.ToUpper(),
-                                product_id = prod.id
+                                product_id = prod.id,
+                                user_id = currentUserId
                             });
                         }
                     }
@@ -853,23 +870,23 @@
             }
 
             await context.SaveChangesAsync();
-
-            await JSRuntime.InvokeVoidAsync("clearNavCache");
+            
+            // 1. Trigger Success Alert
             ShowAlert("Transaction successfully completed!");
             
-            // Fast UI: Reset before printing so the user sees the success state immediately
+            // 2. Capture required data for receipt before clearing/resetting
             var shouldPrint = shouldPrintReceipt;
             var billNo = orderBillNo;
             var mode = transMode;
             
-            // CAPTURE a copy of items for receipt before clearing
-            var receiptItemsCopy = saleItems.ToList();
+            // 3. CLOSE MODAL IMMEDIATELY
+            showPaymentModal = false;
+            await InvokeAsync(StateHasChanged);
             
-            ResetComponent();
-
+            // 4. PRINT (after a short delay to allow UI to update)
             if (shouldPrint) {
                 try {
-                    await Task.Delay(500); 
+                    await Task.Delay(800); // Wait for modal to close fully
                     if (mode != "return") {
                         await JSRuntime.InvokeVoidAsync("renderBarcode", "rcptBarcodeSvg", billNo);
                     }
@@ -878,8 +895,9 @@
                     Console.WriteLine("Print Error: " + jsEx.Message);
                 }
             }
-            
-            // FINALLY clear items after printing is triggered
+
+            // 5. FINAL RESET
+            ResetComponent();
             saleItems.Clear();
             StateHasChanged();
         } catch (Exception ex) { 

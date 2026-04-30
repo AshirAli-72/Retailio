@@ -405,6 +405,9 @@
     private string? successMessage;
     private IBrowserFile? selectedFile;
     private string? imgUrl;
+    
+    [Parameter] public string? UserName { get; set; }
+    [Parameter] public string? UserEmail { get; set; }
 
     // Pagination state
     private int currentPage = 1;
@@ -631,6 +634,11 @@
             CalculateTotalPurPrice();
 
             using var context = DbFactory.CreateDbContext();
+            
+            // Get Current User ID
+            var user = await context.users.AsNoTracking().FirstOrDefaultAsync(u => u.username == UserName);
+            int? currentUserId = user?.id;
+
             // Identfiy current state for history before saving
             var oldStock = await context.stock_details.AsNoTracking()
                 .OrderByDescending(s => s.id)
@@ -692,7 +700,8 @@
                 old_sale_price = oldSale,
                 new_sale_price = stockModel.sale_price,
                 remarks = editingProduct == null ? "CREATE" : "EDIT",
-                product_id = productModel.id
+                product_id = productModel.id,
+                user_id = currentUserId
             };
             context.stock_histories.Add(history);
             
