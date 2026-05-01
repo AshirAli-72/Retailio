@@ -353,80 +353,121 @@
     </div>
 }
 
-<!-- THERMAL RECEIPT (DESIGN REFRESH) -->
-<div id="thermalReceipt">
+<!-- A4 INVOICE RECEIPT (DESIGN REFRESH) -->
+<div id="invoice-to-print" class="invoice-paper" style="display: none; margin: 0 auto;">
+    <!-- Decoration Shapes -->
+    <div class="top-left-pattern"></div>
+    <div class="top-right-pattern"></div>
 
-    <div class="rcpt-header">
-        <div class="rcpt-shop-name">@(currentStore?.ShopName ?? "THE SATA POS")</div>
-        <div class="rcpt-address">@(currentStore?.Address ?? "Address")</div>
-        <div class="rcpt-phone">@(currentStore?.Phone1 ?? "0313-3879645")</div>
-    </div>
-
-    <div class="rcpt-info">
-        <div class="rcpt-info-line"><b>Order:</b> @orderBillNo</div>
-        <div class="rcpt-info-line"><b>Cashier:</b> @(UserEmail?.Split('@')[0] ?? "nill")</div>
-        <div class="rcpt-info-line"><b>Customer:</b> @(selectedCustomer?.name ?? "Walk-In")</div>
-    </div>
-
-    <table class="rcpt-table">
-        <thead>
-            <tr>
-                <th class="col-prod" style="text-align: left;">PRODUCT</th>
-                <th class="col-qty" style="text-align: center;">QTY</th>
-                <th class="col-price" style="text-align: right;">PRICE</th>
-                <th class="col-amt" style="text-align: right;">AMOUNT</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in saleItems)
-            {
-                <tr>
-                    <td class="col-prod">@item.prod_name_service</td>
-                    <td class="col-qty" style="text-align: center;">@Math.Abs(item.qty)</td>
-                    <td class="col-price" style="text-align: right;">@item.price.ToString("N0")</td>
-                    <td class="col-amt" style="text-align: right;">@((item.price * Math.Abs(item.qty)).ToString("N0"))</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <hr class="rcpt-hr-double">
-
-    <div class="rcpt-totals">
-        <div class="rcpt-total-line"><span>SUB TOTAL</span><span>@CurrencyService.GetSymbol()@Math.Abs(totalSub).ToString("N0")</span></div>
-        @if (totalDisc != 0)
-        {
-            <div class="rcpt-total-line"><span>DISCOUNT</span><span>-@CurrencyService.GetSymbol()@Math.Abs(totalDisc).ToString("N0")</span></div>
-        }
-        <hr class="rcpt-hr-thin">
-        <div class="rcpt-total-line"><span>GRAND TOTAL</span><span>@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N0")</span></div>
-        <div class="rcpt-total-line"><span>CASH SALE</span><span>@CurrencyService.GetSymbol()@(tenderedAmount?.ToString("N0") ?? Math.Abs(currentTotal).ToString("N0"))</span></div>
-        <div class="rcpt-total-line"><span>PAY TYPE</span><span>@paymentMethod</span></div>
-    </div>
-
-    <div class="rcpt-footer">
-        <hr class="rcpt-hr-thick">
-        <div class="rcpt-thank-you">THANK YOU!</div>
-        <hr class="rcpt-hr-thick">
-        <div class="rcpt-promo">*** Refer a Friend To Smoke Drop &amp; Get 5% off. ***</div>
-        <hr class="rcpt-hr-thin">
-        <div class="rcpt-copyright">Copyrights 2023, Powered by The SATA POS</div>
-        <hr class="rcpt-hr-thin">
-    </div>
-
-    <div class="rcpt-bottom">
-        <div class="rcpt-bottom-left">
-            <div class="rcpt-date">Generated on @DateTime.Now.ToString("dd/MM/yyyy h:mm:ss tt")</div>
+    <div class="invoice-header">
+        <div class="logo-container">
+            <img src="/images/sata-logo.png" alt="SATA Logo" style="width: 100%; height: auto;" />
         </div>
-        @if (transMode != "return")
-        {
-            <div class="rcpt-barcode-wrap">
-                <svg id="rcptBarcodeSvg" style="height: 40px;"></svg>
-                <div style="font-size: 0.75rem; font-weight: 700; margin-top: 2px;">SALE @orderBillNo.Replace("SALE_", "")</div>
-            </div>
-        }
+        <div class="invoice-meta">
+            <h1 class="invoice-title">@(transMode == "return" ? "Return Receipt" : "Invoice")</h1>
+            <p class="invoice-id">#@orderBillNo</p>
+        </div>
     </div>
 
+    <div class="invoice-addresses">
+        <div class="address-box">
+            <div class="address-label">Invoice To:</div>
+            <h2 class="address-name">@(selectedCustomer?.name ?? "Walk-In")</h2>
+            <div class="address-details">
+                <p>@(selectedCustomer?.address ?? "")</p>
+                <p>Phone: @(selectedCustomer?.contact ?? "")</p>
+            </div>
+        </div>
+        <div class="address-box right">
+            <div class="address-label">Invoice From:</div>
+            <h2 class="address-name">@(currentStore?.ShopName ?? "THE SATA POS")</h2>
+            <div class="address-details">
+                <p>@(currentStore?.Address ?? "Address")</p>
+                <p>Phone: @(currentStore?.Phone1 ?? "0313-3879645")</p>
+                <p style="font-weight:900; color:#111; margin-top:8px; font-size:13px;">Date: @DateTime.Now.ToString("dd MMM yyyy")</p>
+            </div>
+        </div>
     </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <label>Status</label>
+            <span class="status-badge" style="background:#065f46">Paid</span>
+        </div>
+        <div class="status-item">
+            <label>Payment Method</label>
+            <div class="payment-text">@paymentMethod</div>
+        </div>
+    </div>
+
+    <div class="invoice-table-container">
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">Products/Services</th>
+                    <th class="col-center" style="width: 15%;">Price</th>
+                    <th class="col-center" style="width: 20%;">Qty</th>
+                    <th class="col-right" style="width: 20%;">Total Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in saleItems)
+                {
+                    <tr>
+                        <td>
+                            <div class="col-bold">@item.prod_name_service</div>
+                        </td>
+                        <td class="col-center">@CurrencyService.GetSymbol()@item.price.ToString("N2")</td>
+                        <td class="col-center">@Math.Abs(item.qty)</td>
+                        <td class="col-right col-bold">@CurrencyService.GetSymbol()@((item.price * Math.Abs(item.qty)).ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="invoice-footer">
+        <div class="terms-section">
+            <h3>Terms & Conditions</h3>
+            <p>Please make payment within 15 days of receiving this invoice. Thank you for choosing SATA TECHNOLOGIES for your business needs.</p>
+            
+            <div class="signature-section">
+                <div class="sig-line"></div>
+                <p class="sig-label">Authorized Signature</p>
+            </div>
+            
+            @if (transMode != "return")
+            {
+                <div style="margin-top: 20px;">
+                    <svg id="rcptBarcodeSvg" style="height: 40px;"></svg>
+                </div>
+            }
+        </div>
+        
+        <div class="totals-section">
+            <div class="total-row">
+                <span class="total-label">Sub Total</span>
+                <span class="total-val">@CurrencyService.GetSymbol()@Math.Abs(totalSub).ToString("N2")</span>
+            </div>
+            @if (totalDisc != 0)
+            {
+                <div class="total-row" style="color:var(--invoice-red);">
+                    <span class="total-label" style="color:var(--invoice-red);">Discount</span>
+                    <span class="total-val">- @CurrencyService.GetSymbol()@Math.Abs(totalDisc).ToString("N2")</span>
+                </div>
+            }
+            <div class="grand-total-bar">
+                <span class="grand-label">Grand Total</span>
+                <span class="grand-val">@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N2")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Decoration -->
+    <div class="bottom-left-pattern"></div>
+    <div class="bottom-right-pattern"></div>
+    <p class="footer-branding">SATA E-Invoice System Innovating the Future</p>
+</div>
 
 
 @code {
@@ -659,9 +700,9 @@
 
     private void CloseDropdowns() { showCustomerDropdown = false; showScanMenu = false; }
     
-    private void ToggleCustomerDropdown() {
+    private async Task ToggleCustomerDropdown() {
         showCustomerDropdown = !showCustomerDropdown;
-        if (showCustomerDropdown) FilterCustomers();
+        if (showCustomerDropdown) await FilterCustomers();
     }
 
     private void SetTransMode(string mode) {
@@ -673,17 +714,27 @@
         }
     }
 
-    private void OnCustomerSearchFocus() {
+    private async Task OnCustomerSearchFocus() {
         showCustomerDropdown = true;
-        FilterCustomers();
+        await FilterCustomers();
     }
 
-    private void FilterCustomers() {
+    private async Task FilterCustomers() {
+        showCustomerDropdown = true;
         if (string.IsNullOrEmpty(customerSearchQuery)) {
             filteredCustomersList = allCustomersList;
             selectedCustomer = null; 
         }
-        else filteredCustomersList = allCustomersList.Where(c => c.name.ToLower().Contains(customerSearchQuery.ToLower()) || (c.contact != null && c.contact.Contains(customerSearchQuery))).ToList();
+        else {
+            var q = customerSearchQuery.ToLower();
+            using var context = DbFactory.CreateDbContext();
+            filteredCustomersList = await context.customers
+                .AsNoTracking()
+                .Where(c => c.name.ToLower().Contains(q) || (c.contact != null && c.contact.ToLower().Contains(q)))
+                .Take(50)
+                .ToListAsync();
+        }
+        StateHasChanged();
     }
 
     private void SelectCustomer(customers c) { selectedCustomer = c; customerSearchQuery = c.name; showCustomerDropdown = false; }

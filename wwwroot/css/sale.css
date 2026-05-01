@@ -1239,6 +1239,6 @@ textarea.form-control { height: auto; padding: 16px; }
 @media print {
     body * { visibility: hidden !important; }
     #thermalReceipt, #thermalReceipt * { visibility: visible !important; }
-    #thermalReceipt { position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; }
+    #thermalReceipt { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; }
     .pos-container-v2, .sidebar, .top-bar, .modal-overlay { display: none !important; }
 }

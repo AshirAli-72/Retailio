@@ -265,6 +265,7 @@
     
     /* A4 INVOICE SPECIFIC (EDGE-TO-EDGE) */
     #invoice-to-print {
+        display: block !important;
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -280,6 +281,7 @@
 
     /* THERMAL RECEIPT SPECIFIC */
     #thermalReceipt {
+        display: block !important;
         position: static !important;
         width: 80mm !important; 
         margin: 0 auto !important;
