@@ -147,11 +147,23 @@
                     
                     @if (showCustomerDropdown)
                     {
-                        <div class="customer-dropdown-results shadow-luxury show" @onclick:stopPropagation style="left: -40px; width: calc(100% + 40px); border: none; box-shadow: var(--shadow-lift);">
+                        <div class="customer-dropdown-results shadow-luxury show" @onclick:stopPropagation>
+                            @if (!filteredCustomersList.Any())
+                            {
+                                <div class="no-results">No customers found</div>
+                            }
                             @foreach (var c in filteredCustomersList)
                             {
                                 <div class="customer-result-item" @onclick="() => SelectCustomer(c)" @onclick:stopPropagation>
-                                    <span class="cust-name">@c.name</span>
+                                    <div class="cust-avatar">@(string.IsNullOrEmpty(c.name) ? "?" : c.name[0].ToString().ToUpper())</div>
+                                    <div class="cust-info">
+                                        <span class="cust-name">@c.name</span>
+                                        <span class="cust-contact">@c.contact</span>
+                                    </div>
+                                    @if (selectedCustomer?.id == c.id)
+                                    {
+                                        <i class="ph-check-circle-fill" style="color: var(--success); margin-left: auto;"></i>
+                                    }
                                 </div>
                             }
                         </div>
@@ -160,7 +172,7 @@
                 <i class="ph-caret-down" @onclick="ToggleCustomerDropdown" @onclick:stopPropagation style="cursor: pointer;"></i>
             </div>
             <button type="button" @onclick="() => showAddCustomerModal = true" class="btn-add-customer">
-                <i class="ph-plus-circle" style="font-size: 1.25rem;"></i>
+                <i class="ph-plus-bold"></i>
             </button>
         </div>
 
@@ -353,120 +365,90 @@
     </div>
 }
 
-<!-- A4 INVOICE RECEIPT (DESIGN REFRESH) -->
+<!-- A4 INVOICE RECEIPT (NEW CENTERED DESIGN) -->
 <div id="invoice-to-print" class="invoice-paper" style="display: none; margin: 0 auto;">
-    <!-- Decoration Shapes -->
-    <div class="top-left-pattern"></div>
-    <div class="top-right-pattern"></div>
-
-    <div class="invoice-header">
-        <div class="logo-container">
-            <img src="/images/sata-logo.png" alt="SATA Logo" style="width: 100%; height: auto;" />
-        </div>
-        <div class="invoice-meta">
-            <h1 class="invoice-title">@(transMode == "return" ? "Return Receipt" : "Invoice")</h1>
-            <p class="invoice-id">#@orderBillNo</p>
-        </div>
+    <div class="receipt-header-v4">
+        <h1 class="receipt-shop-name-v4">@(currentStore?.ShopName ?? "THE SATA POS")</h1>
+        <p class="receipt-address-v4">@(currentStore?.Address ?? "Address")</p>
+        <p class="receipt-phone-v4">@(currentStore?.Phone1 ?? "0313-3879645")</p>
     </div>
 
-    <div class="invoice-addresses">
-        <div class="address-box">
-            <div class="address-label">Invoice To:</div>
-            <h2 class="address-name">@(selectedCustomer?.name ?? "Walk-In")</h2>
-            <div class="address-details">
-                <p>@(selectedCustomer?.address ?? "")</p>
-                <p>Phone: @(selectedCustomer?.contact ?? "")</p>
-            </div>
-        </div>
-        <div class="address-box right">
-            <div class="address-label">Invoice From:</div>
-            <h2 class="address-name">@(currentStore?.ShopName ?? "THE SATA POS")</h2>
-            <div class="address-details">
-                <p>@(currentStore?.Address ?? "Address")</p>
-                <p>Phone: @(currentStore?.Phone1 ?? "0313-3879645")</p>
-                <p style="font-weight:900; color:#111; margin-top:8px; font-size:13px;">Date: @DateTime.Now.ToString("dd MMM yyyy")</p>
-            </div>
-        </div>
+    <div class="receipt-meta-v4">
+        <div class="meta-row-v4">Cashier: @(UserName ?? "nill")</div>
+        <div class="meta-row-v4">Customer: @(selectedCustomer?.name ?? "Walk-In")</div>
     </div>
 
-    <div class="status-bar">
-        <div class="status-item">
-            <label>Status</label>
-            <span class="status-badge" style="background:#065f46">Paid</span>
-        </div>
-        <div class="status-item">
-            <label>Payment Method</label>
-            <div class="payment-text">@paymentMethod</div>
-        </div>
-    </div>
+    <hr class="receipt-hr-v4" />
 
-    <div class="invoice-table-container">
-        <table class="invoice-table">
-            <thead>
+    <table class="receipt-table-v4">
+        <thead>
+            <tr>
+                <th style="width: 40%;">PRODUCT</th>
+                <th class="col-center" style="width: 20%;">QTY</th>
+                <th class="col-center" style="width: 20%;">PRICE</th>
+                <th class="col-right" style="width: 20%;">AMOUNT</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in saleItems)
+            {
                 <tr>
-                    <th style="width: 45%;">Products/Services</th>
-                    <th class="col-center" style="width: 15%;">Price</th>
-                    <th class="col-center" style="width: 20%;">Qty</th>
-                    <th class="col-right" style="width: 20%;">Total Price</th>
+                    <td>@item.prod_name_service</td>
+                    <td class="col-center">@Math.Abs(item.qty)</td>
+                    <td class="col-center">@item.price.ToString("N0")</td>
+                    <td class="col-right">@((item.price * Math.Abs(item.qty)).ToString("N0"))</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in saleItems)
-                {
-                    <tr>
-                        <td>
-                            <div class="col-bold">@item.prod_name_service</div>
-                        </td>
-                        <td class="col-center">@CurrencyService.GetSymbol()@item.price.ToString("N2")</td>
-                        <td class="col-center">@Math.Abs(item.qty)</td>
-                        <td class="col-right col-bold">@CurrencyService.GetSymbol()@((item.price * Math.Abs(item.qty)).ToString("N2"))</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 
-    <div class="invoice-footer">
-        <div class="terms-section">
-            <h3>Terms & Conditions</h3>
-            <p>Please make payment within 15 days of receiving this invoice. Thank you for choosing SATA TECHNOLOGIES for your business needs.</p>
-            
-            <div class="signature-section">
-                <div class="sig-line"></div>
-                <p class="sig-label">Authorized Signature</p>
-            </div>
-            
-            @if (transMode != "return")
-            {
-                <div style="margin-top: 20px;">
-                    <svg id="rcptBarcodeSvg" style="height: 40px;"></svg>
-                </div>
-            }
+    <hr class="receipt-hr-v4" />
+
+    <div class="receipt-totals-v4">
+        <div class="total-row-v4">
+            <span class="total-label-v4">SUB TOTAL</span>
+            <span class="total-val-v4">@CurrencyService.GetSymbol()@Math.Abs(totalSub).ToString("N0")</span>
         </div>
-        
-        <div class="totals-section">
-            <div class="total-row">
-                <span class="total-label">Sub Total</span>
-                <span class="total-val">@CurrencyService.GetSymbol()@Math.Abs(totalSub).ToString("N2")</span>
-            </div>
-            @if (totalDisc != 0)
-            {
-                <div class="total-row" style="color:var(--invoice-red);">
-                    <span class="total-label" style="color:var(--invoice-red);">Discount</span>
-                    <span class="total-val">- @CurrencyService.GetSymbol()@Math.Abs(totalDisc).ToString("N2")</span>
-                </div>
-            }
-            <div class="grand-total-bar">
-                <span class="grand-label">Grand Total</span>
-                <span class="grand-val">@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N2")</span>
-            </div>
+        <div class="total-row-v4">
+            <span class="total-label-v4">TOTAL</span>
+            <span class="total-val-v4">@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N0")</span>
+        </div>
+        <div class="total-row-v4">
+            <span class="total-label-v4">AMOUNT DUE</span>
+            <span class="total-val-v4">@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N0")</span>
+        </div>
+        <div class="total-row-v4">
+            <span class="total-label-v4">DEBIT TEND</span>
+            <span class="total-val-v4">@CurrencyService.GetSymbol()@Math.Abs(currentTotal).ToString("N0")</span>
         </div>
     </div>
 
-    <!-- Footer Decoration -->
-    <div class="bottom-left-pattern"></div>
-    <div class="bottom-right-pattern"></div>
-    <p class="footer-branding">SATA E-Invoice System Innovating the Future</p>
+    <div class="pay-type-v4">
+        <span>PAY TYPE</span>
+        <span>@(paymentMethod == "Card" ? "Credit Card" : paymentMethod)</span>
+    </div>
+
+    <hr class="receipt-hr-v4" />
+
+    <h2 class="thank-you-v4">THANK YOU!</h2>
+
+    <hr class="receipt-hr-v4" />
+
+    <p class="promo-text-v4">*** Refer a Friend To Smoke Drop & Get 5% off. ***</p>
+
+    <hr class="receipt-hr-v4" />
+
+    <p class="copyright-v4">Copyrights @DateTime.Now.Year, Powered by The SATA POS</p>
+
+    <div class="receipt-footer-v4">
+        <div class="footer-meta-v4">
+            <div class="footer-item-v4">ORDER: @orderBillNo</div>
+            <div class="footer-item-v4">@DateTime.Now.ToString("M/d/yyyy h:mm:ss tt")</div>
+        </div>
+        <div class="barcode-container-v4">
+            <svg id="rcptBarcodeSvg" style="height: 60px; width: 220px;"></svg>
+        </div>
+    </div>
 </div>
 
 
