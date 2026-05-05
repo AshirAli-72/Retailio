@@ -252,11 +252,6 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount");
 
-                    b.Property<string>("Date")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
-
                     b.Property<string>("Method")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("method");
@@ -273,6 +268,11 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("billNo")
                         .HasColumnOrder(1);
+
+                    b.Property<string>("date")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("date");
 
                     b.Property<int>("no_of_items")
                         .HasColumnType("int")
@@ -489,6 +489,8 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_qty");
 
+
+
                     b.HasKey("id");
 
                     b.ToTable("sale_details");
@@ -527,13 +529,13 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("sale_price");
 
-                    b.Property<decimal>("total_pur_price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("total_pur_price");
-
                     b.Property<decimal>("stock_alert")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("stock_alert");
+
+                    b.Property<decimal>("total_pur_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total_pur_price");
 
                     b.Property<decimal>("whole_sale_price")
                         .HasColumnType("decimal(18,2)")
@@ -542,6 +544,60 @@ namespace E_Invoice_system.Data.Migrations
                     b.HasKey("id");
 
                     b.ToTable("stock_details");
+                });
+
+            modelBuilder.Entity("E_Invoice_system.Models.StockHistory", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<string>("date")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("date");
+
+                    b.Property<decimal>("new_purchase_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("new_purchase_price");
+
+                    b.Property<decimal>("new_quantity")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("new_quantity");
+
+                    b.Property<decimal>("new_sale_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("new_sale_price");
+
+                    b.Property<decimal>("old_purchase_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("old_purchase_price");
+
+                    b.Property<decimal>("old_quantity")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("old_quantity");
+
+                    b.Property<decimal>("old_sale_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("old_sale_price");
+
+                    b.Property<int>("product_id")
+                        .HasColumnType("int")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("remarks")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("remarks");
+
+                    b.Property<int?>("user_id")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("id");
+
+                    b.ToTable("stock_history");
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.StoreConfiguration", b =>
@@ -715,6 +771,8 @@ namespace E_Invoice_system.Data.Migrations
                     b.Property<decimal>("total_price")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_price");
+
+
 
                     b.HasKey("id");
 

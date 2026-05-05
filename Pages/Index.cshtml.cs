@@ -10,15 +10,15 @@ namespace E_Invoice_system.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
         private readonly ILogger<IndexModel> _logger;
         private readonly IMemoryCache _cache;
         private readonly Services.CurrencyService _currencyService;
 
-        public IndexModel(ILogger<IndexModel> logger, ApplicationDbContext context, IMemoryCache cache, Services.CurrencyService currencyService)
+        public IndexModel(ILogger<IndexModel> logger, IDbContextFactory<ApplicationDbContext> dbFactory, IMemoryCache cache, Services.CurrencyService currencyService)
         {
             _logger = logger;
-            _context = context;
+            _dbFactory = dbFactory;
             _cache = cache;
             _currencyService = currencyService;
         }
@@ -62,27 +62,58 @@ namespace E_Invoice_system.Pages
 
             await _currencyService.GetSymbolAsync();
 
-            const string cacheKey = "Dashboard_Stats";
+            const string cacheKey = "Dashboard_Stats_v2";
             if (_cache.TryGetValue(cacheKey, out DashboardStats? cachedStats) && cachedStats != null)
             {
                 PopulateFromStats(cachedStats);
                 return Page();
             }
 
+            using var context = _dbFactory.CreateDbContext();
+            
+            // Heartbeat check
+            try 
+            { 
+                if (!await context.Database.CanConnectAsync())
+                {
+                    _logger.LogError("Dashboard: Cannot connect to database.");
+                    return Page();
+                }
+            }
+            catch (Exception ex) 
+            { 
+                _logger.LogError(ex, "Dashboard: Connection heartbeat failed.");
+                return Page();
+            }
+
+            var stats = new DashboardStats();
+            var sw = Stopwatch.StartNew();
+
+            // 1. Total Invoices
+            try { stats.TotalInvoices = await context.invoices.AsNoTracking().CountAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalInvoices"); }
+
+            // 2. Total Customers
+            try { stats.TotalCustomers = await context.customers.AsNoTracking().CountAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalCustomers"); }
+
+            // 3. Total Products
+            try { stats.TotalProducts = await context.products_services.AsNoTracking().CountAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalProducts"); }
+
+            // 4. Total Sales
+            try 
+            { 
+                stats.TotalSales = await context.sales.AsNoTracking()
+                    .Where(s => s.total_price > 0)
+                    .SumAsync(s => (decimal?)s.total_price) ?? 0; 
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalSales"); }
+
+            // 5. Invoice Status Distribution
             try
             {
-                var sw = Stopwatch.StartNew();
-
-                // Live Stats
-                var stats = new DashboardStats();
-                stats.TotalInvoices = await _context.invoices.AsNoTracking().CountAsync();
-                stats.TotalCustomers = await _context.customers.AsNoTracking().CountAsync();
-                stats.TotalProducts = await _context.products_services.AsNoTracking().CountAsync();
-                stats.TotalSales = await _context.sales.AsNoTracking()
-                    .Where(s => s.total_price > 0)
-                    .SumAsync(s => (decimal?)s.total_price) ?? 0;
-
-                var invoiceStatusData = await _context.invoices
+                var invoiceStatusData = await context.invoices
                     .AsNoTracking()
                     .GroupBy(i => i.status ?? "Pending")
                     .Select(g => new { Status = g.Key, Count = g.Count() })
@@ -90,12 +121,16 @@ namespace E_Invoice_system.Pages
 
                 stats.StatusLabels = invoiceStatusData.Select(x => x.Status).ToArray();
                 stats.StatusCounts = invoiceStatusData.Select(x => x.Count).ToArray();
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Status distribution"); }
 
-                // Optimized Trend Query: Only fetch last 7 days from DB
+            // 6. Trend Data (7 Days)
+            try
+            {
                 var startDate = DateTime.Today.AddDays(-6);
                 var startDateStr = startDate.ToString("yyyy-MM-dd");
 
-                var trendResultsFromDb = await _context.invoices
+                var trendResultsFromDb = await context.invoices
                     .AsNoTracking()
                     .Where(inv => inv.date != null && inv.date.CompareTo(startDateStr) >= 0)
                     .GroupBy(inv => inv.date)
@@ -117,33 +152,44 @@ namespace E_Invoice_system.Pages
 
                 stats.TrendLabels = trendLabelsList.ToArray();
                 stats.TrendData = trendDataList.ToArray();
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Trend data"); }
 
-                // Recent Invoices (limit to 4)
-                stats.RecentInvoices = await _context.invoices
+            // 7. Recent Invoices
+            try
+            {
+                stats.RecentInvoices = await context.invoices
                     .AsNoTracking()
                     .OrderByDescending(i => i.id)
                     .Take(4)
                     .ToListAsync();
-
-                // Sale vs Return Counts
-                stats.SaleCount = await _context.sales.AsNoTracking().CountAsync(s => !s.is_returned);
-                stats.ReturnCount = await _context.returns.AsNoTracking().CountAsync();
-
-                // Low Stock Count
-                stats.LowStockCount = await _context.stock_details.AsNoTracking()
-                    .CountAsync(s => s.quantity <= s.stock_alert);
-
-                // Cache for 30 seconds
-                _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(30));
-                PopulateFromStats(stats);
-
-                _logger.LogInformation("Dashboard load completed in {ms}ms", sw.ElapsedMilliseconds);
             }
-            catch (Exception ex)
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching RecentInvoices"); }
+
+            // 8. Sale vs Return
+            try
             {
-                _logger.LogError(ex, "Error loading dashboard statistics.");
-                ErrorMessage = "The database is temporarily busy. Please refresh the page in a few seconds.";
+                stats.SaleCount = await context.sales.AsNoTracking().CountAsync(s => !s.is_returned);
+                stats.ReturnCount = await context.returns.AsNoTracking().CountAsync();
             }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Sale/Return counts"); }
+
+            // 9. Low Stock
+            try
+            {
+                stats.LowStockCount = await context.stock_details.AsNoTracking()
+                    .CountAsync(s => s.quantity <= s.stock_alert);
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching LowStockCount"); }
+
+            // Cache only if we have some data to avoid caching transient failures
+            if (stats.TotalInvoices > 0 || stats.TotalCustomers > 0 || stats.TotalProducts > 0)
+            {
+                _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(30));
+            }
+            PopulateFromStats(stats);
+
+            _logger.LogInformation("Dashboard load completed in {ms}ms", sw.ElapsedMilliseconds);
 
             return Page();
         }

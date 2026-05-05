@@ -20,21 +20,6 @@
     </div>
 }
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-light); border-left: 4px solid var(--primary); border-radius: 12px; display: flex; align-items: center; gap: 1rem; border: 1px solid var(--border);">
-        <div style="background: var(--primary-glow); color: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i class="ph-warning-circle" style="font-size: 1.5rem;"></i>
-        </div>
-        <div style="flex: 1;">
-            <div style="font-weight: 700; color: var(--text); margin-bottom: 0.25rem;">Database Delay</div>
-            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">@Model.ErrorMessage</p>
-        </div>
-        <button onclick="window.location.reload()" style="background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-            <i class="ph-arrows-clockwise"></i> Retry
-        </button>
-    </div>
-}
 
 <div class="stats-grid">
     <div class="stat-card">

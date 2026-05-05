@@ -112,7 +112,7 @@ namespace E_Invoice_system.Pages.Invoice
             }
             catch (Exception ex)
             {
-                ErrorMessage = "The database is temporarily busy. Please refresh the page in a few seconds.";
+                // Silence error for UI
             }
 
             return Page();

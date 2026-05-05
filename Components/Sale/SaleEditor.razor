@@ -12,7 +12,7 @@
             <div class="canvas-header-top" style="justify-content: flex-start; gap: 24px;">
                 <h3 class="canvas-title" style="margin: 0; white-space: nowrap;">Sales Transaction</h3>
                 
-                <div class="search-bar-v2" style="flex: 1; max-width: 800px;">
+                <div class="search-bar-v2">
                     <i class="ph-magnifying-glass"></i>
                     <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")" 
                            @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
@@ -140,39 +140,37 @@
         <div class="customer-selector-v2">
             <div class="select-wrapper-v2">
                 <i class="ph-user-circle"></i>
-                <div style="flex: 1; position: relative;">
-                    <input type="text" class="customer-search-input" placeholder="Search Customer..." 
-                           @bind="customerSearchQuery" @bind:event="oninput" @bind:after="FilterCustomers"
-                           @onfocus="OnCustomerSearchFocus" 
-                           @onclick:stopPropagation />
-                    
-                    @if (showCustomerDropdown)
-                    {
-                        <div class="customer-dropdown-results shadow-luxury show" @onclick:stopPropagation>
-                            @if (!filteredCustomersList.Any())
-                            {
-                                <div class="no-results">No customers found</div>
-                            }
-                            @foreach (var c in filteredCustomersList)
-                            {
-                                <div class="customer-result-item" @onclick="() => SelectCustomer(c)" @onclick:stopPropagation>
-                                    <div class="cust-avatar">@(string.IsNullOrEmpty(c.name) ? "?" : c.name[0].ToString().ToUpper())</div>
-                                    <div class="cust-info">
-                                        <span class="cust-name">@c.name</span>
-                                        <span class="cust-contact">@c.contact</span>
-                                    </div>
-                                    @if (selectedCustomer?.id == c.id)
-                                    {
-                                        <i class="ph-check-circle-fill" style="color: var(--success); margin-left: auto;"></i>
-                                    }
+                <input type="text" class="customer-search-input" placeholder="Search Customer..." 
+                       @bind="customerSearchQuery" @bind:event="oninput" @bind:after="FilterCustomers"
+                       @onfocus="OnCustomerSearchFocus" 
+                       @onclick:stopPropagation />
+                
+                @if (showCustomerDropdown)
+                {
+                    <div class="customer-dropdown-results show" @onclick:stopPropagation>
+                        @if (!filteredCustomersList.Any())
+                        {
+                            <div class="no-results">No customers found</div>
+                        }
+                        @foreach (var c in filteredCustomersList)
+                        {
+                            <div class="customer-result-item" @onclick="() => SelectCustomer(c)" @onclick:stopPropagation>
+                                <div class="cust-avatar">@(string.IsNullOrEmpty(c.name) ? "?" : c.name[0].ToString().ToUpper())</div>
+                                <div class="cust-info">
+                                    <span class="cust-name">@c.name</span>
+                                    <span class="cust-contact">@c.contact</span>
                                 </div>
-                            }
-                        </div>
-                    }
-                </div>
+                                @if (selectedCustomer?.id == c.id)
+                                {
+                                    <i class="ph-check-circle-fill" style="color: var(--success); margin-left: auto;"></i>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
                 <i class="ph-caret-down" @onclick="ToggleCustomerDropdown" @onclick:stopPropagation style="cursor: pointer;"></i>
             </div>
-            <button type="button" @onclick="() => showAddCustomerModal = true" class="btn-add-customer">
+            <button type="button" @onclick="() => showAddCustomerModal = true" class="btn-add-customer" title="Add New Customer">
                 <i class="ph-plus-bold"></i>
             </button>
         </div>
@@ -229,7 +227,7 @@
             <div class="checkout-footer-v2">
                 <div class="price-summary-v2">
                     <div class="summary-line"><span>Subtotal</span><span>@FormatCurrency(totalSub)</span></div>
-                    <div class="summary-line" style="color:var(--success);"><span>Discount</span><span>@FormatCurrency(totalDisc)</span></div>
+                    <div class="summary-line" style="color:var(--success); font-weight: 800;"><span>Discount</span><span>- @FormatCurrency(totalDisc)</span></div>
                     
                     <div class="grand-total-row">
                         <div class="total-label">Grand Total</div>
@@ -237,7 +235,7 @@
                     </div>
                 </div>
                 <button type="button" class="btn-pay-v2" @onclick="OpenPaymentModal">
-                    <i class="ph-credit-card"></i> Proceed to Payment
+                    <i class="ph-credit-card"></i> <span>Proceed to Payment</span>
                 </button>
             </div>
         </div>
@@ -769,8 +767,9 @@
         try {
             using var context = DbFactory.CreateDbContext();
             
-            // Get Current User ID
-            var user = await context.users.AsNoTracking().FirstOrDefaultAsync(u => u.username == UserName);
+            // Get Current User ID (Check both username and email as session might store either)
+            var user = await context.users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.username == UserName || u.email == UserName);
             int? currentUserId = user?.id;
 
             int nextIdNum = 1;
@@ -826,6 +825,15 @@
                         }
                     }
 
+                    // Update original sale record to mark as returned
+                    if (item.OriginalSaleId != 0) {
+                        var originalSale = await context.sales.FindAsync(item.OriginalSaleId);
+                        if (originalSale != null) {
+                            originalSale.is_returned = true;
+                            context.sales.Update(originalSale);
+                        }
+                    }
+
                     var returnRec = new Models.ReturnDetail {
                         billNo = orderBillNo,
                         SaleId = item.OriginalSaleId,
@@ -852,8 +860,7 @@
                         status = (paymentMethod == "Credit" || paymentMethod == "Pending") ? "Pending" : "Paid",
                         is_returned = false, 
                         description = saleDescription,
-                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd"),
-                        user_id = currentUserId 
+                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd")
                     };
 
                     context.sales.Add(sale);
