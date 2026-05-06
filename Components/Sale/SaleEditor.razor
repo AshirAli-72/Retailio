@@ -365,7 +365,7 @@
 }
 
 <!-- A4 INVOICE RECEIPT (NEW CENTERED DESIGN) -->
-<div id="invoice-to-print" class="invoice-paper" style="display: none; margin: 0 auto;">
+<div id="invoice-to-print" class="invoice-paper receipt-hidden" style="margin: 0 auto;">
     <div class="receipt-header-v4">
         <h1 class="receipt-shop-name-v4">@(currentStore?.ShopName ?? "THE SATA POS")</h1>
         <p class="receipt-address-v4">@(currentStore?.Address ?? "Address")</p>
@@ -860,7 +860,8 @@
                         status = (paymentMethod == "Credit" || paymentMethod == "Pending") ? "Pending" : "Paid",
                         is_returned = false, 
                         description = saleDescription,
-                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd")
+                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd"),
+                        user_id = currentUserId
                     };
 
                     context.sales.Add(sale);
@@ -920,20 +921,25 @@
             // 4. PRINT (after a short delay to allow UI to update)
             if (shouldPrint) {
                 try {
-                    await Task.Delay(800); // Wait for modal to close fully
+                    await Task.Delay(500); // Wait for modal to close fully
+                    // Show the receipt element before printing
+                    await JSRuntime.InvokeVoidAsync("eval",
+                        "document.getElementById('invoice-to-print').classList.remove('receipt-hidden');");
+                    await Task.Delay(300); // Let the DOM update
                     if (mode != "return") {
                         await JSRuntime.InvokeVoidAsync("renderBarcode", "rcptBarcodeSvg", billNo);
                     }
                     await JSRuntime.InvokeVoidAsync("window.print");
+                    // Hide it again after print dialog
+                    await JSRuntime.InvokeVoidAsync("eval",
+                        "document.getElementById('invoice-to-print').classList.add('receipt-hidden');");
                 } catch (Exception jsEx) {
                     Console.WriteLine("Print Error: " + jsEx.Message);
                 }
             }
 
-            // 5. FINAL RESET
-            ResetComponent();
-            saleItems.Clear();
-            StateHasChanged();
+            // 5. AUTO-REFRESH: Navigate back to Sale Create to reset the terminal cleanly
+            NavigationManager.NavigateTo("/Sale/Create", forceLoad: true);
         } catch (Exception ex) { 
             string errMessage = ex.Message;
             if (ex.InnerException != null) errMessage += " | " + ex.InnerException.Message;

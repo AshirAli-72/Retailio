@@ -46,5 +46,8 @@ namespace E_Invoice_system.Models
         [Column("is_returned")]
         public bool is_returned { get; set; } = false;
 
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
     }
 }

@@ -14,6 +14,7 @@
     
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sale.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/invoice.css" asp-append-version="true" />
     
     <!-- jQuery -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -518,12 +519,15 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        function showToast(title, message) {
+        function showToast(title, message, type) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast';
+            const isError = type === 'error';
+            const iconClass = isError ? 'ph-x-circle' : 'ph-check-circle';
+            const iconColor = isError ? '#ef4444' : 'var(--primary)';
             toast.innerHTML = `
-                <i class="ph-check-circle" style="color:var(--primary); font-size:1.5rem;"></i>
+                <i class="${iconClass}" style="color:${iconColor}; font-size:1.5rem;"></i>
                 <div style="flex: 1;">
                     <div style="font-weight: 700; font-size: 0.85rem;">${title}</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">${message}</div>
@@ -534,7 +538,7 @@
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 400);
-            }, 3000);
+            }, type === 'error' ? 5000 : 3000);
         }
 
         const successMessage = '@TempData["Success"]';
