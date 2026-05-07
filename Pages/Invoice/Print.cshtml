@@ -3,44 +3,273 @@
 @inject E_Invoice_system.Services.CurrencyService CurrencyService
 @{
     Layout = null;
+    var billRef = Model.Invoice.invoice_no ?? Model.Invoice.id.ToString();
+    var isReturn = Model.Invoice.status?.Contains("Return", StringComparison.OrdinalIgnoreCase) ?? false;
+    var symbol = CurrencyService.GetSymbol() ?? "$";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice - @(Model.Invoice.invoice_no ?? Model.Invoice.id.ToString())</title>
-    <link rel="stylesheet" href="/lib/inter-font/inter.css" />
-    <link rel="stylesheet" href="/css/invoice.css">
-    
+    <title>Receipt - @billRef</title>
+    <script src="/lib/jsbarcode/JsBarcode.all.min.js"></script>
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #000;
+        }
+
+        .print-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-print { background: #000; color: white; }
+        .btn-print:hover { background: #333; transform: translateY(-1px); }
+        .btn-close { background: #ef4444; color: white; }
+        .btn-close:hover { background: #dc2626; transform: translateY(-1px); }
+
+        /* ── THERMAL RECEIPT ── */
+        .receipt {
+            background: white;
+            width: 380px;
+            padding: 30px 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .shop-name {
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .shop-detail {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .header-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .divider-heavy {
+            border: none;
+            border-top: 2.5px solid #000;
+            margin: 12px 0;
+        }
+
+        .divider-light {
+            border: none;
+            border-top: 1px solid #000;
+            margin: 10px 0;
+        }
+
+        .meta-info {
+            margin-bottom: 15px;
+        }
+
+        .meta-row {
+            display: flex;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .meta-row span:first-child { width: 100px; }
+
+        /* Items table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .items-table thead th {
+            font-weight: 800;
+            text-align: left;
+            padding: 8px 0;
+            border-bottom: 1.5px solid #000;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .items-table td {
+            padding: 8px 0;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* Totals */
+        .totals-section {
+            margin-top: 5px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .total-row.large {
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .footer-section {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .thank-you {
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .promo-text {
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+
+        .copyright {
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 15px;
+            text-transform: uppercase;
+        }
+
+        .bottom-meta {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .bottom-left {
+            text-align: left;
+            font-weight: 800;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Barcode */
+        .barcode-container {
+            text-align: right;
+        }
+
+        .barcode-container svg {
+            width: 160px;
+            height: auto;
+        }
+
+        /* Print overrides */
+        @@media print {
+            body { background: white; padding: 0; }
+            .print-controls { display: none; }
+            .receipt {
+                width: 80mm;
+                box-shadow: none;
+                padding: 5mm;
+                margin: 0;
+            }
+            .thank-you { font-size: 18px; }
+            .shop-name { font-size: 20px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="print-controls no-print">
-        <button onclick="window.print()" class="btn btn-print">Print Invoice</button>
-        <button onclick="window.close()" class="btn btn-close">Close Tab</button>
+
+    <div class="print-controls">
+        <button onclick="window.print()" class="btn btn-print">PRINT RECEIPT</button>
+        <button onclick="window.close()" class="btn btn-close">CLOSE</button>
     </div>
 
-    <div id="invoice-to-print" class="invoice-paper">
-        <div class="receipt-header-v4">
-            <h1 class="receipt-shop-name-v4">@Model.Invoice.seller_name</h1>
-            <p class="receipt-address-v4">@Model.Invoice.seller_address</p>
-            <p class="receipt-phone-v4">@Model.Invoice.seller_contact</p>
+    <div class="receipt">
+        
+        @if (isReturn)
+        {
+            <div class="header-meta">
+                <span>@Model.Invoice.date @DateTime.Now.ToString("h:mm:ss tt")</span>
+                <span>ORDER: @billRef</span>
+            </div>
+        }
+
+        <!-- Header -->
+        <div class="receipt-header">
+            <div class="shop-name">THE SATA POS</div>
+            <div class="shop-detail">Address</div>
+            <div class="shop-detail">@Model.Invoice.seller_contact</div>
         </div>
 
-        <div class="receipt-meta-v4">
-            <div class="meta-row-v4">Cashier: @Model.CashierName</div>
-            <div class="meta-row-v4">Customer: @Model.Invoice.customer_name</div>
+        <div class="meta-info">
+            <div class="meta-row">
+                <span>Cashier:</span>
+                <span>nill</span>
+            </div>
+            <div class="meta-row">
+                <span>Customer:</span>
+                <span>@(string.IsNullOrEmpty(Model.Invoice.customer_name) ? "Walk-In" : Model.Invoice.customer_name)</span>
+            </div>
         </div>
 
-        <hr class="receipt-hr-v4" />
+        <hr class="divider-heavy" />
 
-        <table class="receipt-table-v4">
+        <!-- Items -->
+        <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 40%;">PRODUCT</th>
-                    <th class="col-center" style="width: 20%;">QTY</th>
-                    <th class="col-center" style="width: 20%;">PRICE</th>
-                    <th class="col-right" style="width: 20%;">AMOUNT</th>
+                    <th style="width: 45%;">PRODUCT</th>
+                    <th style="width: 15%;" class="text-center">QTY</th>
+                    <th style="width: 20%;" class="text-right">PRICE</th>
+                    <th style="width: 20%;" class="text-right">AMOUNT</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,9 +279,9 @@
                     {
                         <tr>
                             <td>@item["name"]</td>
-                            <td class="col-center">@item["qty"]</td>
-                            <td class="col-center">@(((decimal)item["price"]).ToString("N0"))</td>
-                            <td class="col-right">@(((decimal)item["total"]).ToString("N0"))</td>
+                            <td class="text-center">@item["qty"]</td>
+                            <td class="text-right">@(((decimal)item["price"]).ToString("N0"))</td>
+                            <td class="text-right">@(((decimal)item["total"]).ToString("N0"))</td>
                         </tr>
                     }
                 }
@@ -60,61 +289,90 @@
                 {
                     <tr>
                         <td>@Model.Invoice.prod_name_service</td>
-                        <td class="col-center">@Model.Invoice.qty_unit_type</td>
-                        <td class="col-center">@Model.Invoice.price.ToString("N0")</td>
-                        <td class="col-right">@((Model.Invoice.price - Model.Invoice.discount).ToString("N0"))</td>
+                        <td class="text-center">@Model.Invoice.qty_unit_type</td>
+                        <td class="text-right">@Model.Invoice.price.ToString("N0")</td>
+                        <td class="text-right">@((Model.Invoice.price - Model.Invoice.discount).ToString("N0"))</td>
                     </tr>
                 }
             </tbody>
         </table>
 
-        <hr class="receipt-hr-v4" />
+        <hr class="divider-light" />
 
-        <div class="receipt-totals-v4">
-            <div class="total-row-v4">
-                <span class="total-label-v4">SUB TOTAL</span>
-                <span class="total-val-v4">@CurrencyService.GetSymbol()@Model.Subtotal.ToString("N0")</span>
+        <!-- Totals -->
+        <div class="totals-section">
+            @if (!isReturn)
+            {
+                <div class="total-row">
+                    <span>SUB TOTAL</span>
+                    <span>@symbol@Model.Subtotal.ToString("N0")</span>
+                </div>
+            }
+            
+            <div class="total-row large">
+                <span>TOTAL</span>
+                <span>@symbol@Model.Invoice.total_price.ToString("N0")</span>
             </div>
-            <div class="total-row-v4">
-                <span class="total-label-v4">TOTAL</span>
-                <span class="total-val-v4">@CurrencyService.GetSymbol()@Model.Invoice.total_price.ToString("N0")</span>
+
+            <div class="total-row">
+                <span>AMOUNT DUE</span>
+                <span>@symbol@Model.Invoice.total_price.ToString("N0")</span>
             </div>
-            <div class="total-row-v4">
-                <span class="total-label-v4">AMOUNT DUE</span>
-                <span class="total-val-v4">@CurrencyService.GetSymbol()@Model.Invoice.total_price.ToString("N0")</span>
+
+            <div class="total-row">
+                <span>@(Model.Invoice.payment == "Card" ? "DEBIT TEND" : (isReturn ? "CASH" : "CASH"))</span>
+                <span>@symbol@Model.Invoice.total_price.ToString("N0")</span>
             </div>
-            <div class="total-row-v4">
-                <span class="total-label-v4">DEBIT TEND</span>
-                <span class="total-val-v4">@CurrencyService.GetSymbol()@Model.Invoice.total_price.ToString("N0")</span>
-            </div>
-        </div>
 
-        <div class="pay-type-v4">
-            <span>PAY TYPE</span>
-            <span>@(Model.Invoice.payment == "Card" ? "Credit Card" : Model.Invoice.payment)</span>
-        </div>
-
-        <hr class="receipt-hr-v4" />
-
-        <h2 class="thank-you-v4">THANK YOU!</h2>
-
-        <hr class="receipt-hr-v4" />
-
-        <p class="promo-text-v4">*** Refer a Friend To Smoke Drop & Get 5% off. ***</p>
-
-        <hr class="receipt-hr-v4" />
-
-        <p class="copyright-v4">Copyrights 2023, Powered by The SATA POS</p>
-
-        <div class="receipt-footer-v4">
-            <div class="footer-meta-v4">
-                <div class="footer-item-v4">ORDER: @(Model.Invoice.invoice_no ?? Model.Invoice.id.ToString())</div>
-                <div class="footer-item-v4">@Model.Invoice.date</div>
-            </div>
-            <div class="barcode-container-v4">
-                <img src="https://barcodeapi.org/api/code128/@(Model.Invoice.invoice_no ?? Model.Invoice.id.ToString())" style="height: 60px; width: auto;" />
+            <div class="total-row">
+                <span>PAY TYPE</span>
+                <span class="text-right">@(Model.Invoice.payment == "Card" ? "Credit Card" : (Model.Invoice.payment ?? "Cash"))</span>
             </div>
         </div>
+
+        <hr class="divider-heavy" />
+
+        <div class="footer-section">
+            <div class="thank-you">THANK YOU!</div>
+            <div class="promo-text">*** Refer a Friend To Smoke Drop & Get 5% off. ***</div>
+            <hr class="divider-light" />
+            <div class="copyright">Copyrights 2023, Powered by The SATA POS</div>
+        </div>
+
+        @if (!isReturn)
+        {
+            <div class="bottom-meta">
+                <div class="bottom-left">
+                    <div>ORDER: @billRef</div>
+                    <div>@DateTime.Now.ToString("M/d/yyyy h:mm:ss tt")</div>
+                </div>
+                <div class="barcode-container">
+                    <svg id="receipt-barcode"></svg>
+                </div>
+            </div>
+        }
+        else
+        {
+             <div style="display: flex; justify-content: center; margin-top: 15px;">
+                <div class="barcode-container">
+                    <svg id="receipt-barcode"></svg>
+                </div>
+            </div>
+        }
+
     </div>
+
+    <script>
+        JsBarcode("#receipt-barcode", "@billRef", {
+            format: "CODE128",
+            width: 2,
+            height: 60,
+            displayValue: true,
+            fontSize: 14,
+            fontOptions: "bold",
+            margin: 0,
+            text: "@billRef"
+        });
+    </script>
 </body>
 </html>

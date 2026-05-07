@@ -47,20 +47,7 @@ builder.Services.AddResponseCompression(options =>
 
 var app = builder.Build();
 
-// Ensure database columns exist (fixes "Invalid column name 'user_id'" without a new migration)
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try
-    {
-        context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('invoices') AND name = 'user_id') ALTER TABLE invoices ADD user_id int NULL;");
-        context.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('sale_details') AND name = 'user_id') ALTER TABLE sale_details ADD user_id int NULL;");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database initialization error: {ex.Message}");
-    }
-}
+
 
 
 if (!app.Environment.IsDevelopment())

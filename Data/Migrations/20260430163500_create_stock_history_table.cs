@@ -15,7 +15,7 @@ namespace E_Invoice_system.Data.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    date = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     new_quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     old_quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     new_purchase_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),

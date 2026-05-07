@@ -55,8 +55,5 @@ namespace E_Invoice_system.Models
         [Column("status")]
         public string? status { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
-
     }
 }

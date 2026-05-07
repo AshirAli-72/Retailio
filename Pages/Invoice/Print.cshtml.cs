@@ -23,7 +23,6 @@ namespace E_Invoice_system.Pages.Invoice
         public bool IsMultiItem { get; set; } = false;
         public List<Dictionary<string, object>> Items { get; set; } = new();
         public decimal Subtotal { get; set; }
-        public string CashierName { get; set; } = "N/A";
 
 
         public async Task<IActionResult> OnGetAsync(int id)
@@ -87,13 +86,6 @@ namespace E_Invoice_system.Pages.Invoice
             {
                 var product = await _context.products_services.FirstOrDefaultAsync(p => p.prod_name == invoice.prod_name_service);
                 SingleItemExpiry = product?.expiry_date ?? "N/A";
-            }
-
-            // Fetch cashier name
-            if (invoice.user_id.HasValue)
-            {
-                var cashier = await _context.users.AsNoTracking().FirstOrDefaultAsync(u => u.id == invoice.user_id.Value);
-                CashierName = cashier?.username ?? "N/A";
             }
 
             Invoice = invoice;

@@ -860,8 +860,7 @@
                         status = (paymentMethod == "Credit" || paymentMethod == "Pending") ? "Pending" : "Paid",
                         is_returned = false, 
                         description = saleDescription,
-                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd"),
-                        user_id = currentUserId
+                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd")
                     };
 
                     context.sales.Add(sale);
