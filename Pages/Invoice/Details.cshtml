@@ -6,74 +6,360 @@
     if (isAjax) { Layout = null; }
 }
 
-<div id="invoiceViewWrapper" class="main-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 80px); padding: 40px 20px;">
-    <!-- Action Bar (Not printed) -->
-    <div class="no-print" style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 210mm;">
-        <h2 style="font-weight: 800; margin: 0;">Invoice Details</h2>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+    
+    .invoice-container {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f8fafc;
+        min-height: calc(100vh - 80px);
+        padding: 40px 20px;
+        color: #0f172a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .invoice-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 900px;
+        margin-bottom: 25px;
+    }
+
+    .invoice-card {
+        width: 100%;
+        max-width: 900px;
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.05);
+        overflow: hidden;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        position: relative;
+    }
+
+    .invoice-header {
+        padding: 50px 60px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        background: #ffffff;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .invoice-brand {
+        flex: 1;
+    }
+
+    .invoice-brand-name {
+        font-size: 28px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+        margin-top: 10px;
+    }
+
+    .invoice-brand-details {
+        margin-top: 15px;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .invoice-title-area {
+        flex: 1;
+        text-align: right;
+    }
+
+    .invoice-title {
+        font-size: 48px;
+        font-weight: 800;
+        color: #f1f5f9;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+
+    .invoice-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 5px;
+    }
+
+    .invoice-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 30px;
+        text-align: left;
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        display: inline-grid;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .meta-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+
+    .status-paid { background: #ecfdf5; color: #059669; }
+    .status-unpaid { background: #fef2f2; color: #dc2626; }
+
+    .invoice-body {
+        padding: 40px 60px;
+    }
+
+    .billing-section {
+        display: flex;
+        margin-bottom: 40px;
+        background: #f8fafc;
+        padding: 30px;
+        border-radius: 16px;
+    }
+
+    .billing-details {
+        flex: 1;
+    }
+
+    .billing-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+    }
+
+    .billing-name {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 8px;
+    }
+
+    .billing-address {
+        color: #64748b;
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .invoice-table th {
+        padding: 16px 20px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+        background: #ffffff;
+    }
+
+    .invoice-table td {
+        padding: 24px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #0f172a;
+    }
+
+    .item-name {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .item-expiry {
+        font-size: 12px;
+        color: #ef4444;
+        margin-top: 6px;
+        font-weight: 600;
+        background: #fef2f2;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .invoice-footer {
+        padding: 0 60px 50px;
+        display: flex;
+        gap: 50px;
+    }
+
+    .terms-section {
+        flex: 1.5;
+    }
+
+    .totals-section {
+        flex: 1;
+        background: #0f172a;
+        border-radius: 20px;
+        padding: 30px;
+        color: #ffffff;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        font-size: 15px;
+    }
+
+    .total-label { color: #94a3b8; font-weight: 500; }
+    .total-value { font-weight: 700; }
+
+    .total-divider {
+        width: 100%;
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 20px 0;
+    }
+
+    .grand-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .grand-total-label {
+        font-size: 18px;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    .grand-total-value {
+        font-size: 32px;
+        font-weight: 900;
+        color: #38bdf8;
+    }
+
+    .bottom-bar {
+        background: #f8fafc;
+        padding: 20px;
+        text-align: center;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    @@media print {
+        .invoice-container { padding: 0; background: white; min-height: auto; }
+        .no-print { display: none !important; }
+        .invoice-card { box-shadow: none; border: none; max-width: 100%; border-radius: 0; }
+        .totals-section { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; }
+        .grand-total-label { color: #0f172a; }
+        .grand-total-value { color: #0f172a; }
+        .total-label { color: #64748b; }
+        .total-divider { background: #e2e8f0; }
+    }
+</style>
+
+<div class="invoice-container">
+    <div class="invoice-actions no-print">
+        <h2 style="font-weight: 800; margin: 0; font-size: 24px;">Invoice Details</h2>
         <div style="display: flex; gap: 12px;">
-            <a href="/Invoice/Index" class="btn-secondary">
-                <i class="ph-arrow-left"></i> Back to Invoices
+            <a href="/Invoice/Index" class="btn-secondary" style="padding: 10px 20px; border-radius: 8px; background: white; color: #0f172a; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <i class="ph-arrow-left"></i> Back
             </a>
-            <button onclick="window.print()" class="btn-primary" style="background: var(--invoice-red); border:none;">
+            <button onclick="window.print()" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; background: #0f172a; color: white; border: none; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(15,23,42,0.2);">
                 <i class="ph-printer"></i> Print Invoice
             </button>
         </div>
     </div>
 
-    <div id="invoice-to-print" class="invoice-paper" style="margin: 0 auto;">
-        <!-- Decoration Shapes -->
-        <div class="top-left-pattern"></div>
-        <div class="top-right-pattern"></div>
-
+    <div class="invoice-card">
         <div class="invoice-header">
-            <div class="logo-container">
-                <img src="/images/sata-logo.png" alt="SATA Logo" />
-            </div>
-            <div class="invoice-meta">
-                <h1 class="invoice-title">Invoice</h1>
-                <p class="invoice-id">#@(Model.Invoice.invoice_no ?? Model.Invoice.id.ToString())</p>
-            </div>
-        </div>
-
-        <div class="invoice-addresses">
-            <div class="address-box">
-                <div class="address-label">Invoice To:</div>
-                <h2 class="address-name">@Model.Invoice.customer_name</h2>
-                <div class="address-details">
-                    <p>@Model.Invoice.customer_address</p>
-                    <p>Phone: @Model.Invoice.customer_contact</p>
+            <div class="invoice-brand">
+                @if (!string.IsNullOrEmpty(Model.Store?.LogoPath))
+                {
+                    <img src="/@Model.Store.LogoPath" alt="Logo" style="max-height: 60px; width: auto; object-fit: contain;" />
+                }
+                else
+                {
+                    <div class="invoice-brand-name">@(Model.Store?.ShopName ?? "SATA POS")</div>
+                }
+                <div class="invoice-brand-details">
+                    <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">@Model.Invoice.seller_name</div>
+                    <div>@Model.Invoice.seller_address</div>
+                    <div>Tel: @Model.Invoice.seller_contact</div>
                 </div>
             </div>
-            <div class="address-box right">
-                <div class="address-label">Invoice From:</div>
-                <h2 class="address-name">@Model.Invoice.seller_name</h2>
-                <div class="address-details">
-                    <p>@Model.Invoice.seller_address</p>
-                    <p>Phone: @Model.Invoice.seller_contact</p>
-                    <p style="font-weight:900; color:#111; margin-top:8px; font-size:13px;">Date: @Model.Invoice.date</p>
+            
+            <div class="invoice-title-area">
+                <h1 class="invoice-title">INVOICE</h1>
+                <div class="invoice-number">#@(Model.Invoice.invoice_no ?? Model.Invoice.id.ToString())</div>
+                
+                <div class="invoice-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Date Issued</span>
+                        <span class="meta-value">@Model.Invoice.date</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Payment</span>
+                        <span class="meta-value">@Model.Invoice.payment</span>
+                    </div>
+                    <div class="meta-item" style="grid-column: span 2;">
+                        <span class="status-badge @(Model.Invoice.status == "Paid" ? "status-paid" : "status-unpaid")">
+                            @Model.Invoice.status
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="status-bar">
-            <div class="status-item">
-                <label>Status</label>
-                <span class="status-badge" style="background:@(Model.Invoice.status == "Paid" ? "#065f46" : "#9B111E")">@Model.Invoice.status</span>
+        <div class="invoice-body">
+            <div class="billing-section">
+                <div class="billing-details">
+                    <div class="billing-label">Billed To</div>
+                    <h2 class="billing-name">@(string.IsNullOrEmpty(Model.Invoice.customer_name) ? "Walk-In Customer" : Model.Invoice.customer_name)</h2>
+                    <div class="billing-address">
+                        @if(!string.IsNullOrEmpty(Model.Invoice.customer_address)) { <p style="margin: 0;">@Model.Invoice.customer_address</p> }
+                        @if(!string.IsNullOrEmpty(Model.Invoice.customer_contact)) { <p style="margin: 4px 0 0;">Tel: @Model.Invoice.customer_contact</p> }
+                    </div>
+                </div>
             </div>
-            <div class="status-item">
-                <label>Payment Method</label>
-                <div class="payment-text">@Model.Invoice.payment</div>
-            </div>
-        </div>
 
-        <div class="invoice-table-container">
             <table class="invoice-table">
                 <thead>
                     <tr>
-                        <th style="width: 45%;">Products/Services</th>
-                        <th class="col-center" style="width: 15%;">Price</th>
-                        <th class="col-center" style="width: 20%;">Qty/Unit Type</th>
-                        <th class="col-right" style="width: 20%;">Total Price</th>
+                        <th style="text-align: left; border-top-left-radius: 8px;">Description</th>
+                        <th style="text-align: center;">Price</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right; border-top-right-radius: 8px;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,15 +369,15 @@
                         {
                             <tr>
                                 <td>
-                                    <div class="col-bold">@item["name"]</div>
+                                    <div class="item-name">@item["name"]</div>
                                     @if (item.ContainsKey("expiryDate") && (string)item["expiryDate"] != "N/A")
                                     {
-                                        <div style="font-size:11px; color:#ef4444; margin-top:3px;">Expiry: @item["expiryDate"]</div>
+                                        <div class="item-expiry">Expiry: @item["expiryDate"]</div>
                                     }
                                 </td>
-                                <td class="col-center">@CurrencyService.GetSymbol()@(((decimal)item["price"]).ToString("N2"))</td>
-                                <td class="col-center">@item["qty"]</td>
-                                <td class="col-right col-bold">@CurrencyService.GetSymbol()@(((decimal)item["total"]).ToString("N2"))</td>
+                                <td style="text-align: center; font-weight: 600;">@CurrencyService.GetSymbol()@(((decimal)item["price"]).ToString("N2"))</td>
+                                <td style="text-align: center; font-weight: 600;">@item["qty"]</td>
+                                <td style="text-align: right; font-weight: 800;">@CurrencyService.GetSymbol()@(((decimal)item["total"]).ToString("N2"))</td>
                             </tr>
                         }
                     }
@@ -99,15 +385,15 @@
                     {
                         <tr>
                             <td>
-                                <div class="col-bold">@Model.Invoice.prod_name_service</div>
+                                <div class="item-name">@Model.Invoice.prod_name_service</div>
                                 @if (Model.SingleItemExpiry != "N/A")
                                 {
-                                    <div style="font-size:11px; color:#ef4444; margin-top:3px;">Expiry: @Model.SingleItemExpiry</div>
+                                    <div class="item-expiry">Expiry: @Model.SingleItemExpiry</div>
                                 }
                             </td>
-                            <td class="col-center">@CurrencyService.GetSymbol()@Model.Invoice.price.ToString("N2")</td>
-                            <td class="col-center">@Model.Invoice.qty_unit_type</td>
-                            <td class="col-right col-bold">@CurrencyService.GetSymbol()@((Model.Invoice.price - Model.Invoice.discount).ToString("N2"))</td>
+                            <td style="text-align: center; font-weight: 600;">@CurrencyService.GetSymbol()@Model.Invoice.price.ToString("N2")</td>
+                            <td style="text-align: center; font-weight: 600;">@Model.Invoice.qty_unit_type</td>
+                            <td style="text-align: right; font-weight: 800;">@CurrencyService.GetSymbol()@((Model.Invoice.price - Model.Invoice.discount).ToString("N2"))</td>
                         </tr>
                     }
                 </tbody>
@@ -116,35 +402,39 @@
 
         <div class="invoice-footer">
             <div class="terms-section">
-                <h3>Terms & Conditions</h3>
-                <p>Please make payment within 15 days of receiving this invoice. Thank you for choosing SATA TECHNOLOGIES for your business needs.</p>
+                <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.5px;">Terms & Conditions</h3>
+                <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0; max-width: 80%;">Please make payment within 15 days of receiving this invoice. Thank you for choosing @(Model.Store?.ShopName ?? "SATA TECHNOLOGIES") for your business needs.</p>
                 
-                <div class="signature-section">
-                    <div class="sig-line"></div>
-                    <p class="sig-label">Authorized Signature</p>
+                <div style="margin-top: 50px; width: 200px;">
+                    <div style="width: 100%; height: 2px; background: #e2e8f0; border-radius: 2px;"></div>
+                    <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-align: center; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Authorized Signature</p>
                 </div>
             </div>
             
             <div class="totals-section">
                 <div class="total-row">
-                    <span class="total-label">Sub Total</span>
-                    <span class="total-val">@CurrencyService.GetSymbol()@Model.Subtotal.ToString("N2")</span>
+                    <span class="total-label">Subtotal</span>
+                    <span class="total-value">@CurrencyService.GetSymbol()@Model.Subtotal.ToString("N2")</span>
                 </div>
-                <div class="total-row" style="color:var(--invoice-red);">
-                    <span class="total-label" style="color:var(--invoice-red);">Discount</span>
-                    <span class="total-val">- @CurrencyService.GetSymbol()@Model.Invoice.discount.ToString("N2")</span>
-                </div>
+                @if(Model.Invoice.discount > 0)
+                {
+                    <div class="total-row">
+                        <span class="total-label">Discount</span>
+                        <span class="total-value" style="color: #ef4444;">- @CurrencyService.GetSymbol()@Model.Invoice.discount.ToString("N2")</span>
+                    </div>
+                }
                 
-                <div class="grand-total-bar">
-                    <span class="grand-label">Grand Total</span>
-                    <span class="grand-val">@CurrencyService.GetSymbol()@Model.Invoice.total_price.ToString("N2")</span>
+                <div class="total-divider"></div>
+
+                <div class="grand-total">
+                    <span class="grand-total-label">Total Due</span>
+                    <span class="grand-total-value">@CurrencyService.GetSymbol()@Model.Invoice.total_price.ToString("N2")</span>
                 </div>
             </div>
         </div>
 
-        <!-- Footer Decoration -->
-        <div class="bottom-left-pattern"></div>
-        <div class="bottom-right-pattern"></div>
-        <p class="footer-branding">SATA E-Invoice System Innovating the Future</p>
+        <div class="bottom-bar">
+            @(Model.Store?.ShopName ?? "SATA") E-Invoice System • Innovating the Future • @DateTime.Now.Year
+        </div>
     </div>
 </div>

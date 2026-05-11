@@ -1,4 +1,4 @@
-﻿CREATE TABLE [brands] (
+CREATE TABLE [brands] (
     [id] int NOT NULL IDENTITY,
     [brand_title] nvarchar(200) NOT NULL,
     CONSTRAINT [PK_brands] PRIMARY KEY ([id])

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace E_Invoice_system.Models
 {
     [Table("stock_history")]
-    public class StockHistory
+    public class stock_history
     {
         [Key]
         [Column("id")]

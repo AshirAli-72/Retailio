@@ -29,7 +29,6 @@
         var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";
     }
     <div class="app-container">
-
         @using Microsoft.EntityFrameworkCore
         @using E_Invoice_system.Data
         @using E_Invoice_system.Models
@@ -51,7 +50,27 @@
                 }
             }
             catch { }
+
+            // ── Permissions (cached 30 min per role) ───────────────
+            bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+            RolePermission? perms = null;
+
+            if (!string.IsNullOrEmpty(userRole) && !isAdmin)
+            {
+                string cacheKey = "Perms_" + userRole;
+                if (!LayoutCache.TryGetValue(cacheKey, out perms))
+                {
+                    try
+                    {
+                        using var context2 = DbFactory.CreateDbContext();
+                        perms = context2.roles_permissions.Include(p => p.Role).AsNoTracking().FirstOrDefault(p => p.Role != null && p.Role.RoleTitle == userRole);
+                        if (perms != null) LayoutCache.Set(cacheKey, perms, TimeSpan.FromMinutes(30));
+                    }
+                    catch { }
+                }
+            }
         }
+
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header sidebar-logo-container">
@@ -66,27 +85,6 @@
             </div>
 
             <nav class="sidebar-nav" style="margin-top: 1rem;">
-                @{
-                    // ── Permissions (cached 30 min per role) ───────────────
-                    bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
-                    RolePermission? perms = null;
-
-                    if (!string.IsNullOrEmpty(userRole) && !isAdmin)
-                    {
-                        string cacheKey = "Perms_" + userRole;
-                        if (!LayoutCache.TryGetValue(cacheKey, out perms))
-                        {
-                            try
-                            {
-                                using var context2 = DbFactory.CreateDbContext();
-                                perms = context2.roles_permissions.Include(p => p.Role).AsNoTracking().FirstOrDefault(p => p.Role != null && p.Role.RoleTitle == userRole);
-                                if (perms != null) LayoutCache.Set(cacheKey, perms, TimeSpan.FromMinutes(30));
-                            }
-                            catch { }
-                        }
-                    }
-                }
-
                 @if (isAdmin || (perms?.Dashboard ?? false))
                 {
                     <a href="/" class="nav-item">
@@ -102,7 +100,6 @@
                         <span>Customers</span>
                     </a>
                 }
-
 
                 @if (isAdmin || (perms?.Products ?? false))
                 {
@@ -159,14 +156,11 @@
                         <span>Settings</span>
                     </a>
                 }
-
             </nav>
-            
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-
             <header class="top-bar">
                 <div class="top-bar-left">
                     <button id="sidebarToggle" class="mobile-toggle-btn">
@@ -175,30 +169,29 @@
                 </div>
 
                 <div class="top-bar-right">
+                    <div class="user-profile-wrapper" style="position: relative;">
+                        <div class="user-avatar-initial" id="profileDropdownToggle" style="cursor: pointer;">
+                            @initial
+                        </div>
 
-                        <div class="user-profile-wrapper" style="position: relative;">
-                            <div class="user-avatar-initial" id="profileDropdownToggle" style="cursor: pointer;">
-                                @initial
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div style="padding: 12px; border-bottom: 1px solid var(--border);">
+                                <div class="user-name" style="font-size: 1rem; font-weight: 800;">@userName</div>
+                                <div class="user-role" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">@userRole</div>
+                                @{
+                                    var displayEmail = Context.Session.GetString("UserEmail");
+                                    if (string.IsNullOrEmpty(displayEmail)) {
+                                        displayEmail = userName.Contains("@") ? userName : userName + "@system.com";
+                                    }
+                                }
+                                @if (displayEmail != userName)
+                                {
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; word-break: break-all;">@displayEmail</div>
+                                }
                             </div>
 
-                            <div class="profile-dropdown" id="profileDropdown">
-                                <div style="padding: 12px; border-bottom: 1px solid var(--border);">
-                                    <div class="user-name" style="font-size: 1rem; font-weight: 800;">@userName</div>
-                                    <div class="user-role" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">@userRole</div>
-                                    @{
-                                        var displayEmail = Context.Session.GetString("UserEmail");
-                                        if (string.IsNullOrEmpty(displayEmail)) {
-                                            displayEmail = userName.Contains("@") ? userName : userName + "@system.com";
-                                        }
-                                    }
-                                    @if (displayEmail != userName)
-                                    {
-                                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; word-break: break-all;">@displayEmail</div>
-                                    }
-                                </div>
-                            
                             <div class="dropdown-divider"></div>
-                            
+
                             <form asp-page="/Account/Logout" asp-area="" method="post" style="padding: 0; margin: 0;">
                                 <button type="submit" class="dropdown-item" style="width: 100%; border: none; background: transparent; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: #ef4444;">
                                     <i class="ph-sign-out"></i>
@@ -207,10 +200,10 @@
                             </form>
                         </div>
                     </div>
-                </header>
+                </div>
+            </header>
 
             @RenderBody()
-
         </main>
     </div>
 

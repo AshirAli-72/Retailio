@@ -19,9 +19,9 @@
     --shadow-lift: 0 20px 50px rgba(0, 0, 0, 0.1);
     --shadow-luxury: 0 30px 60px rgba(0, 0, 0, 0.12);
     
-    --radius-premium: 24px;
-    --radius-card: 20px;
-    --radius-pill: 14px;
+    --radius-premium: 12px;
+    --radius-card: 0px;
+    --radius-pill: 0px;
 
     font-family: 'Inter', sans-serif;
 }
@@ -789,14 +789,153 @@ input[type=number] {
 .reveal-up { animation: revealUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
 @keyframes revealUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- Receipt Thermal Styles --- */
-#thermalReceipt { 
-    display: none; 
-    width: 80mm; 
+/* --- Receipt Thermal/A4 Modern Hybrid Design --- */
+#invoice-to-print.invoice-paper {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+    padding: 60px;
     font-family: 'Inter', sans-serif;
-    color: #000; 
-    padding: 10px; 
+}
+
+.receipt-hidden {
+    display: none !important;
+}
+
+.receipt-header-v4 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.receipt-shop-name-v4 {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1e293b;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+}
+
+.receipt-address-v4, .receipt-phone-v4 {
+    color: #64748b;
     font-size: 14px;
+    margin: 4px 0;
+}
+
+.receipt-meta-v4 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+.receipt-hr-v4 {
+    border: none;
+    border-top: 1px dashed #e2e8f0;
+    margin: 20px 0;
+}
+
+.receipt-table-v4 {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.receipt-table-v4 th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+    padding: 10px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.receipt-table-v4 td {
+    padding: 15px 10px;
+    font-size: 14px;
+    color: #1e293b;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.receipt-totals-v4 {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding-right: 10px;
+}
+
+.total-row-v4 {
+    display: flex;
+    justify-content: space-between;
+    width: 250px;
+}
+
+.total-label-v4 {
+    font-weight: 700;
+    color: #64748b;
+}
+
+.total-val-v4 {
+    font-weight: 900;
+    color: #1e293b;
+}
+
+.thank-you-v4 {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    color: #BC1823;
+    margin: 40px 0;
+}
+
+.promo-text-v4 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    font-style: italic;
+}
+
+.copyright-v4 {
+    text-align: center;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 20px;
+}
+
+.receipt-footer-v4 {
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.footer-meta-v4 {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.barcode-container-v4 {
+    background: #fff;
+    padding: 10px;
+}
+
+@media print {
+    body * { visibility: hidden; }
+    #invoice-to-print, #invoice-to-print * { visibility: visible; }
+    #invoice-to-print { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        box-shadow: none !important; 
+        border: none !important; 
+        padding: 0 !important;
+    }
 }
 .rcpt-header { text-align: center; margin-bottom: 15px; }
 .rcpt-shop-name { font-size: 1.5rem; font-weight: 900; margin-bottom: 2px;}

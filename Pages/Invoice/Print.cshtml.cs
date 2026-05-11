@@ -19,6 +19,7 @@ namespace E_Invoice_system.Pages.Invoice
         }
 
         public invoices Invoice { get; set; } = default!;
+        public StoreConfiguration Store { get; set; } = default!;
         public string SingleItemExpiry { get; set; } = "N/A";
         public bool IsMultiItem { get; set; } = false;
         public List<Dictionary<string, object>> Items { get; set; } = new();
@@ -79,6 +80,11 @@ namespace E_Invoice_system.Pages.Invoice
             {
                 invoice.seller_address = storeConfig.Address;
                 invoice.seller_contact = storeConfig.Phone1;
+                Store = storeConfig;
+            }
+            else
+            {
+                Store = new StoreConfiguration();
             }
 
             // Fetch expiry date for single-item invoices

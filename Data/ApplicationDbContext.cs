@@ -26,7 +26,7 @@ namespace E_Invoice_system.Data
         public DbSet<RolePermission> roles_permissions { get; set; }
         public DbSet<StoreConfiguration> store_configurations { get; set; }
         public DbSet<StockDetail> stock_details { get; set; }
-        public DbSet<StockHistory> stock_histories { get; set; }
+        public DbSet<stock_history> stock_history { get; set; }
         public DbSet<Employee> employees { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -81,7 +81,7 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.total_pur_price).HasColumnType("decimal(18,2)");
             });
 
-            modelBuilder.Entity<StockHistory>(entity =>
+            modelBuilder.Entity<stock_history>(entity =>
             {
                 entity.Property(e => e.new_quantity).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.old_quantity).HasColumnType("decimal(18,2)");

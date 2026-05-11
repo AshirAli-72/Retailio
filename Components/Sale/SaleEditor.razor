@@ -87,7 +87,7 @@
 
                             @if (!string.IsNullOrEmpty(p.Image))
                             {
-                                <img src="/product-images/@System.IO.Path.GetFileName(p.Image)" alt="Product" />
+                                <img src="/product-images/@System.IO.Path.GetFileName(p.Image)" alt="Product" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZjFmNWY5Ii8+PC9zdmc+';" />
                             }
                             else
                             {
@@ -183,7 +183,7 @@
                         <div class="item-v2-img">
                             @if (!string.IsNullOrEmpty(item.image))
                             {
-                                <img src="/product-images/@System.IO.Path.GetFileName(item.image)" alt="item" />
+                                <img src="/product-images/@System.IO.Path.GetFileName(item.image)" alt="item" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZjFmNWY5Ii8+PC9zdmc+';" />
                             }
                             else
                             {
@@ -883,19 +883,7 @@
                             stock.quantity = newQty;
                             context.stock_details.Update(stock);
 
-                            // Log History
-                            context.stock_histories.Add(new StockHistory {
-                                date = DateTime.Now.ToString("yyyy-MM-dd"),
-                                old_quantity = oldQty,
-                                new_quantity = newQty,
-                                old_purchase_price = stock.pur_price,
-                                new_purchase_price = stock.pur_price,
-                                old_sale_price = stock.sale_price,
-                                new_sale_price = stock.sale_price,
-                                remarks = transMode.ToUpper(),
-                                product_id = prod.id,
-                                user_id = currentUserId
-                            });
+// Stock history removed
                         }
                     }
                 } catch (Exception ex) { 

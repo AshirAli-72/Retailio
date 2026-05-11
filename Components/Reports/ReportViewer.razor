@@ -14,116 +14,154 @@
             <i class="ph-file-text" style="font-size: 1.75rem; color: var(--primary);"></i>
             <h2 class="page-header-title" style="margin: 0; font-size: 1.5rem; font-weight: 800;">Detailed Reports</h2>
         </div>
-    </div>
-
-    <!-- Simplified Filter Bar -->
-    <div class="report-filter-bar" style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">Select Report Type</label>
-            <select class="report-select" @bind="selectedReportType" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-light); color: var(--text); font-weight: 600;">
-                @foreach (var opt in availableReports)
-                {
-                    <option value="@opt.Value">@opt.Label</option>
-                }
-            </select>
-        </div>
-
-        <div style="flex: 1; min-width: 150px;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">From Date</label>
-            <input type="date" class="report-input" @bind="fromDate" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-light); color: var(--text);" />
-        </div>
-
-        <div style="flex: 1; min-width: 150px;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">To Date</label>
-            <input type="date" class="report-input" @bind="toDate" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-light); color: var(--text);" />
-        </div>
-
-        <div style="display: flex; gap: 0.5rem;">
-            <button @onclick="GenerateReport" class="btn-primary" style="padding: 0.6rem 1.5rem; border-radius: 8px; height: 42px;" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <i class="ph-spinner ph-spin"></i>
-                }
-                else
-                {
-                    <i class="ph-lightning"></i>
-                    <span>Generate Report</span>
-                }
+        <div style="display: flex; gap: 0.75rem;">
+            <button @onclick="() => showReportSelector = true" class="btn-primary" style="padding: 0.6rem 1.5rem; border-radius: 8px;">
+                <i class="ph-file-search"></i>
+                <span>Report Menu</span>
             </button>
-            <button @onclick="ResetFilters" class="btn-icon" style="height: 42px; width: 42px; border-radius: 8px;">
-                <i class="ph-arrow-counter-clockwise"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Report Table Section -->
-    @if (reportGenerated)
-    {
-        <div class="report-results" style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); animation: fadeIn 0.3s ease;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
-                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text);">
-                    @GetReportTitle()
-                    <span style="font-size: 0.875rem; color: var(--text-muted); margin-left: 1rem; font-weight: 500;">
-                        (@reportData?.Count records found)
-                    </span>
-                </h3>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button @onclick="PrintReport" class="btn-icon" title="Print"><i class="ph-printer"></i></button>
-                    <button @onclick="ExportToCSV" class="btn-icon" title="Export CSV"><i class="ph-file-xls"></i></button>
-                </div>
-            </div>
-
-            @if (reportData != null && reportData.Any())
+            @if (reports != null && reports.Any())
             {
-                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                    <table id="resultsTable" class="styled-table" style="width: 100%;">
-                        <thead style="position: sticky; top: 0; z-index: 10;">
-                            <tr>
-                                @foreach (var col in GetColumns())
-                                {
-                                    <th>@col</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in reportData)
-                            {
-                                <tr>
-                                    @foreach (var col in GetColumns())
-                                    {
-                                        <td>@row[col]</td>
-                                    }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-light); border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; border: 1px solid var(--border);">
-                    <span>Total Records: @reportData.Count</span>
-                    <span>Report Period: @fromDate?.ToString("dd-MM-yyyy") - @toDate?.ToString("dd-MM-yyyy")</span>
-                </div>
+                <button @onclick="ResetFilters" class="btn-secondary" style="padding: 0.6rem 1.5rem; border-radius: 8px;">
+                    <i class="ph-arrow-counter-clockwise"></i>
+                    <span>Reset</span>
+                </button>
             }
-            else
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div style="padding: 10rem; text-align: center;">
+            <i class="ph-spinner ph-spin" style="font-size: 3rem; color: var(--primary);"></i>
+            <p style="margin-top: 1rem; font-weight: 600; color: var(--text-muted);">Generating your reports...</p>
+        </div>
+    }
+    else if (reportGenerated && reports != null && reports.Any())
+    {
+        <div class="reports-stack" style="display: flex; flex-direction: column; gap: 2rem;">
+            @foreach (var report in reports)
             {
-                <div style="padding: 4rem; text-align: center; color: var(--text-muted);">
-                    <i class="ph-folder-open" style="font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 1rem;"></i>
-                    <p style="font-weight: 600;">No data found for this period.</p>
+                <div class="report-results" style="background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); animation: fadeIn 0.3s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text);">
+                            @report.Title
+                            <span style="font-size: 0.875rem; color: var(--text-muted); margin-left: 1rem; font-weight: 500;">
+                                (@report.Data?.Count records found)
+                            </span>
+                        </h3>
+                        <div style="display: flex; gap: 0.75rem;" class="no-print">
+                            <button @onclick="() => PrintReport(report.Id)" class="btn-icon" title="Print"><i class="ph-printer"></i></button>
+                            <button @onclick="() => ExportToCSV(report.Id)" class="btn-icon" title="Export CSV"><i class="ph-file-xls"></i></button>
+                        </div>
+                    </div>
+
+                    @if (report.Data != null && report.Data.Any())
+                    {
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table id="@report.Id" class="styled-table" style="width: 100%;">
+                                <thead style="position: sticky; top: 0; z-index: 10;">
+                                    <tr>
+                                        @foreach (var col in report.Data.First().Keys)
+                                        {
+                                            <th>@col</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in report.Data)
+                                    {
+                                        <tr>
+                                            @foreach (var val in row.Values)
+                                            {
+                                                <td>@val</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-light); border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; border: 1px solid var(--border);">
+                            <span>Total Records: @report.Data.Count</span>
+                            <span>Period: @fromDate?.ToString("dd-MM-yyyy") - @toDate?.ToString("dd-MM-yyyy")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            <p style="font-weight: 600;">No data available for this report type in the selected range.</p>
+                        </div>
+                    }
                 </div>
             }
         </div>
     }
     else if (!isLoading)
     {
-        <div style="padding: 6rem; text-align: center; background: var(--card-bg); border-radius: 12px; border: 2px dashed var(--border);">
-            <i class="ph-chart-bar" style="font-size: 4rem; color: var(--border); display: block; margin-bottom: 1.5rem;"></i>
-            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">Ready to Analyze</h3>
-            <p style="color: var(--text-muted); margin: 0; opacity: 0.8;">Select a report type and date range above to view details.</p>
+        <div style="padding: 8rem; text-align: center; background: var(--card-bg); border-radius: 12px; border: 2px dashed var(--border); cursor: pointer;" @onclick="() => showReportSelector = true">
+            <i class="ph-chart-bar-horizontal" style="font-size: 5rem; color: var(--border); display: block; margin-bottom: 1.5rem;"></i>
+            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 800;">Report Builder</h3>
+            <p style="color: var(--text-muted); margin: 0; opacity: 0.8;">Click "Configure Report" to select which data you want to analyze.</p>
         </div>
     }
 </div>
 
+<!-- Report Selection Modal -->
+@if (showReportSelector)
+{
+    <div class="modal-overlay" style="display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 9999;">
+        <div class="modal-content" style="background: var(--card-bg); border-radius: 16px; width: 95%; max-width: 550px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: slideUp 0.3s ease;">
+            <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-light);">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="ph-list-checks" style="color: var(--primary);"></i>
+                    Generate Report
+                </h3>
+                <button @onclick="() => showReportSelector = false" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">Select Report Sections</label>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 2rem;">
+                    @foreach (var opt in availableReports)
+                    {
+                        <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-light); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; @(selectedReportTypes[opt.Value] ? "border-color: var(--primary); background: var(--primary-glow);" : "")">
+                            <input type="checkbox" @bind="selectedReportTypes[opt.Value]" style="width: 18px; height: 18px; accent-color: var(--primary);" />
+                            <span style="font-weight: 600; font-size: 0.875rem;">@opt.Label</span>
+                        </label>
+                    }
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">From Date</label>
+                        <input type="date" class="form-control" @bind="fromDate" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit;" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">To Date</label>
+                        <input type="date" class="form-control" @bind="toDate" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit;" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem; background: var(--bg-light); border-top: 1px solid var(--border); display: flex; gap: 1rem;">
+                <button @onclick="() => showReportSelector = false" class="btn-secondary" style="flex: 1; justify-content: center; padding: 0.75rem;">Cancel</button>
+                <button @onclick="GenerateReports" class="btn-primary" style="flex: 2; justify-content: center; padding: 0.75rem;">
+                    <i class="ph-lightning"></i>
+                    Generate Report
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    @@keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .primary-glow { background: rgba(188, 24, 35, 0.05); }
+</style>
+
 @code {
-    private string selectedReportType = "";
+    private bool showReportSelector = false;
     private DateTime? fromDate = DateTime.Now.AddDays(-30);
     private DateTime? toDate = DateTime.Now;
     private bool isLoading = false;
@@ -132,8 +170,16 @@
     
     private class ReportOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
     private List<ReportOption> availableReports = new();
+    private Dictionary<string, bool> selectedReportTypes = new();
     
-    private List<Dictionary<string, string>>? reportData;
+    private class ReportResult
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public List<Dictionary<string, string>> Data { get; set; } = new();
+    }
+    
+    private List<ReportResult>? reports;
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,16 +198,22 @@
             bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
             availableReports = new List<ReportOption>();
+            selectedReportTypes = new Dictionary<string, bool>();
             
+            Action<string, string> addOption = (val, lbl) => {
+                availableReports.Add(new ReportOption { Value = val, Label = lbl });
+                selectedReportTypes[val] = false;
+            };
+
             if (isAdmin)
             {
-                availableReports.Add(new ReportOption { Value = "sales", Label = "Sale Wise" });
-                availableReports.Add(new ReportOption { Value = "returns", Label = "Return Wise" });
-                availableReports.Add(new ReportOption { Value = "customers", Label = "Customer Wise" });
-                availableReports.Add(new ReportOption { Value = "inventory", Label = "Inventory Wise" });
-                availableReports.Add(new ReportOption { Value = "products", Label = "Product Wise" });
-                availableReports.Add(new ReportOption { Value = "employees", Label = "Employee Wise" });
-                availableReports.Add(new ReportOption { Value = "users", Label = "User Wise" });
+                addOption("sales", "Date Wise");
+                addOption("returns", "Return Wise");
+                addOption("customers", "Customer Wise");
+                addOption("inventory", "Inventory Wise");
+                addOption("products", "Product Wise");
+                addOption("employees", "Employee Wise");
+                addOption("users", "User Wise");
             }
             else
             {
@@ -172,22 +224,17 @@
 
                 if (perms != null)
                 {
-                    if (perms.SaleReport) availableReports.Add(new ReportOption { Value = "sales", Label = "Sale Wise" });
-                    if (perms.ReturnsReport) availableReports.Add(new ReportOption { Value = "returns", Label = "Return Wise" });
-                    if (perms.CustomerReport) availableReports.Add(new ReportOption { Value = "customers", Label = "Customer Wise" });
-                    if (perms.Inventory) availableReports.Add(new ReportOption { Value = "inventory", Label = "Inventory Wise" });
-                    if (perms.ProductReport) availableReports.Add(new ReportOption { Value = "products", Label = "Product Wise" });
-                    if (perms.EmployeeReport) availableReports.Add(new ReportOption { Value = "employees", Label = "Employee Wise" });
-                    
-                    // Allow User Wise report if they have general reports access
-                    if (perms.Reports) availableReports.Add(new ReportOption { Value = "users", Label = "User Wise" });
+                    if (perms.SaleReport) addOption("sales", "Date Wise");
+                    if (perms.ReturnsReport) addOption("returns", "Return Wise");
+                    if (perms.CustomerReport) addOption("customers", "Customer Wise");
+                    if (perms.Inventory) addOption("inventory", "Inventory Wise");
+                    if (perms.ProductReport) addOption("products", "Product Wise");
+                    if (perms.EmployeeReport) addOption("employees", "Employee Wise");
+                    if (perms.Reports) addOption("users", "User Wise");
                 }
             }
             
-            if (availableReports.Any())
-            {
-                selectedReportType = availableReports.First().Value;
-            }
+            if (selectedReportTypes.ContainsKey("sales")) selectedReportTypes["sales"] = true;
         }
         catch { }
     }
@@ -207,24 +254,25 @@
     {
         fromDate = DateTime.Now.AddDays(-30);
         toDate = DateTime.Now;
-        if (availableReports.Any())
-            selectedReportType = availableReports.First().Value;
+        foreach (var key in selectedReportTypes.Keys.ToList()) selectedReportTypes[key] = false;
+        if (selectedReportTypes.ContainsKey("sales")) selectedReportTypes["sales"] = true;
         reportGenerated = false;
-        reportData = null;
+        reports = null;
     }
 
-    private async Task ExportToCSV()
+    private async Task ExportToCSV(string tableId)
     {
-        var fileName = $"{GetReportTitle().Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
-        await JSRuntime.InvokeVoidAsync("exportTableToCSV", "resultsTable", fileName);
+        var report = reports?.FirstOrDefault(r => r.Id == tableId);
+        var fileName = $"{(report?.Title ?? "Report").Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
+        await JSRuntime.InvokeVoidAsync("exportTableToCSV", tableId, fileName);
     }
 
-    private async Task PrintReport()
+    private async Task PrintReport(string tableId)
     {
-        await JSRuntime.InvokeVoidAsync("printElement", "resultsTable");
+        await JSRuntime.InvokeVoidAsync("printElement", tableId);
     }
 
-    private async Task GenerateReport()
+    private async Task GenerateReports()
     {
         if (!fromDate.HasValue || !toDate.HasValue)
         {
@@ -232,23 +280,38 @@
             return;
         }
 
+        if (!selectedReportTypes.Any(x => x.Value))
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "Required", "Please select at least one report type.", "warning");
+            return;
+        }
+
+        showReportSelector = false;
         isLoading = true;
         reportGenerated = false;
+        reports = new List<ReportResult>();
         StateHasChanged();
 
         try
         {
             using var context = DbFactory.CreateDbContext();
 
-            switch (selectedReportType)
+            foreach (var type in selectedReportTypes.Where(x => x.Value))
             {
-                case "sales": await GenerateSalesReport(context); break;
-                case "returns": await GenerateReturnsReport(context); break;
-                case "customers": await GenerateCustomerReport(context); break;
-                case "inventory": await GenerateInventoryReport(context); break;
-                case "products": await GenerateProductReport(context); break;
-                case "employees": await GenerateEmployeeReport(context); break;
-                case "users": await GenerateUserReport(context); break;
+                var result = new ReportResult { Id = $"table_{type.Key}", Title = GetReportTitle(type.Key) };
+                
+                switch (type.Key)
+                {
+                    case "sales": result.Data = await GetSalesReport(context); break;
+                    case "returns": result.Data = await GetReturnsReport(context); break;
+                    case "customers": result.Data = await GetCustomerReport(context); break;
+                    case "inventory": result.Data = await GetInventoryReport(context); break;
+                    case "products": result.Data = await GetProductReport(context); break;
+                    case "employees": result.Data = await GetEmployeeReport(context); break;
+                    case "users": result.Data = await GetUserReport(context); break;
+                }
+                
+                reports.Add(result);
             }
 
             reportGenerated = true;
@@ -264,7 +327,7 @@
         }
     }
 
-    private async Task GenerateSalesReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetSalesReport(ApplicationDbContext context)
     {
         var allSales = await context.sales.ToListAsync();
         var data = allSales.Where(s => {
@@ -272,7 +335,7 @@
                 return dt >= fromDate && dt <= toDate;
             return false;
         }).OrderByDescending(s => s.id).ToList();
-        reportData = data.Select(s => new Dictionary<string, string>
+        return data.Select(s => new Dictionary<string, string>
         {
             ["Bill #"] = s.billNo ?? "",
             ["Date"] = s.date,
@@ -286,7 +349,7 @@
         }).ToList();
     }
 
-    private async Task GenerateReturnsReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetReturnsReport(ApplicationDbContext context)
     {
         var allReturns = await context.returns.ToListAsync();
         var data = allReturns.Where(r => {
@@ -294,7 +357,7 @@
                 return dt >= fromDate && dt <= toDate;
             return false;
         }).OrderByDescending(r => r.Id).ToList();
-        reportData = data.Select(r => new Dictionary<string, string>
+        return data.Select(r => new Dictionary<string, string>
         {
             ["Bill #"] = r.billNo ?? "",
             ["Date"] = r.date,
@@ -305,10 +368,10 @@
         }).ToList();
     }
 
-    private async Task GenerateCustomerReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetCustomerReport(ApplicationDbContext context)
     {
         var data = await context.customers.OrderBy(c => c.name).ToListAsync();
-        reportData = data.Select(c => new Dictionary<string, string>
+        return data.Select(c => new Dictionary<string, string>
         {
             ["ID"] = c.id.ToString(),
             ["Customer Name"] = c.name ?? "",
@@ -319,10 +382,10 @@
         }).ToList();
     }
 
-    private async Task GenerateInventoryReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetInventoryReport(ApplicationDbContext context)
     {
         var data = await context.stock_details.OrderByDescending(s => s.id).ToListAsync();
-        reportData = data.Select(s => new Dictionary<string, string>
+        return data.Select(s => new Dictionary<string, string>
         {
             ["Barcode"] = s.item_barcode ?? "",
             ["Stock Qty"] = s.quantity.ToString("N2"),
@@ -335,10 +398,10 @@
         }).ToList();
     }
 
-    private async Task GenerateProductReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetProductReport(ApplicationDbContext context)
     {
         var data = await context.products_services.OrderBy(p => p.prod_name).ToListAsync();
-        reportData = data.Select(p => new Dictionary<string, string>
+        return data.Select(p => new Dictionary<string, string>
         {
             ["Product Name"] = p.prod_name ?? "",
             ["Barcode"] = p.barcode ?? "",
@@ -349,10 +412,10 @@
         }).ToList();
     }
 
-    private async Task GenerateEmployeeReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetEmployeeReport(ApplicationDbContext context)
     {
         var data = await context.employees.OrderBy(e => e.full_name).ToListAsync();
-        reportData = data.Select(e => new Dictionary<string, string>
+        return data.Select(e => new Dictionary<string, string>
         {
             ["Emp Code"] = e.emp_code ?? "",
             ["Full Name"] = e.full_name ?? "",
@@ -364,10 +427,10 @@
         }).ToList();
     }
 
-    private async Task GenerateUserReport(ApplicationDbContext context)
+    private async Task<List<Dictionary<string, string>>> GetUserReport(ApplicationDbContext context)
     {
         var data = await context.users.Include(u => u.Role).Include(u => u.Employee).OrderBy(u => u.username).ToListAsync();
-        reportData = data.Select(u => new Dictionary<string, string>
+        return data.Select(u => new Dictionary<string, string>
         {
             ["Username"] = u.username ?? "",
             ["Email"] = u.email ?? "",
@@ -377,13 +440,11 @@
         }).ToList();
     }
 
-    private List<string> GetColumns() { if (reportData == null || !reportData.Any()) return new List<string>(); return reportData.First().Keys.ToList(); }
-
-    private string GetReportTitle()
+    private string GetReportTitle(string type)
     {
-        return selectedReportType switch
+        return type switch
         {
-            "sales" => "Sale Wise Report", "returns" => "Return Wise Report", "customers" => "Customer Wise Report",
+            "sales" => "Date Wise Report", "returns" => "Return Wise Report", "customers" => "Customer Wise Report",
             "inventory" => "Inventory Wise Report", "products" => "Product Wise Report", "employees" => "Employee Wise Report",
             "users" => "User Wise Report", _ => "Report"
         };
