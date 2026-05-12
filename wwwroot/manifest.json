@@ -1,15 +1,15 @@
 {
-  "name": "E-Invoice System POS",
-  "short_name": "SATA POS",
+  "name": "E-Invoice System",
+  "short_name": "SATA E-Invoice",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1e40af",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/favicon.png",
       "sizes": "192x192",
-      "type": "image/x-icon"
+      "type": "image/png"
     }
   ]
 }
