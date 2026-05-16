@@ -179,150 +179,7 @@
     </div>
 </div>
 
-<style>
-    .reports-center-container {
-        padding: 1rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    .page-header-minimal {
-        margin-bottom: 2rem;
-    }
-
-    .page-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .page-subtitle {
-        color: #64748b;
-        font-size: 0.95rem;
-        margin-top: 0.25rem;
-    }
-
-    .reports-summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .summary-card {
-        padding: 1.25rem;
-        border-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s;
-    }
-
-    .summary-card:hover {
-        transform: translateY(-4px);
-    }
-
-    .summary-card.primary-red { background: #BC1823; color: white; }
-    .summary-card.dark-gray { background: #1C2120; color: white; }
-    .summary-card.white { background: white; color: #1e293b; border: 1px solid #e2e8f0; }
-
-    .card-info { display: flex; flex-direction: column; }
-    .card-value { font-size: 1.4rem; font-weight: 800; }
-    .card-label { font-size: 0.8rem; opacity: 0.9; font-weight: 500; }
-
-    .card-icon-circle {
-        width: 38px;
-        height: 38px;
-        background: rgba(255,255,255,0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-    }
-
-    .blue-icon { background: #eff6ff; color: #3b82f6; }
-    .red-icon { background: #fef2f2; color: #BC1823; }
-
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 1.5rem;
-    }
-
-    .available-reports-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.25rem;
-    }
-
-    .report-main-card {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease;
-    }
-
-    .report-main-card:hover {
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        border-color: #BC1823;
-    }
-
-    .report-icon-wrap {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        margin-bottom: 1rem;
-    }
-
-    .red-bg { background: #fef2f2; color: #BC1823; }
-
-    .report-name { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin: 0 0 0.5rem 0; }
-    .report-desc { color: #64748b; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem; flex: 1; }
-
-    .report-meta {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #94a3b8;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-    }
-
-    .view-hub-btn {
-        width: 100%;
-        padding: 0.75rem;
-        background: #BC1823;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .view-hub-btn:hover { background: #9c141d; transform: translateY(-1px); }
-
-    @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
+<link href="css/reports/centerreport.css" rel="stylesheet" />
 
 @code {
     [Parameter] public EventCallback<string> OnViewHub { get; set; }
@@ -346,7 +203,7 @@
             using var context = DbFactory.CreateDbContext();
             
             // Currency
-            var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+            var currency = await context.currencies.AsNoTracking().FirstOrDefaultAsync(c => c.is_active);
             if (currency != null) currencySymbol = currency.symbol ?? "$";
 
             // Revenue
@@ -355,21 +212,29 @@
 
             var allSales = await context.sales.AsNoTracking().ToListAsync();
             todayRevenue = allSales.Where(s => s.date == todayStr && !s.is_returned).Sum(s => s.total_price);
-            monthlyRevenue = allSales.Where(s => s.date.StartsWith(monthPrefix) && !s.is_returned).Sum(s => s.total_price);
+            monthlyRevenue = allSales.Where(s => s.date != null && s.date.StartsWith(monthPrefix) && !s.is_returned).Sum(s => s.total_price);
 
-            // SKUs
-            activeSkus = await context.products_services.CountAsync(p => p.status == "Active");
+            // SKUs - Use StockDetail count as that's where the actual inventory resides
+            activeSkus = await context.products_services.CountAsync();
+            if (activeSkus == 0) {
+                // Fallback to stock details if products table is used differently
+                activeSkus = await context.stock_details.CountAsync();
+            }
 
             // Customers
             customerCount = await context.customers.CountAsync();
 
-            // Low Stock
-            var lowStockItems = await context.stock_details.CountAsync(s => s.quantity <= 5);
-            lowStockAlerts = lowStockItems;
+            // Low Stock - Use actual stock alert levels from each item
+            var allStock = await context.stock_details.AsNoTracking().ToListAsync();
+            lowStockAlerts = allStock.Count(s => s.quantity <= s.stock_alert);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading report data: {ex.Message}");
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
         }
     }
 }

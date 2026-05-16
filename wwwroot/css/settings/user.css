@@ -1,0 +1,128 @@
+/* Roles & Permissions */
+.rp-container { padding: 1.5rem; background: white; border-radius: 12px; border: 1px solid var(--border); }
+.rp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.rp-title { margin: 0; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+.rp-icon { color: var(--primary); }
+
+.rp-topbar { background: white; padding: 1.5rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border: 1.5px solid var(--border); box-shadow: var(--shadow); }
+.rp-role-group { display: flex; align-items: center; gap: 1.25rem; flex: 1; }
+.rp-role-label { font-weight: 800; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; }
+
+.rp-role-select-wrapper { flex: 1; max-width: 300px; position: relative; }
+.rp-role-select { width: 100%; padding: 0.75rem 1.25rem; border-radius: 12px; border: 1.5px solid var(--border); font-weight: 700; outline: none; appearance: none; background: #f8fafc; cursor: pointer; transition: all 0.2s; color: var(--text-main); }
+.rp-role-select:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-glow); }
+
+.rp-role-controls { display: flex; gap: 0.75rem; }
+.rp-control-btn {
+    width: 42px; height: 42px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: #f8fafc; color: var(--primary); display: flex; align-items: center;
+    justify-content: center; cursor: pointer; transition: all 0.2s;
+}
+.rp-control-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(188, 24, 35, 0.2); }
+
+.rp-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.75rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rp-btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(188, 24, 35, 0.3);
+}
+
+.rp-section { margin-bottom: 2rem; background: #f8fafc; border-radius: 16px; padding: 1.75rem 2.25rem; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+.rp-section-title { font-weight: 800; font-size: 0.85rem; color: var(--text-main); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
+
+.rp-check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem 1.5rem; }
+.rp-check-item { 
+    display: flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none; 
+    padding: 0.75rem 1rem; border-radius: 10px; background: white; border: 1.5px solid #f1f5f9;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+} 
+.rp-check-item:hover { border-color: var(--primary); background: var(--primary-glow); }
+.rp-check-item.checked { border-color: var(--primary); background: var(--primary-glow); }
+
+.rp-check-box { 
+    width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 6px; 
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s; 
+    background: white; color: white; flex-shrink: 0; font-size: 0.8rem;
+}
+.rp-check-item.checked .rp-check-box { background: var(--primary); border-color: var(--primary); }
+
+.rp-check-label { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
+
+/* --- MODAL SYSTEM --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white; border-radius: 20px; width: 100%; max-width: 450px;
+    padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.modal-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+
+.modal-body { margin-bottom: 2rem; }
+.modal-footer { display: flex; gap: 1rem; justify-content: flex-end; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Form Controls in Modals */
+.form-group-custom { margin-bottom: 1.25rem; }
+.form-group-custom label { display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem; }
+.form-control-custom {
+    width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1.5px solid var(--border);
+    font-family: inherit; font-weight: 600; outline: none; transition: all 0.2s;
+}
+.form-control-custom:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+/* User Management */
+.user-avatar-chip {
+    width: 38px; height: 38px; background: var(--primary-glow);
+    color: var(--primary); border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; font-weight: 800;
+    font-size: 0.95rem; border: 1.5px solid rgba(188, 24, 35, 0.1);
+}
+
+.role-badge {
+    padding: 0.4rem 0.8rem; background: #f8fafc; color: #64748b;
+    border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+    border: 1.5px solid #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.pagination-container {
+    padding: 1.5rem; display: flex; justify-content: space-between;
+    align-items: center; background: #fcfcfc; border-top: 1px solid var(--border);
+}
+
+.pagination-info { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
+.pagination-controls { display: flex; gap: 0.5rem; }
+
+.btn-pagination {
+    width: 36px; height: 36px; display: flex; align-items: center;
+    justify-content: center; border-radius: 8px; border: 1px solid var(--border);
+    background: white; cursor: pointer; font-size: 0.9rem; font-weight: 700;
+    transition: all 0.2s;
+}
+
+.btn-pagination:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+.btn-pagination.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(188, 24, 35, 0.2); }
+.btn-pagination:disabled { opacity: 0.4; cursor: not-allowed; }
+

@@ -5,6 +5,9 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @rendermode RenderMode.InteractiveServer
 
+<link href="css/settings/user.css" rel="stylesheet" />
+<link href="css/settings/index.css" rel="stylesheet" />
+
 <div class="management-container">
     <div class="card card-no-padding">
         <div class="page-header">
@@ -25,7 +28,7 @@
         <div style="padding: 1.5rem;">
 
     <!-- Top Role Selector Bar -->
-    <div class="rp-topbar card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+    <div class="rp-topbar">
         <div class="rp-role-group">
             <label class="rp-role-label">Select Role:</label>
             <div class="rp-role-select-wrapper">
@@ -65,7 +68,7 @@
     }
 
     <!-- SECTION 1: SYSTEM AUTHORITIES -->
-    <div class="rp-section card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+    <div class="rp-section">
         <div class="rp-section-header">
             <span class="rp-section-title">SYSTEM AUTHORITIES:</span>
             <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
@@ -140,7 +143,7 @@
     </div>
 
     <!-- SECTION 2: REPORTS SHOW/HIDDEN -->
-    <div class="rp-section card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+    <div class="rp-section">
         <div class="rp-section-header">
             <span class="rp-section-title">REPORTS SHOW/HIDDEN:</span>
             <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
@@ -219,89 +222,64 @@
 <!-- Add Role Modal -->
 @if (showAddRoleModal)
 {
-    <div class="rp-modal-overlay" @onclick="CloseAddRoleModal"></div>
-    <div class="rp-modal">
-        <div class="rp-modal-header">
-            <div class="rp-modal-title">
-                <div class="rp-modal-icon-plus">+</div>
-                <span>Roles</span>
-            </div>
-            <button class="rp-modal-close" @onclick="CloseAddRoleModal">
-                <i class="ph-x"></i>
-            </button>
-        </div>
-        <div class="rp-modal-body">
-            @if (isDeleteConfirmMode)
-            {
-                <!-- Delete Confirmation Message -->
-                <div class="rp-modal-warning">
-                    <div class="rp-modal-warning-icon">
-                        <i class="ph-warning"></i>
-                    </div>
-                    <div class="rp-modal-warning-text">
-                        <strong>Confirm Deletion</strong>
-                        <p>Are you sure you want to delete the role <strong>"@editingRole?.RoleTitle"</strong>? All permissions for this role will be removed.</p>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <!-- Consolidated Management Field (Combobox) -->
-                <div class="rp-modal-row">
-                    <label class="rp-modal-label">Role Name:</label>
-                    <div class="rp-combo-container">
-                        <input type="text" class="rp-combo-input force-primary-border" @bind="roleManagementInput" @bind:event="oninput" placeholder="e.g. Manager (Type or Select)" autocomplete="off" />
-                        <div class="rp-combo-btn" @onclick="() => showComboDropdown = !showComboDropdown">
-                            <i class="ph-caret-down" style="font-size: 1.2rem;"></i>
-                        </div>
-                        @if (showComboDropdown)
-                        {
-                            <div class="rp-combo-list">
-                                @foreach (var role in rolesList)
-                                {
-                                    <div class="rp-combo-item" @onclick="() => { roleManagementInput = role.RoleTitle; editingRole = role; showComboDropdown = false; }">
-                                        @role.RoleTitle
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <div class="rp-modal-actions">
-                <button class="modal-btn btn-del" @onclick="DeleteRole" 
-                        disabled="@isSubmitting">
-                    @if (isDeleteConfirmMode)
-                    {
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
-                        else { <span>Confirm Delete</span> <i class="ph-trash"></i> }
-                    }
-                    else
-                    {
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
-                        else { <span>Delete</span> <i class="ph-trash"></i> }
-                    }
+    <div class="modal-overlay" @onclick="CloseAddRoleModal">
+        <div class="modal-content" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="ph-shield-plus" style="color: var(--primary);"></i> Manage Roles
+                </h3>
+                <button type="button" class="btn-close-modal" @onclick="CloseAddRoleModal" style="background:none; border:none; cursor:pointer;">
+                    <i class="ph-x" style="font-size: 1.5rem; color: var(--text-muted);"></i>
                 </button>
+            </div>
+            
+            <div class="modal-body">
                 @if (isDeleteConfirmMode)
                 {
-                    <button class="modal-btn btn-upd" @onclick="CancelDelete" 
-                            disabled="@isSubmitting">
-                        <span>Cancel</span> <i class="ph-x"></i>
+                    <div style="background: #fee2e2; padding: 1.25rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 1.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <i class="ph-warning-fill" style="color: #dc2626; font-size: 1.5rem;"></i>
+                            <div>
+                                <strong style="color: #991b1b; display: block; margin-bottom: 0.25rem;">Confirm Deletion</strong>
+                                <p style="margin: 0; font-size: 0.9rem; color: #b91c1c;">Are you sure you want to delete role <strong>"@editingRole?.RoleTitle"</strong>?</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group-custom">
+                        <label>Role Name</label>
+                        <div style="position: relative;">
+                            <input type="text" class="form-control-custom" @bind="roleManagementInput" @bind:event="oninput" placeholder="e.g. Manager" />
+                            <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                @foreach (var role in rolesList)
+                                {
+                                    <span class="role-badge" style="cursor:pointer; @(editingRole?.Id == role.Id ? "border-color: var(--primary); background: var(--primary-glow); color: var(--primary);" : "")" 
+                                          @onclick="() => { roleManagementInput = role.RoleTitle; editingRole = role; }">
+                                        @role.RoleTitle
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                @if (isDeleteConfirmMode)
+                {
+                    <button class="rp-btn-primary" style="background: #64748b;" @onclick="CancelDelete">Cancel</button>
+                    <button class="rp-btn-primary" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSubmitting">
+                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
+                        else { <span>Confirm Delete</span> }
                     </button>
                 }
                 else
                 {
-                    <button class="modal-btn btn-upd" @onclick="UpdateRole" 
-                            disabled="@isSubmitting">
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
-                        else { <span>Update</span> <i class="ph-arrows-clockwise"></i> }
-                    </button>
-                    <button class="modal-btn btn-sav" @onclick="SaveNewRole" 
-                            disabled="@isSubmitting">
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
-                        else { <span>Save</span> <i class="ph-floppy-disk"></i> }
-                    </button>
+                    <button class="rp-btn-primary" style="background: #dc2626; padding: 0.75rem 1rem;" @onclick="DeleteRole" title="Delete Role"><i class="ph-trash"></i></button>
+                    <button class="rp-btn-primary" style="background: #64748b;" @onclick="UpdateRole" disabled="@isSubmitting">Update</button>
+                    <button class="rp-btn-primary" @onclick="SaveNewRole" disabled="@isSubmitting">Save New</button>
                 }
             </div>
         </div>

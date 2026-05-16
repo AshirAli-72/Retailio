@@ -367,173 +367,74 @@
 }
 
 <!-- MODERN INVOICE DESIGN (MOCKUP MATCH) -->
-<div id="invoice-to-print" class="invoice-paper receipt-hidden" style="width: 1000px; margin: 0 auto; background: #fff; padding: 0; font-family: 'Poppins', sans-serif !important;">
-    <div class="top-design-pos">
-        <h1>Invoice</h1>
-    </div>
-
-    <div class="header-pos">
-        <div class="logo-section-pos">
+<div id="invoice-to-print" class="receipt-hidden">
+    <div class="thermal-receipt">
+        <div class="rcpt-header">
             @if (!string.IsNullOrEmpty(currentStore?.LogoPath))
             {
-                <img src="/store-logo/@System.IO.Path.GetFileName(currentStore.LogoPath)" alt="Logo" style="max-height: 100px; margin-bottom: 10px;" />
+                <img src="/store-logo/@System.IO.Path.GetFileName(currentStore.LogoPath)" alt="Logo" class="rcpt-logo" />
             }
-            else
-            {
-                <h2 style="font-size: 42px; font-weight: 900; color: #111; letter-spacing: 2px; line-height: 1; margin: 0;">@(currentStore?.ShopName ?? "SATA")</h2>
-                <div style="font-size: 14px; font-weight: 700; color: #111; letter-spacing: 3px; text-transform: uppercase; margin-top: 5px;">TECHNOLOGIES</div>
-            }
-            <div style="font-size: 13px; font-weight: 700; color: #BC1823; margin-top: 5px; letter-spacing: 1px;">Innovating the Future</div>
+            <h2 class="rcpt-store-name">@(currentStore?.ShopName ?? "SATA TECHNOLOGIES")</h2>
+            <p class="rcpt-store-info">@(currentStore?.Address ?? "Gilgit, Pakistan")</p>
+            <p class="rcpt-store-info">Phone: @(currentStore?.Phone1 ?? "+92 345 6781267")</p>
+            <div class="rcpt-divider"></div>
+            <h3 class="rcpt-title">@(transMode == "return" ? "RETURN RECEIPT" : "SALE RECEIPT")</h3>
         </div>
 
-        <div class="meta-section-pos">
-            <div class="meta-item-pos">
-                <div class="meta-icon-pos"><i class="ph-file-text-bold"></i></div>
-                <div class="meta-label-pos">Invoice No.</div>
-                <div class="meta-value-pos">: @orderBillNo</div>
-            </div>
-            <div class="meta-item-pos">
-                <div class="meta-icon-pos"><i class="ph-calendar-bold"></i></div>
-                <div class="meta-label-pos">Invoice Date</div>
-                <div class="meta-value-pos">: @DateTime.Now.ToString("dd-MM-yyyy")</div>
-            </div>
-            <div class="meta-item-pos">
-                <div class="meta-icon-pos"><i class="ph-barcode-bold"></i></div>
-                <div class="meta-label-pos">Reference</div>
-                <div class="meta-value-pos" style="border:none; padding:0;">
-                    <svg id="rcptBarcodeSvg" style="height:40px; width:150px;"></svg>
-                </div>
-            </div>
+        <div class="rcpt-meta">
+            <div class="rcpt-meta-row"><span>Bill No:</span> <span>@orderBillNo</span></div>
+            <div class="rcpt-meta-row"><span>Date:</span> <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span></div>
+            <div class="rcpt-meta-row"><span>Customer:</span> <span>@(selectedCustomer?.name ?? "Walking Customer")</span></div>
+            <div class="rcpt-meta-row"><span>Payment:</span> <span>@paymentMethod</span></div>
         </div>
-    </div>
 
-    <div class="billing-section-pos">
-        <div class="bill-card-pos">
-            <div class="bill-header-pos">Bill From</div>
-            <div class="bill-row-pos"><i class="ph-buildings-bold"></i> <span class="b-label-pos">Name of Company</span> <span class="b-value-pos">: @(currentStore?.ShopName ?? "SATA Technologies")</span></div>
-            <div class="bill-row-pos"><i class="ph-phone-bold"></i> <span class="b-label-pos">Contact</span> <span class="b-value-pos">: @(currentStore?.Phone1 ?? "+92 345 6781267")</span></div>
-            <div class="bill-row-pos"><i class="ph-map-pin-bold"></i> <span class="b-label-pos">Address</span> <span class="b-value-pos">: @(currentStore?.Address ?? "Gilgit, Pakistan")</span></div>
-        </div>
-        <div class="bill-card-pos">
-            <div class="bill-header-pos">Bill To</div>
-            <div class="bill-row-pos"><i class="ph-user-bold"></i> <span class="b-label-pos">Name of Customer</span> <span class="b-value-pos">: @(selectedCustomer?.name ?? "Walking Customer")</span></div>
-            <div class="bill-row-pos"><i class="ph-phone-bold"></i> <span class="b-label-pos">Contact</span> <span class="b-value-pos">: @(selectedCustomer?.contact ?? "N/A")</span></div>
-            <div class="bill-row-pos"><i class="ph-map-pin-bold"></i> <span class="b-label-pos">Address</span> <span class="b-value-pos">: @(selectedCustomer?.address ?? "N/A")</span></div>
-        </div>
-    </div>
+        <div class="rcpt-divider"></div>
 
-    <div class="table-section-pos">
-        <table class="invoice-table-pos">
+        <table class="rcpt-table">
             <thead>
                 <tr>
-                    <th style="background:#BC1823; width:80px; text-align:center;"><i class="ph-cube-bold"></i></th>
-                    <th style="width:45%;">Product</th>
-                    <th style="text-align:center;">Price</th>
+                    <th>Item</th>
                     <th style="text-align:center;">Qty</th>
-                    <th style="text-align:right;">Total Price</th>
+                    <th style="text-align:right;">Price</th>
+                    <th style="text-align:right;">Total</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in saleItems)
                 {
                     <tr>
-                        <td style="text-align:center;">•</td>
-                        <td>@item.prod_name_service</td>
-                        <td style="text-align:center;">@CurrencyService.GetSymbol()@item.price.ToString("N2")</td>
-                        <td style="text-align:center;">@Math.Abs(item.qty)</td>
-                        <td style="text-align:right;">@CurrencyService.GetSymbol()@((item.price * Math.Abs(item.qty)).ToString("N2"))</td>
+                        <td colspan="4" class="rcpt-item-name">@item.prod_name_service</td>
                     </tr>
-                }
-                @for(int i = saleItems.Count; i < 6; i++) {
-                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+                    <tr class="rcpt-item-details">
+                        <td></td>
+                        <td style="text-align:center;">@Math.Abs(item.qty)</td>
+                        <td style="text-align:right;">@item.price.ToString("N2")</td>
+                        <td style="text-align:right;">@((item.price * Math.Abs(item.qty)).ToString("N2"))</td>
+                    </tr>
                 }
             </tbody>
         </table>
-    </div>
 
-    <div class="bottom-section-pos">
-        <div class="notes-box-pos">
-            <h4>Notes</h4>
-            <div class="notes-content-pos">
-                @(notes ?? "Thank you for your business. Please keep this invoice for your records. All returns are subject to store policy.")
-            </div>
-        </div>
-        <div class="summary-col-pos">
-            <table class="summary-table-pos">
-                <tr><td>Subtotal</td><td>: @FormatCurrency(totalSub)</td></tr>
-                <tr><td>Tax</td><td>: @FormatCurrency(0)</td></tr>
-                <tr><td>Discount</td><td>: @FormatCurrency(totalDisc)</td></tr>
-            </table>
-            <div class="total-bar-pos">
-                <div class="total-label-pos">Total Price</div>
-                <div class="total-value-pos">
-                    @FormatCurrency(currentTotal)
-                    <i class="ph-caret-right-fill"></i>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="rcpt-divider"></div>
 
-    <div class="footer-design-pos">
-        <div class="footer-item-pos"><i class="ph-phone-fill"></i> <span>@(currentStore?.Phone1 ?? "+92 345 6781267")</span></div>
-        <div class="footer-item-pos"><i class="ph-envelope-simple-fill"></i> <span>info@@sata-tech.com</span></div>
-        <div class="footer-item-pos"><i class="ph-globe-fill"></i> <span>www.sata-tech.com</span></div>
+        <div class="rcpt-summary">
+            <div class="rcpt-sum-row"><span>Subtotal:</span> <span>@FormatCurrency(totalSub)</span></div>
+            <div class="rcpt-sum-row"><span>Discount:</span> <span>-@FormatCurrency(totalDisc)</span></div>
+            <div class="rcpt-sum-row total"><span>TOTAL:</span> <span>@FormatCurrency(currentTotal)</span></div>
+        </div>
+
+        <div class="rcpt-footer">
+            <div class="rcpt-divider"></div>
+            <p>Thank You For Your Business!</p>
+            <div class="rcpt-barcode-wrap">
+                <svg id="rcptBarcodeSvg"></svg>
+            </div>
+            <p class="rcpt-tagline">Powered by SATA Technologies</p>
+        </div>
     </div>
 </div>
 
-<style>
-    .receipt-hidden { display: none !important; }
-    
-    #invoice-to-print { background: #fff; min-height: 1400px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-
-    .top-design-pos { position: absolute; top: 0; right: 0; width: 450px; height: 150px; background: #0d1117; border-bottom-left-radius: 150px; display: flex; align-items: center; justify-content: flex-end; padding-right: 60px; z-index: 2; }
-    .top-design-pos::before { content: ''; position: absolute; left: -30px; top: 0; width: 100px; height: 100%; background: #BC1823; transform: skewX(-20deg); border-bottom-left-radius: 150px; }
-    .top-design-pos h1 { color: white; font-size: 48px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; margin: 0; position: relative; }
-    .top-design-pos h1::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 60px; height: 4px; background: #BC1823; }
-
-    .header-pos { padding: 60px 60px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .meta-section-pos { margin-top: 100px; width: 350px; }
-    .meta-item-pos { display: flex; align-items: center; margin-bottom: 25px; gap: 20px; }
-    .meta-icon-pos { width: 45px; height: 45px; border: 1px solid #ddd; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #BC1823; font-size: 20px; }
-    .meta-label-pos { font-size: 13px; font-weight: 800; color: #111; text-transform: uppercase; min-width: 120px; }
-    .meta-value-pos { flex: 1; border-bottom: 1px solid #ddd; padding-bottom: 5px; font-weight: 600; color: #555; position: relative; top: 10px; }
-
-    .billing-section-pos { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; padding: 0 60px 50px; }
-    .bill-header-pos { background: #BC1823; color: white; padding: 10px 25px; font-weight: 800; font-size: 14px; text-transform: uppercase; display: inline-block; border-top-right-radius: 20px; border-bottom-right-radius: 20px; margin-bottom: 25px; transform: translateX(-10px); clip-path: polygon(0% 0%, 90% 0%, 100% 100%, 0% 100%); width: 160px; }
-    .bill-row-pos { display: flex; align-items: center; margin-bottom: 15px; gap: 15px; }
-    .bill-row-pos i { color: #BC1823; font-size: 18px; width: 25px; text-align: center; }
-    .bill-row-pos .b-label-pos { font-size: 13px; color: #666; width: 100px; }
-    .bill-row-pos .b-value-pos { flex: 1; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 600; color: #111; font-size: 14px; }
-
-    .table-section-pos { padding: 0 40px; flex: 1; }
-    .invoice-table-pos { width: 100%; border-collapse: collapse; border: 1px solid #eee; border-radius: 20px; overflow: hidden; }
-    .invoice-table-pos thead th { background: #0d1117; color: white; padding: 20px; text-align: left; font-size: 13px; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.1); }
-    .invoice-table-pos tbody td { padding: 20px; border-bottom: 1px dashed #eee; font-size: 14px; font-weight: 500; color: #444; }
-
-    .bottom-section-pos { display: grid; grid-template-columns: 1fr 400px; gap: 50px; padding: 50px 60px; }
-    .notes-box-pos h4 { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; }
-    .notes-box-pos h4::after { content: ''; display: block; width: 50px; height: 3px; background: #BC1823; margin-top: 5px; }
-    .notes-content-pos { background: #f8fafc; border-radius: 15px; padding: 25px; height: 160px; font-size: 14px; color: #666; line-height: 1.6; }
-
-    .summary-table-pos { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
-    .summary-table-pos td { padding: 15px 25px; font-size: 14px; font-weight: 700; color: #444; text-transform: uppercase; }
-    .summary-table-pos td:last-child { text-align: right; border-left: 1px solid #eee; width: 150px; color: #111; }
-
-    .total-bar-pos { background: #BC1823; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; margin-top: 15px; overflow: hidden; }
-    .total-label-pos { color: white; padding: 20px 25px; font-weight: 800; font-size: 16px; text-transform: uppercase; }
-    .total-value-pos { background: #0d1117; color: white; padding: 20px 25px; flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 15px; font-size: 24px; font-weight: 800; clip-path: polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%); }
-
-    .footer-design-pos { position: relative; height: 120px; width: 100%; background: #0d1117; margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 60px; }
-    .footer-design-pos::before { content: ''; position: absolute; bottom: 0; left: 0; width: 250px; height: 100%; background: #BC1823; border-top-right-radius: 120px; z-index: 1; }
-    .footer-item-pos { color: white; z-index: 2; display: flex; align-items: center; gap: 15px; font-size: 14px; font-weight: 600; }
-    .footer-item-pos i { background: #BC1823; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-
-    @@media print {
-        body * { visibility: hidden !important; }
-        #invoice-to-print, #invoice-to-print * { visibility: visible !important; }
-        #invoice-to-print { display: flex !important; position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; }
-    }
-</style>
+<link href="css/sale/create.css" rel="stylesheet" />
 
 
 

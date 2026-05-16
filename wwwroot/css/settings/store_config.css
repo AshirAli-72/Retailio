@@ -1,0 +1,92 @@
+/* Store Configuration Management */
+.store-config-container { 
+    padding: 1.5rem; 
+    background: white; 
+    border-radius: 12px; 
+    border: 1px solid var(--border); 
+}
+
+.store-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    border-bottom: 1px solid var(--border); 
+    padding-bottom: 1.5rem; 
+    margin-bottom: 1.5rem; 
+}
+
+.store-title { 
+    margin: 0; 
+    font-size: 1.4rem; 
+    font-weight: 700; 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+}
+
+.store-form-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 300px; 
+    gap: 2rem; 
+}
+
+.store-input, .store-textarea { 
+    padding: 0.75rem 1rem; 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    font-weight: 500; 
+    outline: none; 
+    background: #f8fafc; 
+    font-family: inherit; 
+    width: 100%;
+}
+
+.store-input:focus, .store-textarea:focus { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 3px var(--primary-glow); 
+}
+
+.store-logo-section { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 1rem; 
+    background: #f8fafc; 
+    padding: 2rem; 
+    border-radius: 12px; 
+    border: 2px dashed var(--border); 
+}
+
+.store-logo-preview { 
+    width: 200px; 
+    height: 200px; 
+    background: white; 
+    border-radius: 12px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    overflow: hidden; 
+    border: 1px solid var(--border); 
+}
+
+.store-logo-img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: contain; 
+}
+
+.btn-back-hub {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-back-hub:hover { 
+    color: var(--primary); 
+}

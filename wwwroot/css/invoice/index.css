@@ -184,6 +184,51 @@
     text-align: right;
 }
 
+/* Notification / Form Panel Styles */
+.form-panel-body {
+    padding: 1.5rem;
+}
+
+.notification-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10000;
+    min-width: 320px;
+    max-width: 450px;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.notification-success { background: rgba(5, 150, 105, 0.95); box-shadow: 0 8px 24px rgba(5, 150, 105, 0.35); }
+.notification-error { background: rgba(239, 68, 68, 0.95); box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); }
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
 @media print {
     body * { visibility: hidden !important; }
     

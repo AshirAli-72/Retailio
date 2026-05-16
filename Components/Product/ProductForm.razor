@@ -8,6 +8,8 @@
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
 @rendermode RenderMode.InteractiveServer
 
+<link href="css/product/index.css" rel="stylesheet" />
+
 <div class="management-container @(showForm ? "modal-active" : "")">
     <div class="card card-no-padding">
         <div class="page-header">
@@ -23,8 +25,8 @@
         <!-- Modern Flasher Notification -->
         @if (!string.IsNullOrEmpty(successMessage))
         {
-            <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(5, 150, 105, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(5, 150, 105, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="notification-toast notification-success">
+                <div class="notification-icon">
                     <i class="ph-check-circle" style="font-size: 1.25rem;"></i>
                 </div>
                 <span style="flex: 1;">@successMessage</span>
@@ -32,8 +34,8 @@
         }
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(239, 68, 68, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="notification-toast notification-error">
+                <div class="notification-icon">
                     <i class="ph-warning" style="font-size: 1.25rem;"></i>
                 </div>
                 <span style="flex: 1;">@errorMessage</span>

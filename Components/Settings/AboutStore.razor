@@ -7,6 +7,10 @@
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
 @rendermode RenderMode.InteractiveServer
 
+<link href="css/settings/store_config.css" rel="stylesheet" />
+<link href="css/settings/about.css" rel="stylesheet" />
+<link href="css/settings/index.css" rel="stylesheet" />
+
 <div class="management-container">
     <div class="card card-no-padding">
         <div class="page-header">
@@ -24,11 +28,11 @@
             </div>
         </div>
 
-        <!-- Modern Flasher Notification (Right Side) -->
+        <!-- Modern Flasher Notification -->
         @if (!string.IsNullOrEmpty(successMessage))
         {
-            <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(5, 150, 105, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(5, 150, 105, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="notification-toast notification-success">
+                <div class="notification-icon">
                     <i class="ph-check-circle" style="font-size: 1.25rem;"></i>
                 </div>
                 <span style="flex: 1;">@successMessage</span>
@@ -36,8 +40,8 @@
         }
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(239, 68, 68, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-                <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div class="notification-toast notification-error">
+                <div class="notification-icon">
                     <i class="ph-warning" style="font-size: 1.25rem;"></i>
                 </div>
                 <span style="flex: 1;">@errorMessage</span>
@@ -45,12 +49,12 @@
         }
 
         <div style="padding: 2rem;">
-            <div style="display: grid; grid-template-columns: 1fr 320px; gap: 2.5rem;">
+            <div class="about-grid-2">
                 <!-- Left Side: Form Fields -->
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <!-- Section 1: Basic Information -->
-                    <div style="background: var(--bg-light); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border);">
-                        <h3 style="margin: 0 0 1.25rem 0; font-size: 1.1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="about-section-card">
+                        <h3 class="about-section-title">
                             <i class="ph-storefront" style="color: var(--primary); font-size: 1.25rem;"></i>
                             Basic Information
                         </h3>
@@ -85,8 +89,8 @@
                     </div>
 
                     <!-- Section 2: Contact & Details -->
-                    <div style="background: var(--bg-light); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border);">
-                        <h3 style="margin: 0 0 1.25rem 0; font-size: 1.1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="about-section-card">
+                        <h3 class="about-section-title">
                             <i class="ph-phone" style="color: var(--primary); font-size: 1.25rem;"></i>
                             Contact & Business Details
                         </h3>
@@ -121,16 +125,13 @@
                 </div>
 
                 <!-- Right Side: Logo Upload -->
-                <div>
-                    <div style="position: sticky; top: 2rem;">
-                        <div style="background: var(--card-bg); border-radius: 12px; padding: 1.5rem; border: 2px solid var(--border); box-shadow: var(--shadow);">
-                            <div style="text-align: center; margin-bottom: 1.25rem;">
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                    <i class="ph-image" style="color: var(--primary); font-size: 1.25rem;"></i>
-                                    Store Logo
-                                </h3>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Your logo appears on invoices and receipts</p>
-                            </div>
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="about-logo-upload-box">
+                        <h3 class="about-section-title" style="justify-content: center;">
+                            <i class="ph-image" style="color: var(--primary); font-size: 1.25rem;"></i>
+                            Store Logo
+                        </h3>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Your logo appears on invoices and receipts</p>
                             
                             <!-- Logo Preview Area -->
                             <div style="width: 100%; height: 220px; margin-bottom: 1.25rem; background: var(--bg-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--border); transition: all 0.3s;">
@@ -196,29 +197,7 @@
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    .hidden-input {
-        width: 0.1px;
-        height: 0.1px;
-        opacity: 0;
-        overflow: hidden;
-        position: absolute;
-        z-index: -1;
-    }
-</style>
 
 @code {
     private StoreConfiguration storeConfig = new();

@@ -4,165 +4,458 @@
     ViewData["Title"] = "Invoices";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/invoice/index.css" asp-append-version="true" />
+}
 
 <div class="management-container">
     <div class="card card-no-padding">
         <div class="page-header">
             <div class="page-header-left">
                 <i class="ph-file-text page-header-icon"></i>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                <div style="display:flex;flex-direction:column;gap:0.25rem;">
                     <h2 class="page-header-title">Invoice Management</h2>
-                    <p class="text-muted font-sm" style="margin: 0;">View and manage your generated customer invoices.</p>
+                    <p class="text-muted font-sm" style="margin:0;">View and manage your generated customer invoices.</p>
                 </div>
             </div>
-            <button type="button" onclick="openInvoiceModal()" class="btn-primary">
+            <a href="/Invoice/Create" class="btn-primary">
                 <i class="ph-file-plus"></i> Create New Invoice
-            </button>
+            </a>
         </div>
-        
+
         <div class="table-container">
             <div class="table-responsive">
-                <table class="styled-table" style="min-width: 1100px; margin-bottom: 0;">
-                <thead>
-                    <tr>
-                        <th style="padding-left: 1.5rem; white-space: nowrap;">Invoice #</th>
-                        <th style="white-space: nowrap;">Customer Name</th>
-                        <th style="white-space: nowrap;">Date</th>
-                        <th>Product/Service</th>
-                        <th style="white-space: nowrap;">QTY</th>
-                        <th style="white-space: nowrap;">Expiry</th>
-                        <th>Discount</th>
-                        <th>Total</th>
-                        <th style="white-space: nowrap;">Method</th>
-                        <th>Status</th>
-                        <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Invoices)
-                    {
+                <table class="styled-table" style="min-width:1000px;margin-bottom:0;">
+                    <thead>
                         <tr>
-                            <td class="font-bold" style="padding-left: 1.5rem; white-space: nowrap;">@(item.InvoiceNo ?? item.id.ToString())</td>
-                            <td class="font-medium" style="white-space: nowrap;">@item.CustomerName</td>
-                            <td style="white-space: nowrap;">@item.Date</td>
-                            <td class="font-sm">@item.DisplayName</td>
-                            <td class="font-sm">@item.DisplayQty</td>
-                            <td class="font-sm text-muted">@item.DisplayExpiry</td>
-                            <td class="text-danger font-medium">@CurrencyService.GetSymbol()@(item.Discount.ToString("N2"))</td>
-                            <td class="font-bold text-primary">@CurrencyService.GetSymbol()@(item.TotalPrice.ToString("N2"))</td>
-                            <td class="font-sm" style="white-space: nowrap;">@item.Payment</td>
-                            <td>
-                                <span class="status-badge @(item.Status == "Paid" ? "status-active" : (item.Status == "Pending" ? "status-out-of-stock" : "status-inactive"))">
-                                    @(item.Status ?? "Draft")
-                                </span>
-                            </td>
-                            <td class="text-right" style="padding-right: 1.5rem;">
-                                <div class="actions-container actions-right">
-                                    <a href="/Invoice/Details/@item.id" class="btn-icon-sm btn-view" title="View Details">
-                                        <i class="ph-eye"></i>
-                                    </a>
-                                    <a href="/Invoice/Print/@item.id" target="_blank" class="btn-icon-sm btn-edit" style="background: var(--surface); color: var(--text-main);" title="Print Receipt">
-                                        <i class="ph-printer"></i>
-                                    </a>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.id" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this invoice?')">
-                                        <button type="submit" class="btn-icon-sm btn-delete">
-                                            <i class="ph-trash"></i>
+                            <th style="padding-left:1.5rem;">Invoice #</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Discount</th>
+                            <th>Total</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th class="text-right" style="padding-right:1.5rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Invoices)
+                        {
+                            <tr>
+                                <td class="font-bold" style="padding-left:1.5rem;color:#BC1823;">@(item.InvoiceNo ?? $"#{item.id}")</td>
+                                <td class="font-medium">@item.CustomerName</td>
+                                <td style="color:#64748b;">@item.Date</td>
+                                <td class="font-sm">@item.DisplayName</td>
+                                <td class="text-danger font-medium">@CurrencyService.GetSymbol()@(item.Discount.ToString("N2"))</td>
+                                <td class="font-bold text-primary">@CurrencyService.GetSymbol()@(item.TotalPrice.ToString("N2"))</td>
+                                <td class="font-sm">@item.Payment</td>
+                                <td>
+                                    <span class="status-badge @(item.Status=="Paid"?"status-active":(item.Status=="Pending"?"status-out-of-stock":"status-inactive"))">
+                                        @(item.Status ?? "Draft")
+                                    </span>
+                                </td>
+                                <td class="text-right" style="padding-right:1.5rem;">
+                                    <div class="actions-container actions-right">
+                                        <button type="button" class="btn-icon-sm inv-view-btn"
+                                                style="background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;"
+                                                title="View Invoice"
+                                                data-invno="@Html.Encode(item.InvoiceNo ?? $"INV-{item.id}")"
+                                                data-customer="@Html.Encode(item.CustomerName)"
+                                                data-date="@item.Date"
+                                                data-seller="@Html.Encode(item.SellerName)"
+                                                data-payment="@item.Payment"
+                                                data-status="@(item.Status ?? "Draft")"
+                                                data-discount="@item.Discount.ToString("N2")"
+                                                data-total="@item.TotalPrice.ToString("N2")"
+                                                data-currency="@CurrencyService.GetSymbol()"
+                                                data-items="@Html.Encode(item.RawItems)">
+                                            <i class="ph-eye"></i>
                                         </button>
-                                    </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.id"
+                                              style="display:inline;" onsubmit="return confirm('Delete this invoice?')">
+                                            <button type="submit" class="btn-icon-sm btn-delete">
+                                                <i class="ph-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Invoices.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="empty-state">
+                                    <i class="ph-file-text empty-state-icon"></i>
+                                    <p>No invoices found. Click <strong>Create New Invoice</strong> to start.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Invoices.Any())
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing <b>@((Model.PageNumber - 1) * Model.PageSize + 1)</b>
+                        to <b>@(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount))</b>
+                        of <b>@Model.TotalCount</b>
+                    </div>
+                    <div class="pagination-controls">
+                        @if (Model.PageNumber > 1)
+                        { <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber-1)" class="btn-pagination"><i class="ph-caret-left"></i></a> }
+                        else { <button class="btn-pagination" disabled><i class="ph-caret-left"></i></button> }
+
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            var pn = i;
+                            if (i == 1 || i == Model.TotalPages || (i >= Model.PageNumber - 2 && i <= Model.PageNumber + 2))
+                            { <a asp-page="./Index" asp-route-PageNumber="@pn" class="btn-pagination @(i==Model.PageNumber?"active":"")">@i</a> }
+                            else if (i == Model.PageNumber - 3 || i == Model.PageNumber + 3)
+                            { <span class="pagination-ellipsis">...</span> }
+                        }
+
+                        @if (Model.PageNumber < Model.TotalPages)
+                        { <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber+1)" class="btn-pagination"><i class="ph-caret-right"></i></a> }
+                        else { <button class="btn-pagination" disabled><i class="ph-caret-right"></i></button> }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ INVOICE DETAIL MODAL ════════════ -->
+<div id="invModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+    <div id="invModalBox" style="background:white; border-radius:16px; width:750px; max-width:96vw; max-height:94vh; overflow:hidden; box-shadow:0 40px 100px rgba(0,0,0,0.35); display:flex; flex-direction:column;">
+
+        <!-- Modal Toolbar -->
+        <div style="background:#1e293b; padding:0.9rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <i class="ph-file-text" style="color:#94a3b8; font-size:1.2rem;"></i>
+                <span style="color:white; font-weight:600; font-size:0.95rem;">Invoice Detail</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+                <button onclick="window.print()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:0.4rem 0.9rem; border-radius:6px; cursor:pointer; font-size:0.82rem; display:flex; align-items:center; gap:0.4rem;">
+                    <i class="ph-printer"></i> Print
+                </button>
+                <button id="invModalClose" style="background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">
+                    <i class="ph-x"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Invoice Paper -->
+        <div id="invPrint" style="overflow-y:auto; flex:1; background:#cbd5e1; padding:2rem; display:flex; justify-content:center;">
+            
+            <div class="invoice-a4" style="transform-origin: top center; transform: scale(0.9);">
+                <!-- Header Design -->
+                <div class="header-waves">
+                    <div class="wave-bg"></div>
+                    <div class="wave-red"></div>
+                </div>
+
+                <div class="invoice-title-wrap">
+                    <h1>Invoice</h1>
+                    <div class="line"></div>
+                </div>
+
+                <!-- Top Content -->
+                <div class="top-content">
+                    <div class="logo-box">
+                        <h2 style="color:var(--secondary-black); font-size:2rem; font-weight:900; margin:0; letter-spacing:-1px;">SATA<br/><span style="font-size:0.9rem; font-weight:700; letter-spacing:4px; color:var(--text-main);">TECHNOLOGIES</span></h2>
+                        <div class="slogan" style="margin-top:5px;">Innovating the Future</div>
+                        
+                        <div class="invoice-meta">
+                            <div class="meta-item">
+                                <div class="meta-label">
+                                    <i class="ph-file-text-bold"></i> Invoice No.
                                 </div>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Invoices.Any())
-                    {
-                        <tr>
-                            <td colspan="11" class="empty-state">
-                                <i class="ph-file-text empty-state-icon"></i>
-                                <p>No invoices found. Click <strong>Create New Invoice</strong> to start.</p>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        @if (Model.Invoices.Any())
-        {
-            <div class="pagination-container">
-                <div class="pagination-info">
-                    Showing <b>@((Model.PageNumber - 1) * Model.PageSize + 1)</b> to <b>@(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount))</b> of <b>@Model.TotalCount</b>
+                                <div class="meta-value">: <span id="m-invno"></span></div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">
+                                    <i class="ph-calendar-blank-bold"></i> Invoice Date
+                                </div>
+                                <div class="meta-value">: <span id="m-date"></span></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="pagination-controls">
-                    @if (Model.PageNumber > 1)
-                    {
-                        <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber - 1)" class="btn-pagination">
-                            <i class="ph-caret-left"></i>
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn-pagination" disabled><i class="ph-caret-left"></i></button>
-                    }
 
-                    @for (int i = 1; i <= Model.TotalPages; i++)
-                    {
-                        var pageNum = i;
-                        @if (i == 1 || i == Model.TotalPages || (i >= Model.PageNumber - 2 && i <= Model.PageNumber + 2))
-                        {
-                            <a asp-page="./Index" asp-route-PageNumber="@pageNum" class="btn-pagination @(i == Model.PageNumber ? "active" : "")">@i</a>
-                        }
-                        else if (i == Model.PageNumber - 3 || i == Model.PageNumber + 3)
-                        {
-                            <span class="pagination-ellipsis">...</span>
-                        }
-                    }
+                <!-- Billing Info -->
+                <div class="billing-grid">
+                    <div class="billing-card">
+                        <div class="billing-header">Bill From</div>
+                        <div class="billing-body">
+                            <div class="bill-row">
+                                <i class="ph-buildings-bold"></i>
+                                <div class="bill-content" id="m-seller"></div>
+                            </div>
+                            <div class="bill-row">
+                                <i class="ph-credit-card-bold"></i>
+                                <div class="bill-content" id="m-payment"></div>
+                            </div>
+                        </div>
+                    </div>
 
-                    @if (Model.PageNumber < Model.TotalPages)
-                    {
-                        <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber + 1)" class="btn-pagination">
-                            <i class="ph-caret-right"></i>
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn-pagination" disabled><i class="ph-caret-right"></i></button>
-                    }
+                    <div class="billing-card">
+                        <div class="billing-header">Bill To</div>
+                        <div class="billing-body">
+                            <div class="bill-row">
+                                <i class="ph-user-bold"></i>
+                                <div class="bill-content" id="m-customer"></div>
+                            </div>
+                            <div class="bill-row">
+                                <i class="ph-tag-bold"></i>
+                                <div class="bill-content"><span id="m-status-badge"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="table-section">
+                    <div class="invoice-table-wrap">
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="ph-cube-bold"></i></th>
+                                    <th>Product</th>
+                                    <th style="text-align: right;">Price</th>
+                                    <th style="text-align: center;">Qty</th>
+                                    <th style="text-align: right;">Total Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="m-items"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bottom Section -->
+                <div class="bottom-section">
+                    <div class="notes-box">
+                        <h4>Notes</h4>
+                        <div class="notes-content">
+                            Thank you for your business. Please keep this invoice for your records. For any queries, contact our support team.
+                        </div>
+                    </div>
+
+                    <div class="summary-box">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span id="m-subtotal"></span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (0%)</span>
+                            <span>0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Discount</span>
+                            <span id="m-discount" style="color: var(--primary-red);"></span>
+                        </div>
+                        
+                        <div class="total-row-premium">
+                            <div class="total-label">Total Price</div>
+                            <div class="total-value">
+                                <span id="m-total"></span>
+                                <i class="ph-caret-right-bold"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Design -->
+                <div class="footer-waves">
+                    <div class="footer-bg"></div>
+                    <div class="footer-red"></div>
+                </div>
+
+                <div class="footer-content">
+                    <div class="foot-item">
+                        <i class="ph-phone-bold"></i>
+                        <span>Contact Store</span>
+                    </div>
+                    <div class="foot-item">
+                        <i class="ph-envelope-simple-bold"></i>
+                        <span>info@sata.tech</span>
+                    </div>
+                    <div class="foot-item">
+                        <i class="ph-globe-bold"></i>
+                        <span>www.sata-tech.com</span>
+                    </div>
+                </div>
+
+                <div class="footer-logo">
+                    <i class="ph-flame-bold"></i>
                 </div>
             </div>
-        }
+
+        </div>
     </div>
 </div>
 
-<!-- Modal Overlay for InvoiceEditor -->
-<div id="invoiceModalOverlay" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="max-width: 900px; width: 95%;">
-        <div class="form-panel-header">
-            <div class="form-panel-title">
-                <i class="ph-file-plus form-icon-primary"></i>
-                Create New Invoice
-            </div>
-            <button type="button" class="form-panel-close" onclick="closeInvoiceModal()"><i class="ph-x"></i></button>
-        </div>
-        <div class="form-panel-body" style="padding: 0;">
-            <component type="typeof(E_Invoice_system.Components.Invoice.InvoiceEditor)" render-mode="ServerPrerendered" 
-                       param-UserName='@HttpContext.Session.GetString("UserName")' />
-        </div>
-    </div>
-</div>
+<style>
+    @@keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(-10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    #invModalBox { animation: modalIn 0.22s ease; }
+    
+    /* PIC 3 INVOICE DESIGN */
+    :root {
+        --primary-red: #BC1823;
+        --secondary-black: #1C2120;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --border-light: #f1f5f9;
+    }
+    
+    .invoice-a4 {
+        width: 210mm;
+        min-height: 297mm;
+        background: white;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-main);
+    }
+    
+    .header-waves { position: absolute; top: 0; right: 0; width: 400px; height: 120px; z-index: 1; }
+    .wave-bg { position: absolute; top: -20px; right: -20px; width: 120%; height: 120%; background: var(--secondary-black); clip-path: ellipse(80% 50% at 80% 0%); }
+    .wave-red { position: absolute; top: -10px; right: -10px; width: 100%; height: 100%; background: var(--primary-red); clip-path: ellipse(70% 45% at 85% 0%); z-index: 2; }
+    
+    .invoice-title-wrap { position: absolute; top: 40px; right: 60px; z-index: 10; text-align: right; }
+    .invoice-title-wrap h1 { color: white; font-size: 42px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
+    .invoice-title-wrap .line { height: 3px; background: var(--primary-red); width: 60px; margin-left: auto; margin-top: 5px; }
+    
+    .top-content { padding: 60px 60px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-box { max-width: 280px; }
+    .logo-box .slogan { font-size: 14px; font-weight: 700; color: #1e293b; letter-spacing: 1px; }
+    
+    .invoice-meta { margin-top: 20px; }
+    .meta-item { display: flex; align-items: center; gap: 30px; margin-bottom: 20px; }
+    .meta-label { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 13px; color: var(--text-main); text-transform: uppercase; min-width: 140px; }
+    .meta-label i { font-size: 24px; color: var(--primary-red); background: #fef2f2; padding: 8px; border-radius: 10px; }
+    .meta-value { border-bottom: 1px solid #e2e8f0; flex: 1; padding-bottom: 5px; font-weight: 600; color: var(--text-muted); font-size: 14px; }
+    
+    .billing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 60px; margin-top: 20px; }
+    .billing-card { background: #fbfbfc; border-radius: 20px; overflow: hidden; border: 1px solid #f1f5f9; }
+    .billing-header { background: var(--primary-red); color: white; padding: 12px 25px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; width: 140px; border-bottom-right-radius: 20px; }
+    .billing-body { padding: 25px; }
+    .bill-row { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px; }
+    .bill-row i { color: var(--primary-red); font-size: 20px; margin-top: 3px; }
+    .bill-content { flex: 1; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; font-size: 13px; font-weight: 600; min-height: 25px; color: var(--text-main); }
+    
+    .table-section { padding: 40px 60px; }
+    .invoice-table-wrap { border-radius: 20px; overflow: hidden; border: 1px solid var(--secondary-black); }
+    .invoice-table { width: 100%; border-collapse: collapse; }
+    .invoice-table thead th { background: var(--secondary-black); color: white; padding: 18px 20px; text-align: left; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .invoice-table thead th:first-child { width: 60px; background: var(--primary-red); text-align: center; font-size: 24px; }
+    .invoice-table tbody td { padding: 20px; border-bottom: 1px dashed #e2e8f0; border-right: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; color: var(--text-main); }
+    .invoice-table tbody tr:last-child td { border-bottom: none; }
+    .invoice-table tbody td:last-child { border-right: none; }
+    
+    .bottom-section { display: grid; grid-template-columns: 1fr 340px; gap: 40px; padding: 0 60px 60px; align-items: flex-start; }
+    .notes-box h4 { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; display: inline-block; border-bottom: 3px solid var(--primary-red); padding-bottom: 5px; }
+    .notes-content { background: #f8fafc; padding: 25px; border-radius: 20px; min-height: 120px; font-size: 13px; color: var(--text-muted); line-height: 1.6; background-image: radial-gradient(circle at top right, #e2e8f0 1px, transparent 100px); }
+    .summary-box { background: white; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .summary-row { display: flex; justify-content: space-between; padding: 15px 25px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-main); }
+    .summary-row span:last-child { color: var(--text-muted); border-left: 1px solid #e2e8f0; padding-left: 20px; min-width: 120px; text-align: right; }
+    .total-row-premium { background: var(--secondary-black); color: white; display: flex; justify-content: space-between; align-items: center; }
+    .total-label { background: var(--primary-red); padding: 20px 25px; font-weight: 800; font-size: 15px; text-transform: uppercase; flex: 1; }
+    .total-value { padding: 20px 25px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 15px; }
+    .total-value i { font-size: 16px; color: rgba(255,255,255,0.5); }
+    
+    .footer-waves { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; }
+    .footer-bg { position: absolute; bottom: -20px; left: -20px; width: 120%; height: 120%; background: var(--secondary-black); clip-path: ellipse(80% 50% at 20% 100%); }
+    .footer-red { position: absolute; bottom: -10px; left: -10px; width: 100%; height: 100%; background: var(--primary-red); clip-path: ellipse(70% 45% at 15% 100%); z-index: 2; }
+    
+    .footer-content { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; gap: 60px; z-index: 10; color: white; }
+    .foot-item { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+    .foot-item i { background: var(--primary-red); padding: 8px; border-radius: 50%; font-size: 14px; }
+    .foot-item span { border-left: 1px solid rgba(255,255,255,0.3); padding-left: 15px; }
+    .footer-logo { position: absolute; bottom: 30px; right: 40px; z-index: 10; color: var(--primary-red); font-size: 32px; }
 
-<script>
-    function openInvoiceModal() {
-        document.getElementById('invoiceModalOverlay').style.display = 'flex';
-        document.body.classList.add('modal-open');
+    @@media print {
+        body { visibility: hidden !important; }
+        #invPrint, #invPrint * { visibility: visible !important; }
+        #invPrint { position: absolute !important; left: 0; top: 0; width: 100%; height: auto; margin: 0; padding: 0 !important; overflow: visible !important; }
+        .invoice-a4 { transform: none !important; box-shadow: none !important; border-radius: 0 !important; width: 100%; min-height: 100vh; }
+        #invModalBox { overflow: visible !important; }
     }
-    function closeInvoiceModal() {
-        document.getElementById('invoiceModalOverlay').style.display = 'none';
-        document.body.classList.remove('modal-open');
-        // Reload page to see new invoice
-        location.reload();
-    }
-</script>
+</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.inv-view-btn');
+            if (!btn) return;
+
+            var d = btn.dataset;
+            var cur = d.currency || '';
+
+            // Header
+            document.getElementById('m-invno').textContent    = d.invno    || '';
+            document.getElementById('m-seller').textContent   = d.seller   || 'Company';
+            document.getElementById('m-from-name').textContent = d.seller  || 'N/A';
+            document.getElementById('m-date').textContent     = d.date     || '';
+            document.getElementById('m-payment').textContent  = d.payment  || '';
+            document.getElementById('m-customer').textContent = d.customer || 'Walk-In Customer';
+            document.getElementById('m-discount').textContent = '- ' + cur + parseFloat(d.discount || 0).toFixed(2);
+            document.getElementById('m-total').textContent    = cur + parseFloat(d.total    || 0).toFixed(2);
+
+            // Status badge
+            var badge = document.getElementById('m-status-badge');
+            badge.textContent = d.status || 'Draft';
+            badge.style.background = d.status === 'Paid' ? 'rgba(34,197,94,0.2)' : d.status === 'Pending' ? 'rgba(234,179,8,0.2)' : 'rgba(148,163,184,0.2)';
+            badge.style.color      = d.status === 'Paid' ? '#4ade80' : d.status === 'Pending' ? '#fbbf24' : '#94a3b8';
+
+            // Items
+            var tbody = document.getElementById('m-items');
+            var subtotalEl = document.getElementById('m-subtotal');
+            tbody.innerHTML = '';
+            var subtotal = 0;
+            try {
+                var items = JSON.parse(d.items || '[]');
+                if (Array.isArray(items) && items.length > 0) {
+                    items.forEach(function (it, i) {
+                        var name  = it.Name  || it.name  || '—';
+                        var qty   = it.Qty   || it.qty   || 1;
+                        var price = parseFloat(it.Price || it.price || 0);
+                        var tot   = parseFloat(it.Total || it.total || 0);
+                        subtotal += tot;
+                        var tr = document.createElement('tr');
+                        var odd = (i % 2 === 0);
+                        tr.style.background = odd ? '#fafafa' : 'white';
+                        tr.innerHTML =
+                            '<td style="padding:.6rem .5rem .6rem 0;color:#94a3b8;font-weight:600;font-size:0.82rem;">' + (i+1) + '</td>' +
+                            '<td style="padding:.6rem 0;font-weight:600;color:#1e293b;font-size:0.9rem;">' + name + '</td>' +
+                            '<td style="padding:.6rem 0;text-align:center;color:#475569;font-weight:600;">' + qty + '</td>' +
+                            '<td style="padding:.6rem 0;text-align:right;color:#475569;">' + cur + price.toFixed(2) + '</td>' +
+                            '<td style="padding:.6rem 0;text-align:right;font-weight:700;color:#1e293b;">' + cur + tot.toFixed(2) + '</td>';
+                        tbody.appendChild(tr);
+                    });
+                    subtotalEl.textContent = cur + subtotal.toFixed(2);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding:1.5rem 0;text-align:center;color:#94a3b8;font-size:0.85rem;">No items found</td></tr>';
+                    subtotalEl.textContent = cur + '0.00';
+                }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding:1.5rem 0;text-align:center;color:#94a3b8;">Could not load items</td></tr>';
+                subtotalEl.textContent = cur + '0.00';
+            }
+
+            document.getElementById('invModal').style.display = 'flex';
+        });
+
+        document.getElementById('invModalClose').addEventListener('click', function () {
+            document.getElementById('invModal').style.display = 'none';
+        });
+        document.getElementById('invModal').addEventListener('click', function (e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+    </script>
 }

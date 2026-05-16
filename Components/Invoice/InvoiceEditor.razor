@@ -1,470 +1,441 @@
+@using E_Invoice_system.Models
+@using E_Invoice_system.Data
 @namespace E_Invoice_system.Components.Invoice
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject E_Invoice_system.Services.CurrencyService CurrencyService
+@inject IJSRuntime JS
 
-<div class="form-panel-body">
-    <!-- Modern Flasher Notification -->
-    @if (!string.IsNullOrEmpty(successMessage))
-    {
-        <div style="position: fixed; top: 24px; right: 24px; z-index: 10000; min-width: 320px; max-width: 450px; padding: 1rem 1.25rem; border-radius: 12px; background: rgba(5, 150, 105, 0.95); backdrop-filter: blur(10px); color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 24px rgba(5, 150, 105, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1); animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.2);">
-            <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="ph-check-circle" style="font-size: 1.25rem;"></i>
-            </div>
-            <span style="flex: 1;">@successMessage</span>
+<style>
+    .inv-panel { background:#fff; border-radius:16px; border:1px solid #e8edf3; box-shadow:0 4px 20px rgba(0,0,0,0.05); overflow:hidden; max-width:800px; }
+    .inv-panel-header { background:linear-gradient(135deg,#BC1823 0%,#7f0d14 100%); padding:1.25rem 2rem; display:flex; align-items:center; gap:1rem; }
+    .inv-panel-header h3 { color:white; font-size:1.2rem; font-weight:700; margin:0; }
+    .inv-panel-header p { color:rgba(255,255,255,0.7); font-size:0.8rem; margin:0; }
+    .inv-body { padding:2rem; }
+    .inv-field { margin-bottom:1.2rem; }
+    .inv-label { display:block; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:0.4rem; }
+    .inv-input { width:100%; padding:0.7rem 1rem; border-radius:9px; border:1.5px solid #e2e8f0; background:#f8fafc; font-size:0.92rem; color:#1e293b; transition:all 0.2s; outline:none; font-family:inherit; }
+    .inv-input:focus { border-color:#BC1823; box-shadow:0 0 0 3px rgba(188,24,35,0.1); background:#fff; }
+    .inv-select { appearance:auto; }
+    .inv-divider { border:none; border-top:1px dashed #e2e8f0; margin:1.4rem 0; }
+    .inv-section-label { font-size:0.75rem; font-weight:700; color:#BC1823; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+    .add-row { display:flex; gap:0.75rem; align-items:flex-end; background:#f8fafc; padding:1rem; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:1rem; }
+    .add-row > div { flex:1; }
+    .btn-add-item { height:44px; padding:0 1.5rem; background:#BC1823; color:white; border:none; border-radius:9px; font-weight:700; font-size:0.9rem; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:0.4rem; flex-shrink:0; transition:all 0.2s; }
+    .btn-add-item:hover:not(:disabled) { background:#9b141d; transform:translateY(-1px); }
+    .btn-add-item:disabled { background:#94a3b8; cursor:not-allowed; transform:none; }
+    .inv-table-wrap { border:1px solid #e8edf3; border-radius:12px; overflow:hidden; margin-bottom:1.5rem; }
+    .inv-table { width:100%; border-collapse:collapse; }
+    .inv-table th { background:#f8fafc; padding:0.75rem 1rem; text-align:left; font-size:0.72rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #e8edf3; }
+    .inv-table td { padding:0.75rem 1rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:0.9rem; color:#1e293b; }
+    .inv-table tr:last-child td { border-bottom:none; }
+    .qty-stepper { display:flex; align-items:center; gap:5px; }
+    .qty-btn { width:26px; height:26px; border-radius:6px; border:1px solid #e2e8f0; background:white; color:#BC1823; font-weight:900; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+    .qty-btn:hover { background:#BC1823; color:white; border-color:#BC1823; }
+    .qty-display { width:36px; text-align:center; font-weight:700; color:#1e293b; }
+    .totals-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; }
+    .totals-row { display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; font-size:0.92rem; }
+    .totals-final { font-size:1.2rem; font-weight:800; color:#BC1823; border-top:2px dashed #e2e8f0; padding-top:0.75rem; margin-top:0.5rem; }
+    .discount-input { width:100px; padding:0.3rem 0.6rem; border-radius:6px; border:1px solid #e2e8f0; text-align:right; font-size:0.9rem; font-weight:600; background:white; }
+    .btn-submit-inv { width:100%; padding:1rem; background:#BC1823; color:white; border:none; border-radius:10px; font-weight:700; font-size:1.05rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; margin-top:1.25rem; transition:all 0.2s; box-shadow:0 4px 15px rgba(188,24,35,0.2); }
+    .btn-submit-inv:hover:not(:disabled) { background:#9b141d; transform:translateY(-2px); box-shadow:0 8px 25px rgba(188,24,35,0.3); }
+    .btn-submit-inv:disabled { background:#94a3b8; cursor:not-allowed; box-shadow:none; transform:none; }
+    .toast-success { padding:0.6rem 0.9rem; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; border-radius:8px; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; }
+    .toast-error { padding:0.6rem 0.9rem; background:#fef2f2; color:#991b1b; border:1px solid #fecaca; border-radius:8px; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; }
+    .empty-items { text-align:center; padding:3rem 1rem; color:#94a3b8; }
+    .empty-items i { font-size:3rem; display:block; margin-bottom:0.75rem; opacity:0.25; }
+    .not-ready-overlay { text-align:center; padding:1rem; color:#64748b; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; justify-content:center; }
+</style>
+
+<div class="inv-panel">
+    <div class="inv-panel-header">
+        <i class="ph-file-plus" style="font-size:2rem; color:white;"></i>
+        <div>
+            <h3>Create New Invoice</h3>
+            <p>Fill in the details and add products below</p>
         </div>
-    }
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div style="padding: 1rem; border-radius: 8px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
-            <i class="ph-warning" style="font-size: 1.1rem;"></i> @errorMessage.
+    </div>
+    <div class="inv-body">
+
+        <!-- Invoice Number -->
+        <div class="inv-field">
+            <label class="inv-label">Invoice Number</label>
+            <input type="text" @bind="invoiceNo" class="inv-input" placeholder="Auto-generated if blank" />
         </div>
-    }
+        <!-- Invoice Date -->
+        <div class="inv-field">
+            <label class="inv-label">Invoice Date</label>
+            <input type="date" @bind="invoiceDate" @bind:format="yyyy-MM-dd" class="inv-input" />
+        </div>
+        <!-- Company -->
+        <div class="inv-field">
+            <label class="inv-label">Company / Seller Name</label>
+            <input type="text" @bind="companyName" class="inv-input" placeholder="Your store name" />
+        </div>
+        <!-- Phone -->
+        <div class="inv-field">
+            <label class="inv-label">Seller Contact</label>
+            <input type="text" @bind="companyPhone" class="inv-input" placeholder="Phone number" />
+        </div>
+        <!-- Customer -->
+        <div class="inv-field">
+            <label class="inv-label">
+                Customer &nbsp;<span style="font-size:0.7rem;background:#f1f5f9;color:#94a3b8;padding:2px 8px;border-radius:20px;font-weight:500;text-transform:none;letter-spacing:0;">Optional</span>
+            </label>
+            <select class="inv-input inv-select" @onchange="OnCustomerChanged">
+                <option value="0">-- Walk-In Customer --</option>
+                @foreach (var c in customersList)
+                {
+                    <option value="@c.id">@c.name</option>
+                }
+            </select>
+        </div>
+        <!-- Payment -->
+        <div class="inv-field">
+            <label class="inv-label">Payment Method</label>
+            <select @bind="paymentMethod" class="inv-input inv-select">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Check">Check</option>
+            </select>
+        </div>
+        <!-- Status -->
+        <div class="inv-field">
+            <label class="inv-label">Invoice Status</label>
+            <select @bind="status" class="inv-input inv-select">
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Draft">Draft</option>
+            </select>
+        </div>
 
-    <!-- Invoice Header Details -->
-    <div class="form-group">
-        <label class="form-label">Invoice Date</label>
-        <input class="form-control" type="date" value="@invoiceDate" @onchange="@(e => invoiceDate = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
-    </div>
+        <hr class="inv-divider" />
 
-    <div class="form-group">
-        <label class="form-label">Seller Company Name</label>
-        <input class="form-control" @bind="companyName" placeholder="Enter store name" />
-    </div>
+        <!-- Add Line Items -->
+        <div class="inv-section-label">
+            <i class="ph-shopping-cart"></i> Add Line Items
+        </div>
 
-    <div class="form-group">
-        <label class="form-label">Seller Phone</label>
-        <input class="form-control" @bind="companyPhone" placeholder="Enter store phone" />
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Select Customer</label>
-        <select class="form-control" @onchange="OnCustomerChanged">
-            <option value="">-- Choose Customer --</option>
-            @foreach (var c in customersList)
-            {
-                <option value="@c.id" selected="@(selectedCustomer?.id == c.id)">@c.name</option>
-            }
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Invoice Number</label>
-        <input class="form-control" @bind="invoiceNo" placeholder="Auto-generated if blank" />
-    </div>
-
-    @if (showPreviousItems)
-    {
-        <div style="background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
-            <div class="form-panel-title" style="margin-bottom: 0.75rem; font-size: 0.95rem;">
-                <i class="ph-clock-counter-clockwise form-icon-primary"></i>
-                Select Customer's Previous Items
+        <div class="add-row">
+            <div>
+                <label class="inv-label">Select Product / Service</label>
+                <select class="inv-input inv-select" @onchange="OnProductSelected">
+                    <option value="0">-- Choose a product --</option>
+                    @foreach (var p in productsList)
+                    {
+                        <option value="@p.id">@p.prod_name (@(p.item_type ?? "General"))</option>
+                    }
+                </select>
             </div>
-            <div style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white;">
-                <table class="styled-table" style="margin: 0; font-size: 0.85rem;">
+            <button type="button" class="btn-add-item" @onclick="AddItem">
+                <i class="ph-plus-bold"></i> Add Item
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="toast-success"><i class="ph-check-circle"></i> @successMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="toast-error"><i class="ph-warning-circle"></i> @errorMessage</div>
+        }
+
+        <!-- Items Table -->
+        @if (invoiceItems.Any())
+        {
+            <div class="inv-table-wrap">
+                <table class="inv-table">
                     <thead>
                         <tr>
-                            <th style="padding: 0.5rem 1rem;">Select</th>
-                            <th>Bill #</th>
-                            <th>Date</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Total</th>
+                            <th>#</th>
+                            <th>Product / Service</th>
+                            <th style="width:140px;text-align:center;">Qty</th>
+                            <th style="width:110px;text-align:right;">Unit Price</th>
+                            <th style="width:110px;text-align:right;">Total</th>
+                            <th style="width:50px;"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var sale in customerPreviousSales)
+                        @{ int rowNum = 1; }
+                        @foreach (var item in invoiceItems)
                         {
                             <tr>
-                                <td style="padding: 0.5rem 1rem;">
-                                    <input type="checkbox" checked="@selectedSaleIds.Contains(sale.id)" @onclick="() => ToggleSaleSelection(sale.id)" style="width: 18px; height: 18px;" />
+                                <td style="color:#94a3b8;font-weight:600;">@rowNum</td>
+                                <td>
+                                    <div style="font-weight:600;color:#1e293b;">@item.Name</div>
+                                    @if (!string.IsNullOrEmpty(item.ExpiryDate))
+                                    {
+                                        <div style="font-size:0.75rem;color:#94a3b8;">Exp: @item.ExpiryDate</div>
+                                    }
                                 </td>
-                                <td>@sale.billNo</td>
-                                <td>@sale.date</td>
-                                <td>@sale.qty</td>
-                                <td>@sale.price.ToString("F2")</td>
-                                <td class="font-bold">@sale.total_price.ToString("F2")</td>
+                                <td style="text-align:center;">
+                                    <div class="qty-stepper" style="justify-content:center;">
+                                        <button type="button" class="qty-btn" @onclick="() => DecrementQty(item)">−</button>
+                                        <span class="qty-display">@item.Qty</span>
+                                        <button type="button" class="qty-btn" @onclick="() => IncrementQty(item)">+</button>
+                                    </div>
+                                </td>
+                                <td style="text-align:right;color:#475569;font-weight:500;">
+                                    @CurrencyService.GetSymbol()@item.Price.ToString("N2")
+                                </td>
+                                <td style="text-align:right;font-weight:700;color:#BC1823;">
+                                    @CurrencyService.GetSymbol()@item.Total.ToString("N2")
+                                </td>
+                                <td style="text-align:center;">
+                                    <button type="button" @onclick="() => RemoveItem(item)"
+                                            style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.85rem;">
+                                        <i class="ph-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
+                            rowNum++;
                         }
                     </tbody>
                 </table>
             </div>
-            <button type="button" class="btn-primary" style="width: 100%; height: 38px; font-size: 0.85rem;" @onclick="AddSelectedSalesToInvoice" disabled="@(!selectedSaleIds.Any())">
-                <i class="ph-plus-circle"></i> Add Selected to Invoice
-            </button>
-        </div>
-    }
-
-    <hr style="margin: 0.5rem 0; border: none; border-top: 2px dashed #e2e8f0;" />
-
-    <div class="form-panel-title" style="margin-bottom: 1rem;">
-        <i class="ph-shopping-cart form-icon-primary"></i>
-        Line Items
-    </div>
-
-    <!-- Add Item Form -->
-    <div style="background: var(--bg-light); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">Add Product / Service</label>
-            <div style="display: flex; gap: 0.75rem;">
-                <select id="productSelect" class="form-control" @onchange="OnProductSelected" style="flex:1;">
-                    <option value="0">-- Select Product --</option>
-                    @foreach (var p in productsList)
-                    {
-                        <option value="@p.id" selected="@(selectedProductId == p.id)">@p.prod_name (@(p.item_type ?? "N/A"))</option>
-                    }
-                </select>
-                <button type="button" class="btn-primary" @onclick="AddItem" style="flex-shrink: 0;">
-                    <i class="ph-plus"></i> Add
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Items Table -->
-    <div class="table-responsive" style="border: 1px solid var(--border); border-radius: 12px; max-height: 300px; overflow-y: auto; margin-bottom: 1.25rem;">
-        <table class="styled-table" style="margin: 0; box-shadow: none;">
-            <thead>
-                <tr>
-                    <th style="padding-left: 1.5rem;">Product/Service</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th class="text-right" style="padding-right: 1.5rem;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (invoiceItems.Count == 0)
-                {
-                    <tr>
-                        <td colspan="5" class="empty-state" style="padding: 2.5rem;">
-                            <i class="ph-shopping-cart empty-state-icon"></i>
-                            <p>No items added yet. Select a product above to get started.</p>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var item in invoiceItems)
-                    {
-                        <tr>
-                            <td style="padding-left: 1.5rem;">
-                                <div class="font-medium">@item.Name</div>
-                                <div class="font-sm text-muted">Exp: @(item.ExpiryDate ?? "N/A")</div>
-                            </td>
-                            <td>
-                                <input type="number" @bind="item.Qty" @bind:after="() => CalculateItemTotal(item)" class="form-control" style="width: 80px; height: 36px; padding: 0.35rem 0.6rem;" />
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" @bind="item.Price" @bind:after="() => CalculateItemTotal(item)" class="form-control" style="width: 100px; height: 36px; padding: 0.35rem 0.6rem;" />
-                            </td>
-                            <td class="font-bold" style="color: var(--primary);">
-                                @CurrencyService.GetSymbol()@item.Total.ToString("F2")
-                            </td>
-                            <td class="text-right" style="padding-right: 1.5rem;">
-                                <button type="button" @onclick="() => RemoveItem(item)" class="btn-icon-sm btn-delete">
-                                    <i class="ph-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Summary Section -->
-    <div style="background: var(--bg-light); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
-        <div class="form-group">
-            <label class="form-label">Invoice Status</label>
-            <select class="form-control" @bind="status">
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">Payment Method</label>
-            <select class="form-control" @bind="paymentMethod">
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Online">Online</option>
-                <option value="Credit">Credit</option>
-            </select>
-        </div>
-
-        <div style="padding-top: 1rem; border-top: 1px solid var(--border); margin-top: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-                <span class="text-muted font-medium">Subtotal:</span>
-                <span class="font-bold">@CurrencyService.GetSymbol()@subtotal.ToString("F2")</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; align-items: center;">
-                <span class="text-muted font-medium">Discount:</span>
-                <input type="number" step="0.01" @bind="discount" class="form-control" style="width: 120px; text-align: right; height: 38px;" />
-            </div>
-            <hr style="margin: 1rem 0; border: none; border-top: 2px solid var(--border);" />
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="font-bold" style="font-size: 1.15rem; color: var(--text);">Total Amount:</span>
-                <span class="font-bold" style="font-size: 1.35rem; color: var(--primary);">@CurrencyService.GetSymbol()@total.ToString("F2")</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="form-panel-footer">
-    <button type="button" class="btn-save" style="width: 100%; justify-content: center;" @onclick="SubmitInvoice" disabled="@isSubmitting">
-        @if (isSubmitting)
-        {
-            <i class="ph-spinner ph-spin"></i> @("Generating Invoice...")
         }
         else
         {
-            <i class="ph-check-circle"></i> @("Generate & Save Invoice")
+            <div class="empty-items">
+                <i class="ph-receipt"></i>
+                <div style="font-weight:600;font-size:0.95rem;color:#64748b;">No items added yet</div>
+                <div style="font-size:0.82rem;margin-top:0.3rem;">Select a product and click <strong>Add Item</strong></div>
+            </div>
         }
-    </button>
-</div>
 
+        <!-- Totals -->
+        @if (invoiceItems.Any())
+        {
+            <div class="totals-box">
+                <div class="totals-row">
+                    <span style="color:#64748b;font-weight:500;">Subtotal</span>
+                    <span style="font-weight:700;">@CurrencyService.GetSymbol()@subtotal.ToString("N2")</span>
+                </div>
+                <div class="totals-row">
+                    <span style="color:#64748b;font-weight:500;">Discount</span>
+                    <input type="number" min="0" @bind="discount" @bind:after="CalculateTotals" class="discount-input" />
+                </div>
+                <div class="totals-row totals-final">
+                    <span>Total Amount</span>
+                    <span>@CurrencyService.GetSymbol()@total.ToString("N2")</span>
+                </div>
+            </div>
+        }
+
+        <button type="button" class="btn-submit-inv" @onclick="SubmitInvoice" disabled="@isSubmitting">
+            @if (isSubmitting)
+            {
+                <i class="ph-spinner ph-spin"></i><span>Saving Invoice...</span>
+            }
+            else
+            {
+                <i class="ph-check-circle"></i><span>Generate &amp; Save Invoice</span>
+            }
+        </button>
+    </div>
+</div>
 
 @code {
+    [Parameter] public string? UserName { get; set; }
+
+    // ── Form ──────────────────────────────────────
+    private string companyName = "";
+    private string companyPhone = "";
+    private string invoiceNo = "";
+    private DateTime invoiceDate = DateTime.Now;
+
+    // ── Customer ──────────────────────────────────
     private List<customers> customersList = new();
+    private customers? selectedCustomer;
+
+    // ── Products ──────────────────────────────────
     private List<ProductService> productsList = new();
+    private int selectedProductId = 0;
+
+    // ── Items ─────────────────────────────────────
     private List<InvoiceItem> invoiceItems = new();
 
-    private customers? selectedCustomer;
-    private string? invoiceNo;
-    private string invoiceDate = DateTime.Now.ToString("yyyy-MM-dd");
-    private string status = "Paid";
+    // ── Totals ────────────────────────────────────
+    private decimal subtotal;
+    private decimal discount;
+    private decimal total;
+
+    // ── Payment ───────────────────────────────────
     private string paymentMethod = "Cash";
-    private decimal discount = 0;
-    private int selectedProductId;
-    private string? companyName;
-    private string? companyPhone;
-    private bool isSubmitting = false;
+    private string status = "Paid";
+
+    // ── UI ────────────────────────────────────────
     private string? errorMessage;
     private string? successMessage;
+    private bool isSubmitting = false;
 
-    [Parameter] public string? UserName { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
-
-    private List<Sale> customerPreviousSales = new();
-    private HashSet<int> selectedSaleIds = new();
-    private bool showPreviousItems = false;
-
-
-
+    // ── Init ──────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        await CurrencyService.GetSymbolAsync();
-        using var context = DbFactory.CreateDbContext();
-        customersList = await context.customers.OrderBy(c => c.name).ToListAsync();
-        
-        // Use a more resilient way to fetch Available products (handling potential status padding in DB)
-        var allProducts = await context.products_services.ToListAsync();
-        productsList = allProducts.Where(p => !string.IsNullOrEmpty(p.status) && p.status.Trim().Equals("Enable", StringComparison.OrdinalIgnoreCase)).ToList();
-
-        // Load store configuration for defaults
-        var storeConfig = await context.store_configurations.FirstOrDefaultAsync();
-        if (storeConfig != null)
+        try
         {
-            companyName = storeConfig.ShopName;
-            companyPhone = storeConfig.Phone1;
+            await CurrencyService.GetSymbolAsync();
+            using var ctx = DbFactory.CreateDbContext();
+
+            var cfg = await ctx.store_configurations.FirstOrDefaultAsync();
+            companyName = cfg?.ShopName ?? "";
+            companyPhone = cfg?.Phone1 ?? "";
+
+            customersList = await ctx.customers.OrderBy(c => c.name).ToListAsync();
+
+            var all = await ctx.products_services.ToListAsync();
+            productsList = all
+                .Where(p => !string.IsNullOrEmpty(p.status) &&
+                            p.status.Trim().Equals("Enable", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(p => p.prod_name)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading initial data: {ex.Message}");
         }
     }
 
-    private async Task OnCustomerChanged(ChangeEventArgs e)
+    // ── Customer ──────────────────────────────────
+    private void OnCustomerChanged(ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out int id))
-        {
+        if (int.TryParse(e.Value?.ToString(), out int id) && id > 0)
             selectedCustomer = customersList.FirstOrDefault(c => c.id == id);
-            if (selectedCustomer != null)
-            {
-                await LoadCustomerPreviousItems();
-            }
-        }
         else
-        {
             selectedCustomer = null;
-            customerPreviousSales.Clear();
-            selectedSaleIds.Clear();
-            showPreviousItems = false;
-        }
-        StateHasChanged();
     }
 
-    private async Task LoadCustomerPreviousItems()
-    {
-        if (selectedCustomer == null) return;
-        
-        using var context = DbFactory.CreateDbContext();
-        // Look for sales where description contains [Customer: Name]
-        string searchTag = $"[Customer: {selectedCustomer.name}]";
-        customerPreviousSales = await context.sales
-            .Where(s => s.description != null && s.description.Contains(searchTag))
-            .OrderByDescending(s => s.id)
-            .ToListAsync();
-        
-        showPreviousItems = customerPreviousSales.Any();
-    }
-
-    private void ToggleSaleSelection(int saleId)
-    {
-        if (selectedSaleIds.Contains(saleId))
-            selectedSaleIds.Remove(saleId);
-        else
-            selectedSaleIds.Add(saleId);
-    }
-
-    private void AddSelectedSalesToInvoice()
-    {
-        var selectedSales = customerPreviousSales.Where(s => selectedSaleIds.Contains(s.id)).ToList();
-        foreach (var sale in selectedSales)
-        {
-            // Try to extract name from description if possible, otherwise use a generic name
-            // In SaleEditor, each item is a row, but description is the same for all items in a bill.
-            // Actually, we don't have the product name in the Sale table easily, 
-            // but we can try to find it from products table or just use 'Purchased Item'
-            
-            // Wait, let's look at Sale model again. It doesn't have product name.
-            // But it has a description.
-            
-            invoiceItems.Add(new InvoiceItem
-            {
-                Name = "Purchased Item (Bill: " + sale.billNo + ")",
-                Qty = sale.qty,
-                Price = sale.price,
-                ExpiryDate = sale.expiry_date,
-                Total = sale.total_price
-            });
-        }
-        selectedSaleIds.Clear();
-        errorMessage = null;
-        StateHasChanged();
-    }
-
+    // ── Product Select ────────────────────────────
     private void OnProductSelected(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int id))
-        {
             selectedProductId = id;
-        }
         else
-        {
             selectedProductId = 0;
-        }
-        StateHasChanged();
     }
 
+    // ── Add Item ──────────────────────────────────
+    // FIX: If same product exists, just increment qty instead of adding new row
     private async Task AddItem()
     {
-        if (selectedProductId == 0) 
+        errorMessage = null;
+        successMessage = null;
+
+        if (selectedProductId == 0)
         {
-            errorMessage = "Please select a product from the list first.";
+            errorMessage = "Please select a product first.";
             return;
         }
 
-        var product = productsList.FirstOrDefault(p => p.id == selectedProductId);
-        if (product != null)
+        var pid = selectedProductId;
+
+        // Check if product already in list — if yes, just increment qty
+        var existingItem = invoiceItems.FirstOrDefault(i => i.ProductId == pid);
+        if (existingItem != null)
         {
-            invoiceItems.Add(new InvoiceItem
-            {
-                Name = product.prod_name,
-                Qty = 1,
-                Price = 0,
-                ExpiryDate = product.expiry_date,
-                Total = 0
-            });
-            errorMessage = null; 
-            selectedProductId = 0; // Reset after success
-            await InvokeAsync(StateHasChanged);
+            existingItem.Qty++;
+            existingItem.Total = existingItem.Qty * existingItem.Price;
+            CalculateTotals();
+            successMessage = $"Qty updated for \"{existingItem.Name}\".";
+            selectedProductId = 0;
+            _ = Task.Run(async () => { await Task.Delay(2000); successMessage = null; await InvokeAsync(StateHasChanged); });
+            return;
         }
-        else
+
+        using var ctx = DbFactory.CreateDbContext();
+        var prod = await ctx.products_services.FirstOrDefaultAsync(p => p.id == pid);
+        if (prod == null) { errorMessage = "Product not found."; return; }
+
+        var stock = await ctx.stock_details
+            .Where(s => s.item_barcode == prod.barcode)
+            .OrderByDescending(s => s.id)
+            .FirstOrDefaultAsync();
+
+        decimal unitPrice = stock?.sale_price ?? 0m;
+
+        invoiceItems.Add(new InvoiceItem
         {
-            errorMessage = "Selected product not found or no longer available.";
-        }
+            ProductId  = pid,
+            Name       = prod.prod_name ?? "Unknown",
+            Qty        = 1,
+            Price      = unitPrice,
+            ExpiryDate = prod.expiry_date,
+            Total      = unitPrice
+        });
+
+        CalculateTotals();
+        successMessage = $"\"{prod.prod_name}\" added!";
+        selectedProductId = 0;
+
+        _ = Task.Run(async () => { await Task.Delay(2000); successMessage = null; await InvokeAsync(StateHasChanged); });
     }
 
-    private void RemoveItem(InvoiceItem item)
+    // ── Qty ───────────────────────────────────────
+    private void IncrementQty(InvoiceItem item) { item.Qty++; item.Total = item.Qty * item.Price; CalculateTotals(); }
+    private void DecrementQty(InvoiceItem item) { if (item.Qty > 1) item.Qty--; item.Total = item.Qty * item.Price; CalculateTotals(); }
+
+    private void CalculateTotals()
     {
-        invoiceItems.Remove(item);
+        subtotal = invoiceItems.Sum(i => i.Total);
+        total    = subtotal - discount;
+        StateHasChanged();
     }
 
-    private void CalculateItemTotal(InvoiceItem item)
-    {
-        item.Total = item.Qty * item.Price;
-    }
+    private void RemoveItem(InvoiceItem item) { invoiceItems.Remove(item); CalculateTotals(); }
 
-    private decimal subtotal => invoiceItems.Sum(i => i.Total);
-    private decimal total => subtotal - discount;
-
+    // ── Submit ────────────────────────────────────
     private async Task SubmitInvoice()
     {
-        if (selectedCustomer == null) { errorMessage = "Please select a customer."; return; }
-        if (invoiceItems.Count == 0) { errorMessage = "Please add at least one item."; return; }
+        errorMessage = null;
+        if (!invoiceItems.Any()) { errorMessage = "Please add at least one item."; return; }
 
         isSubmitting = true;
         try
         {
-            using var context = DbFactory.CreateDbContext();
-
-            // Get Current User ID
-            var user = await context.users.AsNoTracking().FirstOrDefaultAsync(u => u.username == UserName);
-            int? currentUserId = user?.id;
-
-            // Get store configuration for seller info
-            var storeConfig = await context.store_configurations.FirstOrDefaultAsync();
-
-            var invoice = new invoices
+            using var ctx = DbFactory.CreateDbContext();
+            var inv = new invoices
             {
-                invoice_no = string.IsNullOrWhiteSpace(invoiceNo) ? $"INV-{DateTime.Now.ToString("ddMMyyHHmm")}" : (invoiceNo.Length > 50 ? invoiceNo.Substring(0, 50) : invoiceNo),
-                date = DateTime.TryParse(invoiceDate, out var dt) ? dt.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"),
-                seller_name = companyName?.Length > 100 ? companyName.Substring(0, 100) : companyName,
-                seller_contact = companyPhone?.Length > 50 ? companyPhone.Substring(0, 50) : companyPhone,
-                seller_address = storeConfig?.Address?.Length > 255 ? storeConfig.Address.Substring(0, 255) : storeConfig?.Address,
-                customer_name = selectedCustomer.name?.Length > 100 ? selectedCustomer.name.Substring(0, 100) : selectedCustomer.name,
-                customer_contact = selectedCustomer.contact?.Length > 50 ? selectedCustomer.contact.Substring(0, 50) : selectedCustomer.contact,
-                customer_address = selectedCustomer.address?.Length > 255 ? selectedCustomer.address.Substring(0, 255) : selectedCustomer.address,
-                prod_name_service = System.Text.Json.JsonSerializer.Serialize(invoiceItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }),
-                qty_unit_type = $"{invoiceItems.Count} Items",
-                price = subtotal,
-                discount = discount,
-                total_price = total,
-                payment = paymentMethod,
-                status = status
+                invoice_no       = string.IsNullOrWhiteSpace(invoiceNo) ? $"INV-{DateTime.Now:ddMMyyHHmm}" : invoiceNo,
+                date             = invoiceDate.ToString("yyyy-MM-dd"),
+                seller_name      = companyName,
+                seller_contact   = companyPhone,
+                customer_name    = selectedCustomer?.name ?? "Walk-In Customer",
+                customer_contact = selectedCustomer?.contact,
+                customer_address = selectedCustomer?.address,
+                prod_name_service = System.Text.Json.JsonSerializer.Serialize(invoiceItems),
+                qty_unit_type    = $"{invoiceItems.Count} item(s)",
+                price            = subtotal,
+                discount         = discount,
+                total_price      = total,
+                payment          = paymentMethod,
+                status           = status
             };
+            ctx.invoices.Add(inv);
+            await ctx.SaveChangesAsync();
 
-            context.invoices.Add(invoice);
-            await context.SaveChangesAsync();
-
-            successMessage = "Invoice created successfully!";
-            await Task.Delay(500);
-            
-            if (OnClose.HasDelegate)
-            {
-                await OnClose.InvokeAsync();
-            }
-            else
-            {
-                NavigationManager.NavigateTo("/Invoice/Index", true);
-            }
+            // Show success flash via JS then navigate
+            await JS.InvokeVoidAsync("showInvoiceSuccessFlash");
+            await Task.Delay(1800);
+            NavigationManager.NavigateTo("/Invoice/Index");
         }
         catch (Exception ex)
         {
-            string err = ex.Message;
-            if (ex.InnerException != null) err += " | " + ex.InnerException.Message;
-            errorMessage = "Error saving invoice: " + err;
-            successMessage = null;
+            errorMessage = "Save failed: " + ex.Message;
             isSubmitting = false;
         }
     }
 
+    // ── Model ─────────────────────────────────────
     public class InvoiceItem
-
     {
-        public string? Name { get; set; }
-        public decimal Qty { get; set; }
-        public decimal Price { get; set; }
+        public int     ProductId  { get; set; }
+        public string? Name       { get; set; }
+        public int     Qty        { get; set; }
+        public decimal Price      { get; set; }
         public string? ExpiryDate { get; set; }
-        public decimal Total { get; set; }
+        public decimal Total      { get; set; }
     }
 }

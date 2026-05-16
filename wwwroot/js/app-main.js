@@ -52,12 +52,24 @@ const NavProgress = (() => {
 })();
 
 // ─── Prefetch Cache ────────────────────────────────────────────────────────────
-const EXCLUDED_PATHS = [];
+const EXCLUDED_PATHS = [
+    '/Account/Logout', 
+    '/Account/Login', 
+    '/sale', 
+    '/reports', 
+    '/customer', 
+    '/product', 
+    '/inventory', 
+    '/employee', 
+    '/settings'
+];
 
 function isPathExcluded(url) {
     if (!url) return true;
-    const path = new URL(url, window.location.origin).pathname.toLowerCase();
-    return EXCLUDED_PATHS.some(p => path.startsWith(p.toLowerCase()));
+    try {
+        const path = new URL(url, window.location.origin).pathname.toLowerCase();
+        return EXCLUDED_PATHS.some(p => path.startsWith(p.toLowerCase()));
+    } catch (e) { return true; }
 }
 
 const prefetched = new Map();
@@ -116,6 +128,37 @@ async function fastNavigate(url, pushState = true) {
                 showLoading = false; // Page is ready, don't show dimming if not already shown
                 clearTimeout(loadingTimer);
 
+                // ── Sync Head (CSS & Styles) ──
+                const newHead = doc.head;
+                const currentHead = document.head;
+                
+                // Sync Stylesheets with robust selector
+                newHead.querySelectorAll('link[rel="stylesheet"]').forEach(newLink => {
+                    const href = newLink.getAttribute('href');
+                    if (!href) return;
+                    // Check for existence ignoring protocol/host if possible, or just exact match
+                    let exists = false;
+                    currentHead.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
+                        if (l.getAttribute('href') === href) exists = true;
+                    });
+                    
+                    if (!exists) {
+                        const link = document.createElement('link');
+                        link.rel = 'stylesheet';
+                        link.href = href;
+                        // Use append version if present in attributes
+                        Array.from(newLink.attributes).forEach(attr => {
+                            if (attr.name !== 'href' && attr.name !== 'rel') link.setAttribute(attr.name, attr.value);
+                        });
+                        currentHead.appendChild(link);
+                    }
+                });
+
+                // Sync Inline Styles
+                newHead.querySelectorAll('style').forEach(newStyle => {
+                    currentHead.appendChild(newStyle.cloneNode(true));
+                });
+
                 // Swap Title
                 document.title = doc.title;
 
@@ -140,12 +183,51 @@ async function fastNavigate(url, pushState = true) {
                     
                     window.dispatchEvent(new CustomEvent('fastnav:success', { detail: { url } }));
                     
+                    // --- CRITICAL: Re-initialize Blazor for swapped content ---
+                    if (window.Blazor) {
+                        console.log("Re-initializing Blazor...");
+                        try {
+                            if (typeof Blazor.disconnect === 'function') Blazor.disconnect();
+                        } catch(e) {}
+                        
+                        setTimeout(() => {
+                            try {
+                                if (typeof Blazor.start === 'function') {
+                                    Blazor.start().then(() => {
+                                        console.log("Blazor re-started");
+                                    }).catch(err => {
+                                        // If already started, try reconnecting
+                                        if (typeof Blazor.reconnect === 'function') {
+                                            Blazor.reconnect().then(res => {
+                                                if (!res) location.reload(); // Hard fallback if reconnection failed
+                                            });
+                                        }
+                                    });
+                                }
+                            } catch (e) { console.warn("Blazor start error:", e); }
+                        }, 150); // Increased delay for DOM stability
+                    } else {
+                        // Fallback: If Blazor script was in the new page but not in the old one
+                        if (doc.querySelector('script[src*="blazor.server.js"]')) {
+                            const bScript = document.createElement('script');
+                            bScript.src = '_framework/blazor.server.js';
+                            document.body.appendChild(bScript);
+                        }
+                    }
+
                     NavProgress.finish();
                 });
             }, 50); 
             return true;
         } else {
-            window.location.href = url;
+            // If the layout is fundamentally different (missing .main-content), do a professional smooth reload
+            if (pushState) {
+                if (document.startViewTransition) {
+                    document.startViewTransition(() => { window.location.href = url; });
+                } else {
+                    window.location.href = url;
+                }
+            }
             return false;
         }
     } catch (err) {
@@ -490,6 +572,7 @@ function printElement(elementId, reportTitle, storeInfo) {
             @media print {
                 /* Hide everything except the print overlay */
                 body > *:not(#print-preview-overlay) { display: none !important; }
+                body { overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
                 #print-preview-overlay { 
                     position: static !important; 
                     display: block !important; 
@@ -498,6 +581,7 @@ function printElement(elementId, reportTitle, storeInfo) {
                     margin: 0 !important; 
                     width: 100% !important; 
                     height: auto !important;
+                    overflow: visible !important;
                 }
                 .print-preview-modal { 
                     position: static !important;
@@ -508,21 +592,25 @@ function printElement(elementId, reportTitle, storeInfo) {
                     box-shadow: none !important; 
                     background: white !important;
                     display: block !important;
+                    overflow: visible !important;
                 }
                 #print-preview-content { 
                     background: white !important; 
                     padding: 0 !important; 
                     overflow: visible !important; 
                     display: block !important;
+                    height: auto !important;
                 }
                 .paper-page { 
                     box-shadow: none !important; 
-                    padding: 40px !important; 
+                    padding: 0 !important; 
+                    margin: 0 !important;
                     width: 100% !important; 
                     max-width: none !important; 
                     opacity: 1 !important; 
                     transform: none !important; 
                     display: block !important;
+                    overflow: visible !important;
                 }
                 /* Hide UI controls during print */
                 #close-preview, #confirm-print, .print-preview-modal > div:first-child, .no-print { 

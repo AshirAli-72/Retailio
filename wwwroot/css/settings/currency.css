@@ -1,0 +1,47 @@
+/* Currency Management */
+.active-currency-row {
+    background: rgba(16, 185, 129, 0.03) !important;
+}
+
+.active-currency-row td {
+    border-bottom-color: rgba(16, 185, 129, 0.2);
+}
+
+.force-primary-border:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px var(--primary-glow) !important;
+}
+
+.search-field {
+    transition: all 0.2s;
+}
+
+.search-field:focus {
+    background: white !important;
+}
+
+.currency-symbol-big {
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 1.25rem;
+}
+
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}

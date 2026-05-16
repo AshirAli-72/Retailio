@@ -1,0 +1,59 @@
+@page
+@model E_Invoice_system.Pages.Invoice.CreateModel
+@{
+    ViewData["Title"] = "Create Invoice";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/invoice/create.css" asp-append-version="true" />
+}
+
+<div class="management-container">
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <div class="page-header-left">
+            <i class="ph-file-plus page-header-icon"></i>
+            <div>
+                <h2 class="page-header-title">Create New Invoice</h2>
+                <p class="text-muted font-sm" style="margin:0;">Fill in the details and add your line items.</p>
+            </div>
+        </div>
+        <a href="/Invoice/Index" class="btn-secondary" style="display:flex;align-items:center;gap:0.5rem;">
+            <i class="ph-arrow-left"></i> Back to Invoices
+        </a>
+    </div>
+
+    <component type="typeof(E_Invoice_system.Components.Invoice.InvoiceEditor)"
+               render-mode="ServerPrerendered"
+               param-UserName='@HttpContext.Session.GetString("UserName")' />
+</div>
+
+<!-- ── Success Flash Notification ── -->
+<div id="invSuccessFlash" style="display:none; position:fixed; top:30px; left:50%; transform:translateX(-50%); z-index:10000;
+     background:white; border-radius:16px; padding:1rem 2rem; box-shadow:0 20px 60px rgba(0,0,0,0.15);
+     display:none; align-items:center; gap:1rem; border-left:5px solid #22c55e; min-width:320px;">
+    <div style="background:#dcfce7; color:#16a34a; width:44px; height:44px; border-radius:50%;
+                display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+        <i class="ph-check-bold"></i>
+    </div>
+    <div>
+        <div style="font-weight:700; font-size:1rem; color:#1e293b;">Invoice Generated!</div>
+        <div style="font-size:0.82rem; color:#64748b; margin-top:2px;">Invoice has been saved successfully.</div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        window.showInvoiceSuccessFlash = function () {
+            var el = document.getElementById('invSuccessFlash');
+            el.style.display = 'flex';
+            el.style.animation = 'flashSlideDown 0.4s cubic-bezier(0.16,1,0.3,1) forwards';
+        };
+    </script>
+    <style>
+        @@keyframes flashSlideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+}

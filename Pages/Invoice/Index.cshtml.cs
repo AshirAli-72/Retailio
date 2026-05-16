@@ -42,6 +42,8 @@ namespace E_Invoice_system.Pages.Invoice
             public decimal TotalPrice { get; set; }
             public string? Payment { get; set; }
             public string? Status { get; set; }
+            public string? SellerName { get; set; }
+            public string? RawItems { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -79,30 +81,40 @@ namespace E_Invoice_system.Pages.Invoice
                         Discount = item.discount,
                         TotalPrice = item.total_price,
                         Payment = item.payment,
-                        Status = item.status
+                        Status = item.status,
+                        SellerName = item.seller_name,
+                        RawItems = item.prod_name_service ?? "[]"
                     };
 
                     try {
                         if (!string.IsNullOrEmpty(display.DisplayName) && display.DisplayName.Trim().StartsWith("["))
                         {
-                            var items = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(display.DisplayName);
+                            var opts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var items = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, System.Text.Json.JsonElement>>>(display.DisplayName, opts);
                             if (items != null && items.Any())
                             {
-                                var names = items.Select(i => i.ContainsKey("name") ? i["name"]?.ToString() : "").Where(n => !string.IsNullOrEmpty(n));
-                                display.DisplayName = string.Join(", ", names);
-                                
-                                var qtys = items.Select(i => i.ContainsKey("qty") ? i["qty"]?.ToString() : "").Where(q => !string.IsNullOrEmpty(q));
-                                display.DisplayQty = string.Join(", ", qtys);
+                                // Helper: get value checking both PascalCase and camelCase keys
+                                string GetVal(Dictionary<string, System.Text.Json.JsonElement> d, string pascal, string camel) {
+                                    if (d.ContainsKey(pascal)) return d[pascal].ToString();
+                                    if (d.ContainsKey(camel))  return d[camel].ToString();
+                                    return "";
+                                }
 
-                                var dates = items.Select(i => i.ContainsKey("expiryDate") ? i["expiryDate"]?.ToString() : null)
-                                                 .Where(d => !string.IsNullOrEmpty(d))
-                                                 .Select(d => d);
+                                var nameParts = items.Select(i => {
+                                    var n = GetVal(i, "Name", "name");
+                                    var q = GetVal(i, "Qty",  "qty");
+                                    return string.IsNullOrEmpty(n) ? "" : (string.IsNullOrEmpty(q) ? n : $"{n} (x{q})");
+                                }).Where(n => !string.IsNullOrEmpty(n));
+
+                                display.DisplayName = string.Join(", ", nameParts);
+                                display.DisplayQty  = $"{items.Count} item(s)";
+
+                                var dates = items
+                                    .Select(i => GetVal(i, "ExpiryDate", "expiryDate"))
+                                    .Where(d => !string.IsNullOrEmpty(d));
                                 display.DisplayExpiry = string.Join(", ", dates);
 
-                                // Truncate if too long
-                                if (display.DisplayName.Length > 40) display.DisplayName = display.DisplayName.Substring(0, 37) + "...";
-                                if (display.DisplayQty.Length > 20) display.DisplayQty = display.DisplayQty.Substring(0, 17) + "...";
-                                if (display.DisplayExpiry.Length > 25) display.DisplayExpiry = display.DisplayExpiry.Substring(0, 22) + "...";
+                                if (display.DisplayName.Length > 50) display.DisplayName = display.DisplayName.Substring(0, 47) + "...";
                             }
                         }
                     } catch { }
