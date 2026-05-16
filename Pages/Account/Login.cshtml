@@ -10,56 +10,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - E-Invoice System</title>
-    <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
     <link rel="icon" type="image/png" href="~/favicon.png" />
     <link rel="stylesheet" href="~/lib/phosphor/icons.css" asp-append-version="true" />
     <style>
-        @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
         :root {
             --primary-red: #BC1823;
-            --dark-black: #0d1117;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --dark-bg: #0d1117;
+            --text-main: #111827;
+            --text-muted: #6b7280;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Outfit', sans-serif;
             height: 100vh;
             overflow: hidden;
             background: #fff;
         }
 
-        .login-container {
+        .login-wrapper {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* ── LEFT SIDE ── */
+        /* ── LEFT SIDE (FORM) ── */
         .left-side {
-            flex: 1.2;
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 0 10%;
-            position: relative;
+            padding: 0 8% 0 12%;
             background: #fff;
+            position: relative;
+            z-index: 10;
         }
 
         .login-content {
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
-            z-index: 2;
         }
 
         .welcome-title {
             font-size: 3.5rem;
             font-weight: 700;
-            color: var(--dark-black);
-            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+            letter-spacing: -1px;
         }
 
         .welcome-title span {
@@ -69,100 +69,73 @@
         .subtitle {
             font-size: 1.1rem;
             color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            letter-spacing: 0.5px;
+            margin-bottom: 2rem;
+            font-weight: 500;
         }
 
-        .subtitle::after {
-            content: '';
-            display: block;
-            width: 40px;
+        .subtitle-line {
+            width: 45px;
             height: 3px;
             background: var(--primary-red);
-            margin-top: 15px;
+            margin-bottom: 3rem;
         }
 
         .form-group {
             margin-bottom: 1.5rem;
-            position: relative;
         }
 
-        .input-wrapper {
+        .input-box {
             position: relative;
             display: flex;
             align-items: center;
         }
 
-        .input-wrapper i {
+        .input-box i {
             position: absolute;
-            left: 15px;
-            font-size: 1.25rem;
+            left: 18px;
+            font-size: 1.4rem;
             color: var(--primary-red);
         }
 
-        .input-wrapper input {
+        .input-box input {
             width: 100%;
-            padding: 14px 15px 14px 50px;
-            border: 1.5px solid #e2e8f0;
+            padding: 18px 20px 18px 56px;
+            background: #fcfcfc;
+            border: 1.5px solid #f1f1f1;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-family: inherit;
             color: var(--text-main);
-            transition: all 0.3s;
-            background: #fcfcfc;
+            transition: all 0.3s ease;
         }
 
-        .input-wrapper input:focus {
-            border-color: var(--primary-red);
+        .input-box input::placeholder {
+            color: #9ca3af;
+        }
+
+        .input-box input:focus {
             outline: none;
-            box-shadow: 0 0 0 4px rgba(188, 24, 35, 0.05);
+            border-color: var(--primary-red);
             background: #fff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
         }
 
         .password-toggle {
             position: absolute;
-            right: 15px;
+            right: 18px;
             cursor: pointer;
-            color: #94a3b8;
-            font-size: 1.25rem;
+            color: #9ca3af !important;
+            font-size: 1.3rem !important;
         }
 
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-main);
-            cursor: pointer;
-        }
-
-        .remember-me input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--primary-red);
-        }
-
-        .forgot-pass {
-            color: var(--primary-red);
-            text-decoration: none;
-        }
-
-        .btn-signin {
+        .btn-login {
             width: 100%;
-            padding: 16px;
-            background: var(--primary-red);
+            padding: 18px;
+            background: #9c141d; /* Slightly darker red as in pic */
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            border-radius: 14px;
+            font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
             display: flex;
@@ -170,243 +143,164 @@
             justify-content: center;
             gap: 15px;
             transition: all 0.3s;
-            box-shadow: 0 10px 20px rgba(188, 24, 35, 0.2);
+            margin-top: 2.5rem;
+            box-shadow: 0 10px 25px rgba(156, 20, 29, 0.25);
         }
 
-        .btn-signin:hover {
+        .btn-login:hover {
+            background: #BC1823;
             transform: translateY(-2px);
-            box-shadow: 0 15px 25px rgba(188, 24, 35, 0.3);
-            background: #a5151f;
+            box-shadow: 0 15px 30px rgba(156, 20, 29, 0.35);
         }
 
         .footer-tagline {
             position: absolute;
             bottom: 60px;
-            left: 10%;
+            left: 12%;
             border-left: 3px solid var(--primary-red);
-            padding-left: 15px;
-            font-size: 1rem;
+            padding-left: 18px;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--text-muted);
-            line-height: 1.4;
+            color: #4b5563;
+            line-height: 1.5;
         }
 
         .footer-tagline strong {
-            color: var(--primary-red);
+            color: #111827;
         }
 
-        /* ── RIGHT SIDE ── */
+        /* ── RIGHT SIDE (VISUAL) ── */
         .right-side {
-            flex: 1;
-            background: var(--dark-black);
+            flex: 1.1;
+            background: var(--dark-bg);
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
         }
 
-        /* Wave Separator */
-        .wave-separator {
+        /* The Red Sweep Wave */
+        .wave-container {
             position: absolute;
             top: 0;
-            left: 0;
+            left: -1px;
             height: 100%;
-            width: 150px;
-            background: #fff;
-            clip-path: ellipse(50% 50% at 0% 50%);
+            width: 100%;
+            z-index: 2;
+        }
+
+        .wave-svg {
+            height: 100%;
+            width: auto;
+            min-width: 300px;
+        }
+
+        /* Abstract Background Dots (like in pic 2 bottom right) */
+        .dots-pattern {
+            position: absolute;
+            bottom: -50px;
+            right: -50px;
+            width: 400px;
+            height: 400px;
+            background-image: radial-gradient(rgba(188, 24, 35, 0.15) 2px, transparent 2px);
+            background-size: 30px 30px;
             z-index: 1;
         }
-
-        .red-wave {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 180px;
-            background: var(--primary-red);
-            clip-path: ellipse(50% 50% at 0% 50%);
-            opacity: 0.1;
-            transform: translateX(20px);
-        }
-
-        .big-logo {
-            z-index: 2;
-            width: 50%;
-            max-width: 300px;
-            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.4));
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @@keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        /* Decorative dots */
-        .dots {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            background-image: radial-gradient(circle, #BC1823 1px, transparent 1px);
-            background-size: 20px 20px;
-            opacity: 0.2;
-        }
-
-        .dots-tl { top: -50px; left: -50px; }
-        .dots-br { bottom: 20px; left: 20%; }
 
         /* Notification flasher */
         #loginFlasher {
             position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 30px;
+            left: 30px;
             z-index: 10000;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 16px 28px;
+            border-radius: 16px;
             background: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border-left: 5px solid var(--primary-red);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-weight: 600;
-            animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            gap: 15px;
+            font-weight: 700;
+            animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @@keyframes slideDown {
-            from { opacity: 0; transform: translate(-50%, -40px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+        @@keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        @@media (max-width: 1024px) {
+        @@media (max-width: 1100px) {
             .right-side { display: none; }
-            .left-side { flex: 1; padding: 0 5%; align-items: center; }
-            .welcome-title { font-size: 2.5rem; text-align: center; }
+            .left-side { flex: 1; padding: 0 8%; align-items: center; }
+            .welcome-title { font-size: 2.8rem; text-align: center; }
             .subtitle { text-align: center; }
-            .subtitle::after { margin-inline: auto; }
+            .subtitle-line { margin-inline: auto; }
             .footer-tagline { left: 50%; transform: translateX(-50%); text-align: center; border: none; padding: 0; }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    
+    <div class="login-wrapper">
         
-        <!-- Flashers -->
-        @if (TempData["Success"] != null || TempData["Error"] != null)
-        {
-            var isError = TempData["Error"] != null;
-            var msg = TempData["Success"] ?? TempData["Error"];
-            <div id="loginFlasher" style="border-left-color: @(isError ? "#dc2626" : "#065f46")">
-                <i class="@(isError ? "ph-warning-circle" : "ph-check-circle")" style="color: @(isError ? "#dc2626" : "#065f46"); font-size: 1.5rem;"></i>
-                <span>@msg</span>
-            </div>
-        }
-
         <div class="left-side">
-            <div class="dots dots-tl"></div>
-            
             <div class="login-content">
                 <h1 class="welcome-title">Welcome <span>Back</span></h1>
                 <p class="subtitle">Sign in to continue to your account</p>
+                <div class="subtitle-line"></div>
 
                 <form method="post" id="loginForm">
                     <div class="form-group">
-                        <div class="input-wrapper">
+                        <div class="input-box">
                             <i class="ph-user"></i>
-                            <input asp-for="Email" type="email" placeholder="Username" required />
+                            <input asp-for="Email" type="email" placeholder="Email Address" required />
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <div class="input-wrapper">
+                        <div class="input-box">
                             <i class="ph-lock"></i>
                             <input asp-for="Password" type="password" id="passwordField" placeholder="Password" required />
-                            <i class="ph-eye password-toggle" id="togglePass"></i>
                         </div>
                     </div>
 
-                    <div class="form-options">
-                        <label class="remember-me">
-                            <input type="checkbox">
-                            Remember me
-                        </label>
-                        <a href="#" class="forgot-pass">Forgot Password?</a>
-                    </div>
-
-                    <button type="submit" class="btn-signin" id="loginBtn">
-                        Sign In <i class="ph-arrow-right"></i>
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        Login <i class="ph-arrow-right"></i>
                     </button>
                 </form>
             </div>
 
             <div class="footer-tagline">
-                <strong>Innovating</strong> Today,<br>
-                <strong>Transforming</strong> Tomorrow.
+                <strong>E-Invoice</strong> System,<br>
+                Secure <strong>Business</strong> Intelligence.
             </div>
-            
-            <div class="dots dots-br"></div>
         </div>
 
         <div class="right-side">
-            <!-- Professional SVG Background Pattern -->
-            <svg style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0.1;" xmlns="http://www.w3.org/2000/svg">
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/>
-                </pattern>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-
-            <!-- Decorative Waves from Image -->
-            <div style="position:absolute; top:0; left:0; height:100%; width:100%;">
-                <svg viewBox="0 0 500 800" preserveAspectRatio="none" style="height:100%; width:250px;">
-                    <path d="M0,0 C150,200 150,600 0,800 L0,800 L0,0 Z" fill="white"></path>
-                    <path d="M0,50 C180,250 180,550 0,750" fill="none" stroke="#BC1823" stroke-width="8" opacity="0.8"></path>
+            <!-- Sweeping Wave SVG -->
+            <div class="wave-container">
+                <svg viewBox="0 0 500 1000" preserveAspectRatio="none" class="wave-svg">
+                    <path d="M0,0 C200,300 200,700 0,1000 L0,1000 L0,0 Z" fill="#fff"></path>
+                    <path d="M5,0 C210,310 210,690 5,1000" fill="none" stroke="#BC1823" stroke-width="12" opacity="0.9"></path>
+                    <path d="M15,0 C230,320 230,680 15,1000" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"></path>
                 </svg>
             </div>
 
-            <img src="/favicon.png" alt="Logo" class="big-logo" />
-            
-            <!-- Red accent shapes -->
-            <div style="position:absolute; bottom: -50px; right: -50px; width: 300px; height: 300px; background: radial-gradient(circle, var(--primary-red) 0%, transparent 70%); opacity: 0.1;"></div>
+            <div class="dots-pattern"></div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const togglePass = document.getElementById('togglePass');
-            const passField = document.getElementById('passwordField');
-
-            if (togglePass && passField) {
-                togglePass.addEventListener('click', function () {
-                    const type = passField.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passField.setAttribute('type', type);
-                    this.classList.toggle('ph-eye');
-                    this.classList.toggle('ph-eye-closed');
-                });
-            }
-
-            const flasher = document.getElementById('loginFlasher');
-            if (flasher) {
-                setTimeout(() => {
-                    flasher.style.transition = 'all 0.5s ease-in';
-                    flasher.style.opacity = '0';
-                    flasher.style.transform = 'translate(-50%, -20px)';
-                    setTimeout(() => flasher.remove(), 500);
-                }, 3500);
-            }
-
             const loginForm = document.getElementById('loginForm');
             const loginBtn = document.getElementById('loginBtn');
 
             if (loginForm && loginBtn) {
                 loginForm.addEventListener('submit', function () {
                     loginBtn.disabled = true;
-                    loginBtn.innerHTML = '<i class="ph-spinner ph-spin"></i> Signing In...';
+                    loginBtn.innerHTML = '<i class="ph-spinner ph-spin"></i> Logging in...';
                 });
             }
         });
     </script>
 </body>
 </html>
+

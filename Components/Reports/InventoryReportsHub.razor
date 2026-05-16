@@ -41,12 +41,12 @@
     <div class="filters-glass no-print">
         <div class="filters-inner">
             <div class="filter-group">
-                <label><i class="ph-calendar"></i> Date Range</label>
-                <div class="date-input-group">
-                    <input type="date" @bind="fromDate" />
-                    <span class="to-label">to</span>
-                    <input type="date" @bind="toDate" />
-                </div>
+                <label><i class="ph-calendar"></i> From Date</label>
+                <input type="date" @bind="fromDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> To Date</label>
+                <input type="date" @bind="toDate" />
             </div>
             <div class="filter-group">
                 <label><i class="ph-tag"></i> Category</label>

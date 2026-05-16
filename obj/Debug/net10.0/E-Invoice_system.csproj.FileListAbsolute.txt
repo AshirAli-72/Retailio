@@ -236,5 +236,5 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ns0mu67c64-{0}-uqc05oyr
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\5bi2uwl4se-{0}-ej96puwv3k-ej96puwv3k.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\lj6xxfk8wj-{0}-cj5793hgrt-cj5793hgrt.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\3sdy1zx8ma-{0}-gjoon454f3-gjoon454f3.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-f0j1t566zm-f0j1t566zm.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\iuu60c21so-{0}-q7fgn50hip-q7fgn50hip.gz
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-exf7op1dkr-exf7op1dkr.gz

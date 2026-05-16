@@ -397,6 +397,13 @@
                 <div class="meta-label-pos">Invoice Date</div>
                 <div class="meta-value-pos">: @DateTime.Now.ToString("dd-MM-yyyy")</div>
             </div>
+            <div class="meta-item-pos">
+                <div class="meta-icon-pos"><i class="ph-barcode-bold"></i></div>
+                <div class="meta-label-pos">Reference</div>
+                <div class="meta-value-pos" style="border:none; padding:0;">
+                    <svg id="rcptBarcodeSvg" style="height:40px; width:150px;"></svg>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -987,25 +994,23 @@
             // 4. PRINT (after a short delay to allow UI to update)
             if (shouldPrint) {
                 try {
-                    await Task.Delay(500); // Wait for modal to close fully
-                    // Show the receipt element before printing
-                    await JSRuntime.InvokeVoidAsync("eval",
-                        "document.getElementById('invoice-to-print').classList.remove('receipt-hidden');");
-                    await Task.Delay(300); // Let the DOM update
+                    await Task.Delay(500); // Wait for data binding
+                    
+                    // Force the barcode to render
                     if (mode != "return") {
                         await JSRuntime.InvokeVoidAsync("renderBarcode", "rcptBarcodeSvg", billNo);
                     }
+                    
+                    await Task.Delay(300); // Wait for barcode
                     await JSRuntime.InvokeVoidAsync("window.print");
-                    // Hide it again after print dialog
-                    await JSRuntime.InvokeVoidAsync("eval",
-                        "document.getElementById('invoice-to-print').classList.add('receipt-hidden');");
                 } catch (Exception jsEx) {
                     Console.WriteLine("Print Error: " + jsEx.Message);
                 }
             }
 
-            // 5. AUTO-REFRESH: Navigate back to Sale Create to reset the terminal cleanly
-            NavigationManager.NavigateTo("/Sale/Create", forceLoad: true);
+            // 5. AUTO-REFRESH: Reset the terminal cleanly without a hard reload to ensure print dialog finishes
+            ResetComponent();
+            await InvokeAsync(StateHasChanged);
         } catch (Exception ex) { 
             string errMessage = ex.Message;
             if (ex.InnerException != null) errMessage += " | " + ex.InnerException.Message;

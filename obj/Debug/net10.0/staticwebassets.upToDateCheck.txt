@@ -8,7 +8,6 @@ wwwroot\css\settings.css
 wwwroot\favicon.png
 wwwroot\images\invoice-illustration.png
 wwwroot\images\login-bg.jpg
-wwwroot\js\app-main.js
 wwwroot\js\site.js
 wwwroot\js\sw.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
@@ -82,27 +81,28 @@ wwwroot\lib\jsbarcode\JsBarcode.all.min.js
 wwwroot\lib\phosphor\icons.css
 wwwroot\manifest.json
 wwwroot\savepic\bac7a766-3665-4267-96ab-868ef05fdc77.png
+wwwroot\js\app-main.js
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.web.js
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.server.js
-D:\netcore\E-Invoice_system\wwwroot\css\sale.css
-D:\netcore\E-Invoice_system\wwwroot\js\app-main.js
+D:\netcore\E-Invoice_system\wwwroot\css\customer.css
+D:\netcore\E-Invoice_system\wwwroot\css\dashboard.css
+D:\netcore\E-Invoice_system\wwwroot\css\invoice.css
 D:\netcore\E-Invoice_system\wwwroot\css\login.css
 D:\netcore\E-Invoice_system\wwwroot\css\product.css
-D:\netcore\E-Invoice_system\wwwroot\css\invoice.css
-D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.slim.min.js
-D:\netcore\E-Invoice_system\wwwroot\css\dashboard.css
-D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
+D:\netcore\E-Invoice_system\wwwroot\css\sale.css
+D:\netcore\E-Invoice_system\wwwroot\css\settings.css
 D:\netcore\E-Invoice_system\wwwroot\js\site.js
 D:\netcore\E-Invoice_system\wwwroot\js\sw.js
-D:\netcore\E-Invoice_system\wwwroot\css\settings.css
-D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
+D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
+D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css
+D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css.map
 D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css
@@ -149,14 +149,14 @@ D:\netcore\E-Invoice_system\wwwroot\lib\jquery-validation\dist\jquery.validate.m
 D:\netcore\E-Invoice_system\wwwroot\lib\jquery-validation\LICENSE.md
 D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.js
 D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.min.js
-D:\netcore\E-Invoice_system\wwwroot\lib\jquery\LICENSE.txt
+D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.min.map
 D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.slim.js
+D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.slim.min.js
+D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.slim.min.map
+D:\netcore\E-Invoice_system\wwwroot\lib\jquery\LICENSE.txt
 D:\netcore\E-Invoice_system\wwwroot\lib\jsbarcode\JsBarcode.all.min.js
+D:\netcore\E-Invoice_system\wwwroot\lib\phosphor\icons.css
 D:\netcore\E-Invoice_system\wwwroot\manifest.json
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\_framework\blazor.web.js
-D:\netcore\E-Invoice_system\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map
-D:\netcore\E-Invoice_system\wwwroot\css\customer.css
-D:\netcore\E-Invoice_system\wwwroot\lib\phosphor\icons.css
-D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.min.map
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\_framework\blazor.server.js
-D:\netcore\E-Invoice_system\wwwroot\lib\jquery\dist\jquery.slim.min.map
+D:\netcore\E-Invoice_system\wwwroot\js\app-main.js
