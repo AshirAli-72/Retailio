@@ -7,7 +7,6 @@ const STATIC_ASSETS = [
     '/Account/Login',
     '/css/dashboard.css',
     '/css/customer.css',
-    '/css/invoice.css',
     '/css/sale.css',
     '/css/product.css',
     '/css/settings.css',

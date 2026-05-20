@@ -38,10 +38,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xFbXBsb3llZVxFbXBsb3llZUZvcm0ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/netcore/E-Invoice_system/Components/Invoice/InvoiceEditor.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xJbnZvaWNlXEludm9pY2VFZGl0b3IucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [D:/netcore/E-Invoice_system/Components/Product/ProductForm.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQcm9kdWN0XFByb2R1Y3RGb3JtLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -124,18 +120,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/netcore/E-Invoice_system/Pages/Inventory/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52ZW50b3J5XEluZGV4LmNzaHRtbA==
-build_metadata.AdditionalFiles.CssScope = 
-
-[D:/netcore/E-Invoice_system/Pages/Invoice/Details.cshtml]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52b2ljZVxEZXRhaWxzLmNzaHRtbA==
-build_metadata.AdditionalFiles.CssScope = 
-
-[D:/netcore/E-Invoice_system/Pages/Invoice/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52b2ljZVxJbmRleC5jc2h0bWw=
-build_metadata.AdditionalFiles.CssScope = 
-
-[D:/netcore/E-Invoice_system/Pages/Invoice/Print.cshtml]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW52b2ljZVxQcmludC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/netcore/E-Invoice_system/Pages/Product/Index.cshtml]

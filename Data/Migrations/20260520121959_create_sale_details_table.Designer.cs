@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace E_Invoice_system.Data.Migrations
+namespace E_Invoice_system.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260518112414_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260520121959_create_sale_details_table")]
+    partial class create_sale_details_table
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -241,59 +241,6 @@ namespace E_Invoice_system.Data.Migrations
                     b.ToTable("products_services");
                 });
 
-            modelBuilder.Entity("E_Invoice_system.Models.ReturnDetail", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id")
-                        .HasColumnOrder(0);
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<string>("Method")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("method");
-
-                    b.Property<int>("SaleId")
-                        .HasColumnType("int")
-                        .HasColumnName("sale_id");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("billNo")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("billNo")
-                        .HasColumnOrder(1);
-
-                    b.Property<string>("date")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
-
-                    b.Property<int>("no_of_items")
-                        .HasColumnType("int")
-                        .HasColumnName("no_of_items");
-
-                    b.Property<int>("qty")
-                        .HasColumnType("int")
-                        .HasColumnName("qty");
-
-                    b.Property<int>("total_qty")
-                        .HasColumnType("int")
-                        .HasColumnName("total_qty");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("return_details");
-                });
-
             modelBuilder.Entity("E_Invoice_system.Models.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -330,25 +277,13 @@ namespace E_Invoice_system.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("CustomerReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("customer_report");
-
                     b.Property<bool>("Customers")
                         .HasColumnType("bit")
                         .HasColumnName("customers");
 
-                    b.Property<bool>("DailySummary")
-                        .HasColumnType("bit")
-                        .HasColumnName("daily_summary");
-
                     b.Property<bool>("Dashboard")
                         .HasColumnType("bit")
                         .HasColumnName("dashboard");
-
-                    b.Property<bool>("EmployeeReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("employee_report");
 
                     b.Property<bool>("Employees")
                         .HasColumnType("bit")
@@ -358,18 +293,6 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("inventory");
 
-                    b.Property<bool>("InvoiceReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("invoice_report");
-
-                    b.Property<bool>("Invoices")
-                        .HasColumnType("bit")
-                        .HasColumnName("invoices");
-
-                    b.Property<bool>("ProductReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("product_report");
-
                     b.Property<bool>("Products")
                         .HasColumnType("bit")
                         .HasColumnName("products");
@@ -378,17 +301,9 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("Reports");
 
-                    b.Property<bool>("ReturnsReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("returns_report");
-
                     b.Property<int>("RoleId")
                         .HasColumnType("int")
                         .HasColumnName("role_id");
-
-                    b.Property<bool>("SaleReport")
-                        .HasColumnType("bit")
-                        .HasColumnName("sale_report");
 
                     b.Property<bool>("Sales")
                         .HasColumnType("bit")
@@ -408,21 +323,13 @@ namespace E_Invoice_system.Data.Migrations
                         new
                         {
                             Id = 1,
-                            CustomerReport = true,
                             Customers = true,
-                            DailySummary = true,
                             Dashboard = true,
-                            EmployeeReport = true,
                             Employees = true,
                             Inventory = true,
-                            InvoiceReport = true,
-                            Invoices = true,
-                            ProductReport = true,
                             Products = true,
                             Reports = true,
-                            ReturnsReport = true,
                             RoleId = 1,
-                            SaleReport = true,
                             Sales = true,
                             Settings = true
                         });
@@ -628,6 +535,10 @@ namespace E_Invoice_system.Data.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("address");
 
+                    b.Property<string>("cnic")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("cnic");
+
                     b.Property<string>("contact")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("contact");
@@ -647,81 +558,6 @@ namespace E_Invoice_system.Data.Migrations
                     b.HasKey("id");
 
                     b.ToTable("customers");
-                });
-
-            modelBuilder.Entity("E_Invoice_system.Models.invoices", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<string>("customer_address")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("customer_address");
-
-                    b.Property<string>("customer_contact")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("customer_contact");
-
-                    b.Property<string>("customer_name")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("customer_name");
-
-                    b.Property<string>("date")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
-
-                    b.Property<decimal>("discount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("discount");
-
-                    b.Property<string>("invoice_no")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("invoice_no");
-
-                    b.Property<string>("payment")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("payment");
-
-                    b.Property<decimal>("price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("price");
-
-                    b.Property<string>("prod_name_service")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("prod_name/service");
-
-                    b.Property<string>("qty_unit_type")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("qty/unit_type");
-
-                    b.Property<string>("seller_address")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("seller_address");
-
-                    b.Property<string>("seller_contact")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("seller_contact");
-
-                    b.Property<string>("seller_name")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("seller_name");
-
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("status");
-
-                    b.Property<decimal>("total_price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("total_price");
-
-                    b.HasKey("id");
-
-                    b.ToTable("invoices");
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.stock_history", b =>

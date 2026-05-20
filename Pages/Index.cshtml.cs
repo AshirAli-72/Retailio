@@ -25,27 +25,19 @@ namespace E_Invoice_system.Pages
 
         public class DashboardStats
         {
-            public int TotalInvoices { get; set; }
             public int TotalCustomers { get; set; }
             public int TotalProducts { get; set; }
             public decimal TotalSales { get; set; }
-            public string[] StatusLabels { get; set; } = Array.Empty<string>();
-            public int[] StatusCounts { get; set; } = Array.Empty<int>();
             public string[] TrendLabels { get; set; } = Array.Empty<string>();
             public int[] TrendData { get; set; } = Array.Empty<int>();
-            public List<invoices> RecentInvoices { get; set; } = new List<invoices>();
             public int SaleCount { get; set; }
             public int ReturnCount { get; set; }
             public int LowStockCount { get; set; }
         }
 
-        public IEnumerable<invoices> RecentInvoices { get; set; } = new List<invoices>();
-        public int TotalInvoices { get; set; }
         public int TotalCustomers { get; set; }
         public int TotalProducts { get; set; }
         public decimal TotalSales { get; set; }
-        public string[] StatusLabels { get; set; } = Array.Empty<string>();
-        public int[] StatusCounts { get; set; } = Array.Empty<int>();
         public string[] TrendLabels { get; set; } = Array.Empty<string>();
         public int[] TrendData { get; set; } = Array.Empty<int>();
         public int SaleCount { get; set; }
@@ -89,10 +81,6 @@ namespace E_Invoice_system.Pages
             var stats = new DashboardStats();
             var sw = Stopwatch.StartNew();
 
-            // 1. Total Invoices
-            try { stats.TotalInvoices = await context.invoices.AsNoTracking().CountAsync(); }
-            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalInvoices"); }
-
             // 2. Total Customers
             try { stats.TotalCustomers = await context.customers.AsNoTracking().CountAsync(); }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalCustomers"); }
@@ -110,30 +98,16 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalSales"); }
 
-            // 5. Invoice Status Distribution
-            try
-            {
-                var invoiceStatusData = await context.invoices
-                    .AsNoTracking()
-                    .GroupBy(i => i.status ?? "Pending")
-                    .Select(g => new { Status = g.Key, Count = g.Count() })
-                    .ToListAsync();
-
-                stats.StatusLabels = invoiceStatusData.Select(x => x.Status).ToArray();
-                stats.StatusCounts = invoiceStatusData.Select(x => x.Count).ToArray();
-            }
-            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Status distribution"); }
-
             // 6. Trend Data (7 Days)
             try
             {
                 var startDate = DateTime.Today.AddDays(-6);
                 var startDateStr = startDate.ToString("yyyy-MM-dd");
 
-                var trendResultsFromDb = await context.invoices
+                var trendResultsFromDb = await context.sales
                     .AsNoTracking()
-                    .Where(inv => inv.date != null && inv.date.CompareTo(startDateStr) >= 0)
-                    .GroupBy(inv => inv.date)
+                    .Where(s => s.date != null && s.date.CompareTo(startDateStr) >= 0 && !s.is_returned)
+                    .GroupBy(s => s.date)
                     .Select(g => new { Date = g.Key, Count = g.Count() })
                     .ToListAsync();
 
@@ -155,17 +129,6 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Trend data"); }
 
-            // 7. Recent Invoices
-            try
-            {
-                stats.RecentInvoices = await context.invoices
-                    .AsNoTracking()
-                    .OrderByDescending(i => i.id)
-                    .Take(4)
-                    .ToListAsync();
-            }
-            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching RecentInvoices"); }
-
             // 8. Sale vs Return
             try
             {
@@ -183,7 +146,7 @@ namespace E_Invoice_system.Pages
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching LowStockCount"); }
 
             // Cache only if we have some data to avoid caching transient failures
-            if (stats.TotalInvoices > 0 || stats.TotalCustomers > 0 || stats.TotalProducts > 0)
+            if (stats.TotalCustomers > 0 || stats.TotalProducts > 0)
             {
                 _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(30));
             }
@@ -196,15 +159,11 @@ namespace E_Invoice_system.Pages
 
         private void PopulateFromStats(DashboardStats stats)
         {
-            TotalInvoices = stats.TotalInvoices;
             TotalCustomers = stats.TotalCustomers;
             TotalProducts = stats.TotalProducts;
             TotalSales = stats.TotalSales;
-            StatusLabels = stats.StatusLabels;
-            StatusCounts = stats.StatusCounts;
             TrendLabels = stats.TrendLabels;
             TrendData = stats.TrendData;
-            RecentInvoices = stats.RecentInvoices;
             SaleCount = stats.SaleCount;
             ReturnCount = stats.ReturnCount;
             LowStockCount = stats.LowStockCount;

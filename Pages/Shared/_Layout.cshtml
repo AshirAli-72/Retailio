@@ -123,14 +123,6 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Invoices ?? false))
-                {
-                    <a href="/Invoice" class="nav-item">
-                        <i class="ph-file-text nav-icon"></i>
-                        <span>Invoices</span>
-                    </a>
-                }
-
                 @if (isAdmin || (perms?.Employees ?? false))
                 {
                     <a href="/employee" class="nav-item">

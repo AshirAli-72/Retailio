@@ -843,7 +843,7 @@
                     };
                     context.returns.Add(returnRec);
                 } else {
-                    string itemDescription = $"{item.prod_name_service} | Customer: {selectedCustomer?.name ?? "Walk-In"} | Contact: {selectedCustomer?.contact ?? ""} | Notes: {notes ?? ""}";
+                    string itemDescription = selectedCustomer?.name ?? "Walk-In";
                     if (itemDescription.Length > 200) itemDescription = itemDescription.Substring(0, 200);
 
                     var sale = new Models.Sale {

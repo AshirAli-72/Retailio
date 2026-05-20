@@ -3662,5 +3662,13 @@
         }
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: The download of 'https://api.nuget.org/v3-vulnerabilities/2026.05.18.23.32.55/vulnerability.base.json' timed out because no data was received for 60000ms."
+    }
+  ]
 }

@@ -230,7 +230,6 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\5bi2uwl4se-{0}-ej96puwv
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\lj6xxfk8wj-{0}-cj5793hgrt-cj5793hgrt.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\p4cf7c3tdy-{0}-ry8w4deexo-ry8w4deexo.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ke3h83mlbt-{0}-kek7qrqps5-kek7qrqps5.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\nsm7m6xegr-{0}-iru6s76ywe-iru6s76ywe.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\y2hcoyodtn-{0}-0lilfriqja-0lilfriqja.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\8udpp7yicj-{0}-e6qf2v6ae5-e6qf2v6ae5.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\c71hkegjhu-{0}-a5gdiy5c0v-a5gdiy5c0v.gz
@@ -243,13 +242,10 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\z2xrnhna45-{0}-fqd1943x
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ejpw7b9vf9-{0}-pshs8e7lu5-pshs8e7lu5.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\5b0x952ws8-{0}-1wntvyrc5r-1wntvyrc5r.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\wvauteo3ck-{0}-zes8x4k133-zes8x4k133.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q06yc68to6-{0}-5vshovn9r0-5vshovn9r0.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-f6xdy3ik62-f6xdy3ik62.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\3l620vsmkj-{0}-flhz98c7fw-flhz98c7fw.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ha8kycc6a3-{0}-doo7ooahly-doo7ooahly.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\t3uvnv7ary-{0}-jh5kgda72y-jh5kgda72y.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ruln6usrnd-{0}-e7ulg8ckmh-e7ulg8ckmh.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\io11njlr67-{0}-j3r34nfhby-j3r34nfhby.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\zbgkhzose7-{0}-9sgkpr5me2-9sgkpr5me2.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\iazcvhyn87-{0}-pm7zsfjjyf-pm7zsfjjyf.gz
+d:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-fhkj595668-fhkj595668.gz
+d:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\3l620vsmkj-{0}-75qpgknnqy-75qpgknnqy.gz
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

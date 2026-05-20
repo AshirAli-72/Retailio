@@ -88,13 +88,7 @@
                 </span>
                 <span class="rp-check-label">Sales / POS</span>
             </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Invoices" />
-                <span class="rp-check-box @(currentPermissions.Invoices ? "checked" : "")">
-                    @if (currentPermissions.Invoices) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Invoices</span>
-            </label>
+
             <label class="rp-check-item">
                 <input type="checkbox" @bind="currentPermissions.Settings" />
                 <span class="rp-check-box @(currentPermissions.Settings ? "checked" : "")">
@@ -241,8 +235,7 @@
     // Permission model
     private RolePermission currentPermissions = new();
 
-    private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Invoices && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
-    private bool AllReportsChecked => currentPermissions.CustomerReport && currentPermissions.SaleReport && currentPermissions.ProductReport && currentPermissions.InvoiceReport && currentPermissions.EmployeeReport && currentPermissions.ReturnsReport && currentPermissions.DailySummary;
+    private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,18 +292,10 @@
                     currentPermissions.Customers = true;
                     currentPermissions.Products = true;
                     currentPermissions.Sales = true;
-                    currentPermissions.Invoices = true;
                     currentPermissions.Employees = true;
                     currentPermissions.Reports = true;
                     currentPermissions.Settings = true;
                     currentPermissions.Inventory = true;
-                    currentPermissions.CustomerReport = true;
-                    currentPermissions.SaleReport = true;
-                    currentPermissions.ProductReport = true;
-                    currentPermissions.InvoiceReport = true;
-                    currentPermissions.EmployeeReport = true;
-                    currentPermissions.ReturnsReport = true;
-                    currentPermissions.DailySummary = true;
                 }
             }
         }
@@ -362,19 +347,10 @@
             perms.Customers = currentPermissions.Customers;
             perms.Products = currentPermissions.Products;
             perms.Sales = currentPermissions.Sales;
-            perms.Invoices = currentPermissions.Invoices;
             perms.Employees = currentPermissions.Employees;
             perms.Reports = currentPermissions.Reports;
             perms.Settings = currentPermissions.Settings;
             perms.Inventory = currentPermissions.Inventory;
-
-            perms.CustomerReport = currentPermissions.Reports;
-            perms.SaleReport = currentPermissions.Reports;
-            perms.ProductReport = currentPermissions.Reports;
-            perms.InvoiceReport = currentPermissions.Reports;
-            perms.EmployeeReport = currentPermissions.Reports;
-            perms.ReturnsReport = currentPermissions.Reports;
-            perms.DailySummary = currentPermissions.Reports;
 
             if (isNew)
             {
@@ -407,24 +383,12 @@
         currentPermissions.Customers = val;
         currentPermissions.Products = val;
         currentPermissions.Sales = val;
-        currentPermissions.Invoices = val;
         currentPermissions.Employees = val;
         currentPermissions.Reports = val;
         currentPermissions.Settings = val;
         currentPermissions.Inventory = val;
     }
 
-    private void ToggleAllReports(ChangeEventArgs e)
-    {
-        var val = (bool)(e.Value ?? false);
-        currentPermissions.CustomerReport = val;
-        currentPermissions.SaleReport = val;
-        currentPermissions.ProductReport = val;
-        currentPermissions.InvoiceReport = val;
-        currentPermissions.EmployeeReport = val;
-        currentPermissions.ReturnsReport = val;
-        currentPermissions.DailySummary = val;
-    }
 
     // Role Management Methods
     private void OpenAddRoleModal()

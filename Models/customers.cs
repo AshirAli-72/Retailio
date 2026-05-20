@@ -13,6 +13,9 @@ namespace E_Invoice_system.Models
         [Column("name")]
         public string? name { get; set; }
 
+        [Column("cnic")]
+        public string? cnic { get; set; }
+
         [Column("contact")]
         public string? contact { get; set; }
 

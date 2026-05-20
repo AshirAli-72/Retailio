@@ -16,7 +16,6 @@ namespace E_Invoice_system.Data
         public DbSet<Category> categories { get; set; }
         public DbSet<Brand> brands { get; set; }
         public DbSet<users> users { get; set; }
-        public DbSet<invoices> invoices { get; set; }
        
         public DbSet<Sale> sales { get; set; }
         public DbSet<ReturnDetail> returns { get; set; }
@@ -50,18 +49,6 @@ namespace E_Invoice_system.Data
 
             modelBuilder.Entity<Sale>()
                 .Property(s => s.total_price)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<invoices>()
-                .Property(i => i.price)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<invoices>()
-                .Property(i => i.discount)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<invoices>()
-                .Property(i => i.total_price)
                 .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<ReturnDetail>()
@@ -108,17 +95,9 @@ namespace E_Invoice_system.Data
                     Customers = true,
                     Products = true,
                     Sales = true,
-                    Invoices = true,
                     Employees = true,
                     Reports = true,
                     Settings = true,
-                    CustomerReport = true,
-                    SaleReport = true,
-                    ProductReport = true,
-                    InvoiceReport = true,
-                    EmployeeReport = true,
-                    ReturnsReport = true,
-                    DailySummary = true,
                     Inventory = true
                 }
             );
@@ -156,3 +135,4 @@ namespace E_Invoice_system.Data
         }
     }
 }
+

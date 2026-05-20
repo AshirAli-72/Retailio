@@ -4,194 +4,148 @@
     ViewData["Title"] = "Dashboard";
 }
 
+<!-- Dashboard Hero / Welcome Section -->
+<div class="dashboard-hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome back, @(HttpContext.Session.GetString("UserName") ?? "Admin")! 👋</h1>
+        <p class="hero-subtitle">Here is what's happening with your store today.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/Sale/Create" class="btn-hero-primary"><i class="ph-shopping-cart-bold"></i> New Sale</a>
+        <a href="/Product/Index" class="btn-hero-secondary"><i class="ph-package-bold"></i> Inventory</a>
+    </div>
+</div>
+
 @if (Model.LowStockCount > 0)
 {
-    <div style="margin-bottom: 2rem; padding: 1.25rem; background: #fff7ed; border-left: 4px solid #f97316; border-radius: 12px; display: flex; align-items: center; gap: 1rem; border: 1px solid #ffedd5;">
-        <div style="background: #ffedd5; color: #f97316; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i class="ph-warning-bold" style="font-size: 1.5rem;"></i>
+    <div class="alert-modern alert-warning slide-in">
+        <div class="alert-icon-wrapper">
+            <i class="ph-warning-circle-fill"></i>
         </div>
-        <div style="flex: 1;">
-            <div style="font-weight: 700; color: #9a3412; margin-bottom: 0.25rem;">Stock Alert</div>
-            <p style="margin: 0; color: #c2410c; font-size: 0.9rem;">There are <strong>@Model.LowStockCount</strong> products running low on stock. Please check your inventory.</p>
+        <div class="alert-text">
+            <strong>Action Required:</strong> There are <span>@Model.LowStockCount</span> products running low on stock.
         </div>
-        <a asp-page="/Product/Index" style="background: white; border: 1px solid #fed7aa; color: #9a3412; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem;">
-            View Products
-        </a>
+        <a asp-page="/Product/Index" class="alert-action">View Products <i class="ph-arrow-right"></i></a>
     </div>
 }
 
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon" style="background: var(--primary-glow); color: var(--primary);"><i class="ph-file-text"></i></div>
-            <span class="stat-trend" style="color: var(--success); font-size: 0.75rem; font-weight: 600;">+12% <i class="ph-trend-up"></i></span>
+<!-- Key Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon-bg bg-blue">
+            <i class="ph-users-three-duotone"></i>
         </div>
-        <div class="stat-label">Total Invoices</div>
-        <div class="stat-value">@Model.TotalInvoices</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;"><i class="ph-users"></i></div>
-            <span class="stat-trend" style="color: var(--success); font-size: 0.75rem; font-weight: 600;">Active</span>
-        </div>
-        <div class="stat-label">Total Customers</div>
-        <div class="stat-value">@Model.TotalCustomers</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #059669;"><i class="ph-money"></i></div>
-            <span class="stat-trend" style="color: var(--success); font-size: 0.75rem; font-weight: 600;">Growth <i class="ph-chart-line-up"></i></span>
-        </div>
-        <div class="stat-label">Total Sale</div>
-        <div class="stat-value">@CurrencyService.GetSymbol()@(Model.TotalSales.ToString("N2"))</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: #d97706;"><i class="ph-package"></i></div>
-            <span class="stat-trend" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">Items</span>
-        </div>
-        <div class="stat-label">Active Products</div>
-        <div class="stat-value">@Model.TotalProducts</div>
-    </div>
-</div>
-
-<div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-    <div class="card card-no-padding" style="overflow: hidden; border-radius: 20px;">
-        <div class="card-header">
-            <h3 class="card-title">Recent Invoices</h3>
-            <a asp-page="/Invoice/Index" class="btn-view-all">
-                View All <i class="ph-arrow-right"></i>
-            </a>
-        </div>
-        
-        <div class="table-responsive" style="margin: 0; border: none; border-radius: 0;">
-            <table class="styled-table" style="margin-bottom: 0;">
-                <thead>
-                    <tr>
-                        <th>Invoice</th>
-                        <th>Customer</th>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        <th class="text-right">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var inv in Model.RecentInvoices)
-                    {
-                        <tr>
-                            <td style="font-weight: 700; color: var(--primary);">#@(inv.invoice_no ?? inv.id.ToString())</td>
-                            <td style="font-weight: 500;">@inv.customer_name</td>
-                            <td style="color: var(--text-muted);">@inv.date</td>
-                            <td style="font-weight: 700;">@CurrencyService.GetSymbol()@(inv.total_price.ToString("N2"))</td>
-                            <td class="text-right">
-                                @{
-                                    var statusColor = inv.status == "Paid" ? "#10b981" : (inv.status == "Pending" ? "#f59e0b" : "#6b7280");
-                                    var statusBg = inv.status == "Paid" ? "rgba(16, 185, 129, 0.1)" : (inv.status == "Pending" ? "rgba(245, 158, 11, 0.1)" : "rgba(107, 114, 128, 0.1)");
-                                }
-                                <span style="background: @statusBg; color: @statusColor; padding: 0.35rem 0.8rem; border-radius: 30px; font-size: 0.75rem; font-weight: 700;">@inv.status</span>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.RecentInvoices.Any())
-                    {
-                        <tr>
-                            <td colspan="5" style="padding: 3rem; text-align: center; color: var(--text-muted);">
-                                <i class="ph-folder-open" style="font-size: 2.5rem; display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
-                                No recent invoices found.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="metric-info">
+            <p class="metric-label">Total Customers</p>
+            <h3 class="metric-value">@Model.TotalCustomers</h3>
+            <div class="metric-trend positive"><i class="ph-trend-up"></i> Active Users</div>
         </div>
     </div>
 
-    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
-        <div class="card-header">
-            <h3 class="card-title">Sale vs Return Analysis</h3>
+    <div class="metric-card">
+        <div class="metric-icon-bg bg-green">
+            <i class="ph-currency-circle-dollar-duotone"></i>
         </div>
-        <div style="padding: 1.5rem; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="position: relative; width: 100%; height: 260px;">
-                <canvas id="saleReturnChart"></canvas>
-            </div>
-            <div style="margin-top: 1.5rem; display: flex; gap: 2rem; width: 100%; justify-content: center;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></span>
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Sales (@Model.SaleCount)</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #BC1823; box-shadow: 0 0 8px rgba(188, 24, 35, 0.4);"></span>
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Returns (@Model.ReturnCount)</span>
-                </div>
-            </div>
+        <div class="metric-info">
+            <p class="metric-label">Total Revenue</p>
+            <h3 class="metric-value">@CurrencyService.GetSymbol()@(Model.TotalSales.ToString("N2"))</h3>
+            <div class="metric-trend positive"><i class="ph-trend-up"></i> Total Sales Volume</div>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon-bg bg-orange">
+            <i class="ph-package-duotone"></i>
+        </div>
+        <div class="metric-info">
+            <p class="metric-label">Active Products</p>
+            <h3 class="metric-value">@Model.TotalProducts</h3>
+            <div class="metric-trend neutral"><i class="ph-minus"></i> Current Inventory</div>
         </div>
     </div>
 </div>
 
-<div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
-    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
-        <div class="card-header">
-            <h3 class="card-title">Invoices Trend</h3>
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Last 7 Days</div>
+<!-- Charts Section -->
+<div class="dashboard-charts-grid">
+    <div class="chart-card span-2">
+        <div class="chart-header">
+            <div>
+                <h3 class="chart-title">Revenue Overview</h3>
+                <p class="chart-subtitle">Sales performance over the last 7 days</p>
+            </div>
+            <div class="chart-action">
+                <span class="badge-soft">Weekly</span>
+            </div>
         </div>
-        <div style="height: 300px;">
+        <div class="chart-body">
             <canvas id="trendChart"></canvas>
         </div>
     </div>
-    <div class="card card-no-padding" style="border-radius: 20px; overflow: hidden;">
-        <div class="card-header">
-            <h3 class="card-title">Invoice Status</h3>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <div>
+                <h3 class="chart-title">Sales vs Returns</h3>
+                <p class="chart-subtitle">Transaction ratio</p>
+            </div>
         </div>
-        <div style="height: 300px; display: flex; justify-content: center; align-items: center;">
-            <canvas id="statusChart"></canvas>
+        <div class="chart-body doughnut-body">
+            <canvas id="saleReturnChart"></canvas>
+            <div class="doughnut-legend">
+                <div class="legend-item">
+                    <span class="legend-dot dot-sale"></span>
+                    <span class="legend-label">Sales</span>
+                    <span class="legend-value">@Model.SaleCount</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot dot-return"></span>
+                    <span class="legend-label">Returns</span>
+                    <span class="legend-value">@Model.ReturnCount</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Self-executing initialization for charts
-    // Works with both full page loads and Fast Navigation swaps
     (function() {
         const initCharts = () => {
-            // Check if Chart.js is loaded
             if (typeof Chart === 'undefined') {
                 setTimeout(initCharts, 100);
                 return;
             }
 
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            const labelColor = currentTheme === 'dark' ? '#ffffff' : '#1e293b';
-            const gridColor = currentTheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const labelColor = currentTheme === 'dark' ? '#94a3b8' : '#64748b';
+            const gridColor = currentTheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+            const fontFam = "'Inter', sans-serif";
 
-            // Line Chart for Trend
+            Chart.defaults.font.family = fontFam;
+            Chart.defaults.color = labelColor;
+
+            // Trend Chart
             const trendChartEl = document.getElementById('trendChart');
             if (trendChartEl) {
-                // Cleanup existing instance
                 const existingTrend = Chart.getChart(trendChartEl);
                 if (existingTrend) existingTrend.destroy();
 
                 const trendCtx = trendChartEl.getContext('2d');
-                
-                var gradient = trendCtx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(188, 24, 35, 0.2)');
-                gradient.addColorStop(1, 'rgba(188, 24, 35, 0.0)');
+                var gradient = trendCtx.createLinearGradient(0, 0, 0, 350);
+                gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)');
+                gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
 
                 new Chart(trendCtx, {
                     type: 'line',
                     data: {
                         labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TrendLabels)),
                         datasets: [{
-                            label: 'Invoices Issued',
+                            label: 'Sales Trend',
                             data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TrendData)),
                             backgroundColor: gradient,
-                            borderColor: '#BC1823',
-                            borderWidth: 2,
+                            borderColor: '#4f46e5',
+                            borderWidth: 3,
                             pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#BC1823',
+                            pointBorderColor: '#4f46e5',
                             pointBorderWidth: 2,
                             pointRadius: 4,
                             pointHoverRadius: 6,
@@ -203,82 +157,36 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 13, family: fontFam },
+                                bodyFont: { size: 14, weight: 'bold', family: fontFam },
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false
+                            }
                         },
                         scales: {
                             y: { 
                                 beginAtZero: true, 
                                 grid: { 
-                                    borderDash: [2, 4],
                                     color: gridColor,
                                     drawBorder: false 
                                 },
-                                ticks: { 
-                                    font: { size: 11 },
-                                    color: labelColor
-                                }
+                                ticks: { font: { size: 12 } }
                             },
                             x: { 
                                 grid: { display: false },
-                                ticks: { 
-                                    font: { size: 11 },
-                                    color: labelColor
-                                }
+                                ticks: { font: { size: 12 } }
                             }
                         },
-                        interaction: {
-                            intersect: false,
-                            mode: 'index',
-                        },
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
             }
 
-            // Pie Chart for Status
-            const statusChartEl = document.getElementById('statusChart');
-            if (statusChartEl) {
-                // Cleanup existing instance
-                const existingStatus = Chart.getChart(statusChartEl);
-                if (existingStatus) existingStatus.destroy();
-
-                const statusCtx = statusChartEl.getContext('2d');
-                const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusLabels));
-                const statusCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusCounts));
-                
-                const statusColors = statusLabels.map(label => {
-                    if (label === 'Paid') return '#10b981'; // Green
-                    if (label === 'Pending') return '#ea580c'; // Orange
-                    if (label === 'Cancelled') return '#3b82f6'; // Blue
-                    return '#6b7280'; // Gray default
-                });
-
-                new Chart(statusCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: statusLabels,
-                        datasets: [{
-                            data: statusCounts,
-                            backgroundColor: statusColors,
-                            borderWidth: 2,
-                            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { 
-                                position: 'bottom',
-                                labels: {
-                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim()
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Sale vs Return Pie Chart
+            // Doughnut Chart
             const saleReturnChartEl = document.getElementById('saleReturnChart');
             if (saleReturnChartEl) {
                 const existingSaleReturn = Chart.getChart(saleReturnChartEl);
@@ -290,38 +198,34 @@
                         labels: ['Sales', 'Returns'],
                         datasets: [{
                             data: [@Model.SaleCount, @Model.ReturnCount],
-                            backgroundColor: ['#10b981', '#BC1823'],
-                            hoverOffset: 15,
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            hoverOffset: 10,
                             borderWidth: 0,
-                            borderRadius: 10,
-                            spacing: 5
+                            borderRadius: 8,
+                            spacing: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '70%',
+                        cutout: '75%',
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 13 },
+                                bodyFont: { size: 14, weight: 'bold' },
                                 padding: 12,
-                                bodyFont: { size: 14, weight: 'bold' }
+                                cornerRadius: 8
                             }
                         },
-                        animation: {
-                            animateScale: true,
-                            animateRotate: true
-                        }
+                        animation: { animateScale: true, animateRotate: true }
                     }
                 });
             }
         };
 
-        // Run immediately as this script is executed after content swap
         initCharts();
-        window.addEventListener('theme:changed', () => {
-            setTimeout(initCharts, 50);
-        });
+        window.addEventListener('theme:changed', () => { setTimeout(initCharts, 50); });
     })();
 </script>

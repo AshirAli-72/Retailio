@@ -29,6 +29,7 @@
                     <tr>
                         <th style="padding-left: 1.5rem;">ID</th>
                         <th>Name</th>
+                        <th>CNIC</th>
                         <th>Contact</th>
                         <th>Email</th>
                         <th>Status</th>
@@ -41,6 +42,7 @@
                         <tr>
                             <td class="font-bold" style="padding-left: 1.5rem;">@item.id</td>
                             <td class="font-medium">@item.name</td>
+                            <td>@item.cnic</td>
                             <td>@item.contact</td>
                             <td class="text-muted font-sm">@item.email</td>
                             <td>
@@ -132,6 +134,11 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Full Name</label>
                     <input type="text" @bind="customerModel.name" class="form-control" placeholder="Enter customer's full name" required />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">CNIC</label>
+                    <input type="text" @bind="customerModel.cnic" class="form-control" placeholder="Enter CNIC" />
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
@@ -252,6 +259,7 @@
         {
             id = customer.id,
             name = customer.name,
+            cnic = customer.cnic,
             contact = customer.contact,
             email = customer.email,
             address = customer.address,
@@ -285,15 +293,6 @@
             }
             else
             {
-                if (!string.IsNullOrEmpty(originalName) && originalName != customerModel.name)
-                {
-                    var associatedInvoices = await context.invoices.Where(i => i.customer_name == originalName).ToListAsync();
-                    foreach (var inv in associatedInvoices)
-                    {
-                        inv.customer_name = customerModel.name;
-                        context.invoices.Update(inv);
-                    }
-                }
                 context.customers.Update(customerModel);
             }
 

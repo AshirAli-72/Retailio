@@ -25,9 +25,6 @@ namespace E_Invoice_system.Models
         [Column("sales")]
         public bool Sales { get; set; }
 
-        [Column("invoices")]
-        public bool Invoices { get; set; }
-
         [Column("employees")]
         public bool Employees { get; set; }
 
@@ -36,27 +33,6 @@ namespace E_Invoice_system.Models
 
         [Column("settings")]
         public bool Settings { get; set; }
-
-        [Column("customer_report")]
-        public bool CustomerReport { get; set; }
-
-        [Column("sale_report")]
-        public bool SaleReport { get; set; }
-
-        [Column("product_report")]
-        public bool ProductReport { get; set; }
-
-        [Column("invoice_report")]
-        public bool InvoiceReport { get; set; }
-
-        [Column("employee_report")]
-        public bool EmployeeReport { get; set; }
-
-        [Column("returns_report")]
-        public bool ReturnsReport { get; set; }
-
-        [Column("daily_summary")]
-        public bool DailySummary { get; set; }
 
         [Column("inventory")]
         public bool Inventory { get; set; }

@@ -54,5 +54,15 @@
     "C:\\Users\\SATA Technologies\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.4\\system.security.cryptography.pkcs.9.0.4.nupkg.sha512",
     "C:\\Users\\SATA Technologies\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "Error occurred while getting package vulnerability data: The download of 'https://api.nuget.org/v3-vulnerabilities/2026.05.18.23.32.55/vulnerability.base.json' timed out because no data was received for 60000ms.",
+      "projectPath": "D:\\netcore\\E-Invoice_system\\E-Invoice_system.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\netcore\\E-Invoice_system\\E-Invoice_system.csproj",
+      "targetGraphs": []
+    }
+  ]
 }
