@@ -4,12 +4,12 @@
 
 namespace E_Invoice_system.Migrations
 {
-    /// <inheritdoc />
     public partial class create_customers_table : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(name: "customers");   // Drop old table
+
             migrationBuilder.CreateTable(
                 name: "customers",
                 columns: table => new
@@ -21,6 +21,7 @@ namespace E_Invoice_system.Migrations
                     contact = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    credit_limit = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     status = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -29,11 +30,9 @@ namespace E_Invoice_system.Migrations
                 });
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "customers");
+            migrationBuilder.DropTable(name: "customers");
         }
     }
 }

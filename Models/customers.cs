@@ -25,6 +25,9 @@ namespace E_Invoice_system.Models
         [Column("email")]
         public string? email { get; set; }
 
+        [Column("credit_limit")]
+        public decimal? credit_limit { get; set; }     // Best as decimal
+
         [Column("status")]
         public string? status { get; set; }
     }

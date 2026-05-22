@@ -33,6 +33,8 @@ CREATE TABLE [customers] (
     [contact] nvarchar(max) NULL,
     [address] nvarchar(max) NULL,
     [email] nvarchar(max) NULL,
+    [cnic] nvarchar(max) NULL,
+    [credit_limit] nvarchar(max) NULL,
     [status] nvarchar(max) NULL,
     CONSTRAINT [PK_customers] PRIMARY KEY ([id])
 );
@@ -233,7 +235,18 @@ CREATE TABLE [users] (
     CONSTRAINT [FK_users_roles_role_id] FOREIGN KEY ([role_id]) REFERENCES [roles] ([id]) ON DELETE CASCADE
 );
 GO
-
+CREATE TABLE [credits] (
+    [id] int NOT NULL IDENTITY,
+    [customer_id] nvarchar(max) NULL,
+    [grand_total] nvarchar(max) NULL,
+    [paid_amount] nvarchar(max) NULL,
+    [discount] nvarchar(max) NULL,
+    [remaining_amount] nvarchar(max) NULL,
+    [date] nvarchar(max) NULL,
+    [bill_No] nvarchar(max) NULL,
+    CONSTRAINT [PK_customers] PRIMARY KEY ([id])
+);
+GO
 
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'address', N'cnic', N'date', N'email', N'emp_code', N'full_name', N'image_path', N'mobile_no', N'salary', N'status') AND [object_id] = OBJECT_ID(N'[employee]'))
     SET IDENTITY_INSERT [employee] ON;

@@ -14,7 +14,7 @@
                 
                 <div class="search-bar-v2">
                     <i class="ph-magnifying-glass"></i>
-                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")" 
+                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")"
                            @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
                 </div>
 
@@ -64,7 +64,6 @@
                     <i class="ph-spinner-gap" style="font-size: 3.5rem; color: var(--primary); opacity: 0.8; animation: spin 1s linear infinite; margin-bottom: 16px;"></i>
                     <h3 style="margin: 0; font-weight: 700; color: var(--text-main);">Loading Products...</h3>
                     <p style="margin: 8px 0 0; font-size: 0.9rem;">Fetching real-time inventory and pricing</p>
-                    
                 </div>
             }
             else
@@ -83,8 +82,7 @@
                             @if (p.Stock <= 0)
                             {
                                 <div class="out-of-stock-overlay">Out of Stock</div>
-                            }  
-
+                            }
                             @if (!string.IsNullOrEmpty(p.Image))
                             {
                                 var fileName = System.IO.Path.GetFileName(p.Image);
@@ -141,9 +139,9 @@
         <div class="customer-selector-v2">
             <div class="select-wrapper-v2">
                 <i class="ph-user-circle"></i>
-                <input type="text" class="customer-search-input" placeholder="Search Customer..." 
+                <input type="text" class="customer-search-input" placeholder="Search Customer..."
                        @bind="customerSearchQuery" @bind:event="oninput" @bind:after="FilterCustomers"
-                       @onfocus="OnCustomerSearchFocus" 
+                       @onfocus="OnCustomerSearchFocus"
                        @onclick:stopPropagation />
                 
                 @if (showCustomerDropdown)
@@ -176,22 +174,22 @@
             </button>
         </div>
 
-            <!-- Items List -->
-            <div class="checkout-items-v2">
-                @foreach (var item in saleItems)
-                {
-                    <div class="item-v2 reveal-up">
-                        <div class="item-v2-img">
-                            @if (!string.IsNullOrEmpty(item.image))
-                            {
-                                var fileName = System.IO.Path.GetFileName(item.image);
-                                <img src="/product-images/@fileName" alt="item" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZjFmNWY5Ii8+PC9zdmc+';" />
-                            }
-                            else
-                            {
-                                <i class="ph-package" style="font-size:1.5rem;color:#cbd5e1; display: flex; align-items: center; justify-content: center; height: 100%;"></i>
-                            }
-                        </div>
+        <!-- Items List -->
+        <div class="checkout-items-v2">
+            @foreach (var item in saleItems)
+            {
+                <div class="item-v2 reveal-up">
+                    <div class="item-v2-img">
+                        @if (!string.IsNullOrEmpty(item.image))
+                        {
+                            var fileName = System.IO.Path.GetFileName(item.image);
+                            <img src="/product-images/@fileName" alt="item" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZjFmNWY5Ii8+PC9zdmc+';" />
+                        }
+                        else
+                        {
+                            <i class="ph-package" style="font-size:1.5rem;color:#cbd5e1; display: flex; align-items: center; justify-content: center; height: 100%;"></i>
+                        }
+                    </div>
                     <div class="item-v2-info">
                         <div class="title">@item.prod_name_service</div>
                         <div class="price-input-container">
@@ -200,275 +198,172 @@
                                    @bind="item.price" @bind:after="() => CalculateSaleItemTotal(item)" />
                         </div>
                     </div>
-                        <div class="item-v2-controls">
-                            <div class="qty-stepper">
-                                <button type="button" @onclick="() => DecreaseQty(item)">-</button>
-                                <input type="number" class="manual-qty-input" 
-                                       value="@item.qty" 
-                                       @onchange="(e) => UpdateItemQty(item, e.Value?.ToString())" />
-                                <button type="button" @onclick="() => IncreaseQty(item)">+</button>
-                            </div>
+                    <div class="item-v2-controls">
+                        <div class="qty-stepper">
+                            <button type="button" @onclick="() => DecreaseQty(item)">-</button>
+                            <input type="number" class="manual-qty-input"
+                                   value="@item.qty"
+                                   @onchange="(e) => UpdateItemQty(item, e.Value?.ToString())" />
+                            <button type="button" @onclick="() => IncreaseQty(item)">+</button>
                         </div>
-                        <div class="item-total-info">
-                            @FormatCurrency(item.total_price)
-                        </div>
-                        <i class="ph-trash btn-remove-item" @onclick="() => RemoveItem(item)"></i>
                     </div>
-                }
-
-                @if (!saleItems.Any())
-                {
-                    <div class="empty-state-v2">
-                        <i class="ph-shopping-cart-simple"></i>
-                        <p style="font-weight:700;">Bag is empty</p>
+                    <div class="item-total-info">
+                        @FormatCurrency(item.total_price)
                     </div>
-                }
-            </div>
-
-            <!-- Checkout Footer -->
-            <div class="checkout-footer-v2">
-                <div class="price-summary-v2">
-                    <div class="summary-line"><span>Subtotal</span><span>@FormatCurrency(totalSub)</span></div>
-                    <div class="summary-line" style="color:var(--success); font-weight: 800;"><span>Discount</span><span>- @FormatCurrency(totalDisc)</span></div>
-                    
-                    <div class="grand-total-row">
-                        <div class="total-label">Grand Total</div>
-                        <div class="total-value">@FormatCurrency(currentTotal)</div>
-                    </div>
+                    <i class="ph-trash btn-remove-item" @onclick="() => RemoveItem(item)"></i>
                 </div>
-                <button type="button" class="btn-pay-v2" @onclick="OpenPaymentModal">
-                    <i class="ph-credit-card"></i> <span>Proceed to Payment</span>
-                </button>
+            }
+
+            @if (!saleItems.Any())
+            {
+                <div class="empty-state-v2">
+                    <i class="ph-shopping-cart-simple"></i>
+                    <p style="font-weight:700;">Bag is empty</p>
+                </div>
+            }
+        </div>
+
+        <!-- Checkout Footer -->
+        <div class="checkout-footer-v2">
+            <div class="price-summary-v2">
+                <div class="summary-line"><span>Subtotal</span><span>@FormatCurrency(totalSub)</span></div>
+                <div class="summary-line" style="color:var(--success); font-weight: 800;"><span>Discount</span><span>- @FormatCurrency(totalDisc)</span></div>
+                <div class="grand-total-row">
+                    <div class="total-label">Grand Total</div>
+                    <div class="total-value">@FormatCurrency(currentTotal)</div>
+                </div>
             </div>
+            <button type="button" class="btn-pay-v2" @onclick="OpenPaymentModal">
+                <i class="ph-credit-card"></i> <span>Proceed to Payment</span>
+            </button>
         </div>
     </div>
+</div>
 
 
 <!-- PAYMENT MODAL -->
 @if (showPaymentModal)
 {
     <div class="modal-overlay show" style="display:flex;">
-
         <div class="payment-card-v4">
 
             <!-- LEFT -->
             <div class="payment-left-v4">
-
-                <!-- HEADER -->
                 <div class="payment-header-v4">
-
                     <div class="payment-brand-v4">
-
                         <div class="payment-icon-v4">
                             <i class="ph-shopping-cart-bold"></i>
                         </div>
-
                         <div>
                             <h1>Checkout</h1>
                             <p>Complete your transaction securely</p>
                         </div>
-
                     </div>
-
                 </div>
 
                 <!-- METHODS -->
                 <div class="payment-methods-v4">
-
-                    <div class="payment-method-card @(paymentMethod == "Cash" ? "active" : "")"
-                         @onclick='() => SetPaymentMethod("Cash")'>
-
+                    <div class="payment-method-card @(paymentMethod == "Cash" ? "active" : "")" @onclick='() => SetPaymentMethod("Cash")'>
                         <i class="ph-money-bold"></i>
-
-                        <div>
-                            <span>Cash</span>
-                          
-                        </div>
-
+                        <div><span>Cash</span></div>
                     </div>
-
-                    <div class="payment-method-card @(paymentMethod == "Card" ? "active" : "")"
-                         @onclick='() => SetPaymentMethod("Card")'>
-
+                    <div class="payment-method-card @(paymentMethod == "Card" ? "active" : "")" @onclick='() => SetPaymentMethod("Card")'>
                         <i class="ph-credit-card-bold"></i>
-
-                        <div>
-                            <span>Card</span>
-                           
-                        </div>
-
+                        <div><span>Card</span></div>
                     </div>
-
-                    <div class="payment-method-card @(paymentMethod == "Transfer" ? "active" : "")"
-                         @onclick='() => SetPaymentMethod("Transfer")'>
-
+                    <div class="payment-method-card @(paymentMethod == "Transfer" ? "active" : "")" @onclick='() => SetPaymentMethod("Transfer")'>
                         <i class="ph-bank-bold"></i>
-
-                        <div>
-                            <span>Bank</span>
-                           
-                        </div>
-
+                        <div><span>Bank</span></div>
                     </div>
-
-                    <div class="payment-method-card @(paymentMethod == "Credit" ? "active" : "")"
-                         @onclick='() => SetPaymentMethod("Credit")'>
-
+                    <div class="payment-method-card @(paymentMethod == "Credit" ? "active" : "")" @onclick='() => SetPaymentMethod("Credit")'>
                         <i class="ph-user-focus-bold"></i>
-
-                        <div>
-                            <span>Credit</span>
-                           
-                        </div>
-
+                        <div><span>Credit</span></div>
                     </div>
-
                 </div>
 
                 <!-- AMOUNT -->
                 <div class="payment-input-group-v4">
-
                     <label>Amount Tendered</label>
-
                     <div class="payment-input-wrap-v4">
-
                         <i class="ph-currency-circle-dollar-bold"></i>
-
-                        <input type="number"
-                               class="payment-input-v4"
-                               step="0.01"
-                               @bind="tenderedAmount"
-                               @bind:event="oninput"
-                               placeholder="0.00" />
-
+                        <input type="number" class="payment-input-v4" step="0.01"
+                               @bind="tenderedAmount" @bind:event="oninput" placeholder="0.00" />
                     </div>
-
-                    <!-- QUICK -->
                     <div class="payment-quick-v4">
-
-                        @foreach (var amt in new[] {1000,3000,5000 })
+                        @foreach (var amt in new[] { 1000, 3000, 5000 })
                         {
-                            <div class="payment-pill-v4"
-                                 @onclick="() => tenderedAmount = (tenderedAmount ?? 0) + amt">
+                            <div class="payment-pill-v4" @onclick="() => tenderedAmount = (tenderedAmount ?? 0) + amt">
                                 + @CurrencyService.GetSymbol()@amt
                             </div>
                         }
-                        <div class="payment-pill-v4 special"
-                             @onclick="() => tenderedAmount = Math.Abs(currentTotal)">
+                        <div class="payment-pill-v4 special" @onclick="() => tenderedAmount = Math.Abs(currentTotal)">
                             Match Total
                         </div>
-
                     </div>
-
                 </div>
 
                 <!-- NOTE -->
                 <div class="payment-input-group-v4">
-
                     <label>Reference / Note</label>
-
                     <div class="payment-input-wrap-v4">
-
                         <i class="ph-note-pencil-bold"></i>
-
-                        <input type="text"
-                               class="payment-input-v4"
-                               @bind="notes"
-                               placeholder="Transaction notes (optional)" />
-
+                        <input type="text" class="payment-input-v4" @bind="notes" placeholder="Transaction notes (optional)" />
                     </div>
-
                 </div>
-
             </div>
 
             <!-- RIGHT -->
             <div class="payment-right-v4">
-
-                <!-- SUMMARY -->
                 <div class="payment-summary-v4">
-
                     <div class="summary-top-v4">
                         <h3>Payment Summary</h3>
                         <p>Transaction overview</p>
                     </div>
-
                     <div class="summary-line-v4">
                         <span>Total Amount</span>
                         <strong>@FormatCurrency(currentTotal)</strong>
                     </div>
-
                     <div class="summary-line-v4">
                         <span>Tendered</span>
                         <strong>@FormatCurrency(tenderedAmount ?? 0)</strong>
                     </div>
-
                     @{
                         var change = (tenderedAmount ?? 0) - Math.Abs(currentTotal);
-
                         <div class="summary-line-v4 total">
                             <span>Change Due</span>
-
                             <strong style="color:@(change >= 0 ? "var(--success)" : "var(--danger)")">
-
                                 @FormatCurrency(Math.Abs(change))
-
                             </strong>
                         </div>
                     }
-
                 </div>
 
                 <!-- RECEIPT -->
                 <div class="receipt-box-v4">
-
                     <div class="receipt-left-v4">
-
                         <div class="receipt-icon-v4">
                             <i class="ph-printer-bold"></i>
                         </div>
-
                         <div>
                             <span>Print Receipt</span>
                             <small>Generate invoice after checkout</small>
                         </div>
-
                     </div>
-
-                    <!-- Toggle Switch -->
                     <label class="receipt-toggle-v4">
-
-                        <input type="checkbox"
-                               @bind="shouldPrintReceipt" />
-
+                        <input type="checkbox" @bind="shouldPrintReceipt" />
                         <span class="receipt-slider-v4"></span>
-
                     </label>
-
                 </div>
 
                 <!-- FOOTER -->
                 <div class="payment-footer-v4">
-
                     <p class="payment-info-v4">
                         By completing this order, stock levels and invoice records will automatically update.
                     </p>
-
                     <div class="payment-actions-v4">
-
-                        <button type="button"
-                                class="payment-btn-v4 cancel"
-                                @onclick="() => showPaymentModal = false">
-
-                            Cancel
-
-                        </button>
-
-                        <button type="button"
-                                class="payment-btn-v4 confirm @(isSubmitting ? "processing" : "")"
-                                @onclick="SubmitSale"
-                                disabled="@isSubmitting">
-
+                        <button type="button" class="payment-btn-v4 cancel" @onclick="() => showPaymentModal = false">Cancel</button>
+                        <button type="button" class="payment-btn-v4 confirm @(isSubmitting ? "processing" : "")"
+                                @onclick="SubmitSale" disabled="@isSubmitting">
                             @if (isSubmitting)
                             {
                                 <i class="ph-spinner ph-spin"></i>
@@ -477,20 +372,15 @@
                             {
                                 <span>Complete Order</span>
                             }
-
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 }
 
+<!-- ADD CUSTOMER MODAL -->
 @if (showAddCustomerModal)
 {
     <div class="modal-overlay show" style="display: flex;">
@@ -502,7 +392,6 @@
                 </div>
                 <button type="button" class="c-modal-close" @onclick="() => showAddCustomerModal = false"><i class="ph-x"></i></button>
             </div>
-
             <div class="c-modal-body">
                 <div class="c-form-group">
                     <label>Full Name</label>
@@ -531,7 +420,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="c-modal-footer">
                 <button type="button" class="btn-c-cancel" @onclick="() => showAddCustomerModal = false">Cancel</button>
                 <button type="button" class="btn-c-save" @onclick="SaveNewCustomer">
@@ -542,7 +430,208 @@
     </div>
 }
 
-<!-- MODERN INVOICE DESIGN (MOCKUP MATCH) -->
+<!-- CREDIT MODAL -->
+@if (showCreditModal)
+{
+    <div class="modal-overlay show" style="display:flex;" @onclick="CloseCreditDropdownOnly">
+        <div class="customer-modal-v3" style="max-width: 480px; width: 100%;" @onclick:stopPropagation>
+            <div class="c-modal-header">
+                <div class="c-modal-title">
+                    <i class="ph-user-focus-bold" style="color: #BC1823; font-size: 1.5rem;"></i>
+                    <span>Credit Payment Details</span>
+                </div>
+                <button type="button" class="c-modal-close" @onclick="CancelCreditModal">
+                    <i class="ph-x"></i>
+                </button>
+            </div>
+
+            <div class="c-modal-body">
+
+                <!-- Read-only summary -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span style="color:#64748b; font-size:0.85rem; font-weight:600;">Grand Total</span>
+                        <span style="font-weight:800; color:#1e293b;">@FormatCurrency(Math.Abs(currentTotal))</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#64748b; font-size:0.85rem; font-weight:600;">Discount</span>
+                        <span style="font-weight:800; color:#16a34a;">- @FormatCurrency(totalDisc)</span>
+                    </div>
+                </div>
+
+                <!-- Customer Search + Dropdown Combined -->
+                <div class="c-form-group">
+                    <label>Customer</label>
+
+                    <div style="position:relative;" @onclick:stopPropagation>
+
+                        <!-- Left Icon -->
+                        <i class="ph-user-circle"
+                               style="position:absolute;
+                            left:14px;
+                            top:50%;
+                            transform:translateY(-50%);
+                            z-index:2;
+                            color:#64748b;
+                            font-size:1rem;">
+                        </i>
+
+                        <!-- Search Input -->
+                        <input type="text"
+                               placeholder="Search customer..."
+                               value="@creditCustomerSearch"
+                               @oninput="OnCreditCustomerInput"
+                               @onfocus="OnCreditCustomerFocus"
+                               @onclick:stopPropagation
+                               style="width:100%;
+                        height:48px;
+                        border:1px solid #dbe3ec;
+                        border-radius:14px;
+                        background:#fff;
+                        padding-left:42px;
+                        padding-right:42px;
+                        font-size:0.95rem;
+                        outline:none;
+                        box-sizing:border-box;" />
+
+                        <!-- Right Dropdown Icon -->
+                        <i class="ph-caret-down"
+                               @onclick="ToggleCreditCustomerDropdown"
+                               @onclick:stopPropagation
+                               style="position:absolute;
+                            right:14px;
+                            top:50%;
+                            transform:translateY(-50%);
+                            z-index:2;
+                            cursor:pointer;
+                            color:#64748b;
+                            font-size:1rem;">
+                        </i>
+
+                        <!-- Dropdown -->
+                        @if (showCreditCustomerDropdown)
+                        {
+                            <div style="position:absolute;
+                                top:54px;
+                                left:0;
+                                width:100%;
+                                background:#fff;
+                                border:1px solid #e2e8f0;
+                                border-radius:14px;
+                                box-shadow:0 10px 25px rgba(0,0,0,0.08);
+                                max-height:250px;
+                                overflow-y:auto;
+                                z-index:9999;
+                                padding:6px;">
+
+                                @if (filteredCreditCustomers.Any())
+                                {
+                                    @foreach (var c in filteredCreditCustomers)
+                                    {
+                                        <div @onclick="() => SelectCreditCustomer(c)"
+                                             @onclick:stopPropagation
+                                             style="display:flex;
+                                            align-items:center;
+                                            gap:12px;
+                                            padding:10px;
+                                            border-radius:10px;
+                                            cursor:pointer;">
+
+                                            <div style="width:36px;
+                                                height:36px;
+                                                border-radius:50%;
+                                                background:#BC1823;
+                                                color:white;
+                                                display:flex;
+                                                align-items:center;
+                                                justify-content:center;
+                                                font-weight:700;">
+                                                @(string.IsNullOrEmpty(c.name)
+                                                    ? "?"
+                                                    : c.name[0].ToString().ToUpper())
+                                            </div>
+
+                                            <div style="flex:1;">
+                                                <div style="font-weight:600; color:#1e293b;">
+                                                    @c.name
+                                                </div>
+                                            </div>
+
+                                            @if (creditSelectedCustomer?.id == c.id)
+                                            {
+                                                <i class="ph-check-circle-fill"
+                                                   style="color:#16a34a; font-size:1.1rem;"></i>
+                                            }
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div style="padding:14px;
+                                        text-align:center;
+                                        color:#94a3b8;">
+                                        No customer found
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                    </div>
+                </div>
+
+                <!-- Paid Amount -->
+                <div class="c-form-group">
+                    <label>Paid Amount</label>
+                    <input type="number"
+                           step="0.01"
+                           value="@creditEntry.paid_amount"
+                           @oninput="OnCreditPaidAmountInput"
+                           placeholder="Enter amount paid now" />
+                </div>
+
+                <!-- Credit Discount -->
+                <div class="c-form-group">
+                    <label>Credit Discount</label>
+                    <input type="number"
+                           step="0.01"
+                           value="@creditEntry.discount"
+                           @oninput="OnCreditDiscountInput"
+                           placeholder="Additional discount (optional)" />
+                </div>
+
+                <!-- Remaining Amount -->
+                <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="color:#c2410c; font-size:0.9rem; font-weight:700;">Remaining Amount</span>
+
+                        <span style="font-weight:900; font-size:1.1rem; color:#c2410c;">
+                            @FormatCurrency(creditRemainingAmount)
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="c-modal-footer">
+                <button type="button"
+                        class="btn-c-cancel"
+                        @onclick="CancelCreditModal">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="btn-c-save"
+                        @onclick="ConfirmCreditAndProceed">
+                    <i class="ph-check-bold"></i>
+                    Confirm Credit
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- INVOICE / RECEIPT -->
 <div id="invoice-to-print" class="receipt-hidden">
     <div class="thermal-receipt">
         <div class="rcpt-header">
@@ -555,16 +644,20 @@
             <div class="rcpt-divider"></div>
             <h3 class="rcpt-title">@(transMode == "return" ? "RETURN RECEIPT" : "SALE RECEIPT")</h3>
         </div>
-
         <div class="rcpt-meta">
-            <div class="rcpt-meta-row"><span>Bill No:</span> <span>@orderBillNo</span></div>
+            <div class="rcpt-meta-row">
+                <span>Bill No:</span>
+                <span>
+                    @(string.IsNullOrWhiteSpace(orderBillNo)
+                        ? "N/A"
+                        : orderBillNo)
+                </span>
+            </div>
             <div class="rcpt-meta-row"><span>Date:</span> <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span></div>
             <div class="rcpt-meta-row"><span>Customer:</span> <span>@(selectedCustomer?.name ?? "Walking Customer")</span></div>
             <div class="rcpt-meta-row"><span>Payment:</span> <span>@paymentMethod</span></div>
         </div>
-
         <div class="rcpt-divider"></div>
-
         <table class="rcpt-table">
             <thead>
                 <tr>
@@ -589,15 +682,12 @@
                 }
             </tbody>
         </table>
-
         <div class="rcpt-divider"></div>
-
         <div class="rcpt-summary">
             <div class="rcpt-sum-row"><span>Subtotal:</span> <span>@FormatCurrency(totalSub)</span></div>
             <div class="rcpt-sum-row"><span>Discount:</span> <span>-@FormatCurrency(totalDisc)</span></div>
             <div class="rcpt-sum-row total"><span>TOTAL:</span> <span>@FormatCurrency(currentTotal)</span></div>
         </div>
-
         <div class="rcpt-footer">
             <div class="rcpt-divider"></div>
             <p>Thank You For Your Business!</p>
@@ -612,18 +702,19 @@
 <link href="/css/sale/create.css" rel="stylesheet" />
 
 
-
 @code {
+    // ── Lists ─────────────────────────────────────────────────────────────────
     private List<ProductDisplay> allProducts = new();
     private List<ProductDisplay> filteredProducts = new();
     private List<customers> allCustomersList = new();
     private List<customers> filteredCustomersList = new();
     private List<SaleItem> saleItems = new();
 
+    // ── UI State ──────────────────────────────────────────────────────────────
     private string searchQuery = "";
-    private string searchType = "item"; // item or receipt
+    private string searchType = "item";
     private bool showScanMenu = false;
-    private string productTypeFilter = "All"; // All, Product, or Service
+    private string productTypeFilter = "All";
     private string selectedCategory = "all";
     private string transMode = "sale";
     private string? customerSearchQuery;
@@ -633,25 +724,30 @@
     private bool showAddCustomerModal = false;
     private string paymentMethod = "Cash";
     private decimal? tenderedAmount = null;
-    private string notes = "";  
+    private string notes = "";
     private bool shouldPrintReceipt = true;
-    private string? stockAlert;
     private bool isSubmitting = false;
     private string orderBillNo = "";
     private customers newCustomer = new customers { status = "Active" };
     private StoreConfiguration? currentStore;
+    private bool isLoading = true;
+
+    // ── Credit Modal State ────────────────────────────────────────────────────
+    private bool showCreditModal = false;
+    private CreditEntry creditEntry = new();
+    private decimal creditRemainingAmount = 0;
+    private string? creditCustomerSearch;
+    private bool showCreditCustomerDropdown = false;
+    private List<customers> filteredCreditCustomers = new();
+    private customers? creditSelectedCustomer;
 
     [Parameter] public string? UserEmail { get; set; }
     [Parameter] public string? UserName { get; set; }
 
-    private bool isLoading = true;
-
+    // ── Init ──────────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        // Prime currency symbol before data loading
         await CurrencyService.GetSymbolAsync();
-
-        // Non-blocking initialization so the UI renders instantly
         _ = LoadDataAsync();
     }
 
@@ -660,10 +756,10 @@
         isLoading = true;
         await InvokeAsync(StateHasChanged);
 
-        try 
+        try
         {
             using var context = DbFactory.CreateDbContext();
-            // Sequential data fetching to avoid EF Core concurrency issues
+
             var prodsData = await context.products_services
                 .AsNoTracking()
                 .Where(p => p.status == "Enable")
@@ -673,124 +769,119 @@
                     s => s.item_barcode,
                     (p, s) => new { p, stock = s.OrderByDescending(x => x.id).FirstOrDefault() }
                 )
-                .Select(x => new { 
-                    x.p.id, x.p.prod_name, x.p.pic, x.p.barcode,
-                    x.p.expiry_date, x.p.prod_state, x.p.unit, x.p.size, x.p.item_type,
-                    x.p.category_id, x.p.brand_id,
+                .Select(x => new
+                {
+                    x.p.id,
+                    x.p.prod_name,
+                    x.p.pic,
+                    x.p.barcode,
+                    x.p.expiry_date,
+                    x.p.item_type,
                     sale_price = x.stock != null ? x.stock.sale_price : 0,
                     stock_qty = x.stock != null ? x.stock.quantity : 0
                 })
                 .OrderByDescending(p => p.id)
-                .Take(50) 
+                .Take(100)
                 .ToListAsync();
 
             allCustomersList = await context.customers
                 .AsNoTracking()
                 .OrderBy(c => c.name)
-                .Take(50) 
+                .Take(100)
                 .ToListAsync();
 
             currentStore = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
 
-            allProducts = prodsData.Select(p => {
-                int stock = Math.Max(0, p.stock_qty);
+            allProducts = prodsData.Select(p =>
+            {
                 bool isSvc = p.item_type == "Service";
-                return new ProductDisplay { 
-                    Id = p.id, Name = p.prod_name ?? "", Price = p.sale_price, Discount = 0, 
-                    Expiry = p.expiry_date, Stock = stock, IsService = isSvc, Image = p.pic, 
-                    Category = isSvc ? "Beverages" : "Foods", Barcode = p.barcode 
+                return new ProductDisplay
+                {
+                    Id = p.id,
+                    Name = p.prod_name ?? "",
+                    Price = p.sale_price,
+                    Stock = Math.Max(0, p.stock_qty),
+                    IsService = isSvc,
+                    Image = p.pic,
+                    Category = isSvc ? "Beverages" : "Foods",
+                    Barcode = p.barcode
                 };
             }).ToList();
-            
+
             filteredProducts = allProducts;
             filteredCustomersList = allCustomersList;
             ApplyFilters();
-
-            // Optional: simulate network delay briefly for skeleton testing if desired
-            // await Task.Delay(500);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
         }
-        finally 
+        finally
         {
             isLoading = false;
             await InvokeAsync(StateHasChanged);
         }
     }
 
+    // ── Filters ───────────────────────────────────────────────────────────────
     private void ApplyFilters()
     {
         var query = allProducts.AsEnumerable();
 
-        // 1. Product/Service Type Filter
-        if (productTypeFilter != "All") {
+        if (productTypeFilter != "All")
+        {
             bool isSvc = productTypeFilter == "Service";
             query = query.Where(p => p.IsService == isSvc);
         }
 
-        // 2. Category Filter
-        if (selectedCategory != "all") {
+        if (selectedCategory != "all")
             query = query.Where(p => p.Category == selectedCategory);
-        }
-        
-        // 3. Search Filter (if any)
-        if (!string.IsNullOrEmpty(searchQuery) && searchType == "item") {
+
+        if (!string.IsNullOrEmpty(searchQuery) && searchType == "item")
+        {
             var s = searchQuery.ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(s) || (p.Barcode != null && p.Barcode.ToLower() == s));
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(s) ||
+                (p.Barcode != null && p.Barcode.ToLower() == s));
         }
 
         filteredProducts = query.ToList();
     }
 
-    private void SetCategory(string cat)
-    {
-        selectedCategory = cat;
-        ApplyFilters();
-    }
-
-    private void SetProductType(string type)
-    {
-        productTypeFilter = type;
-        selectedCategory = "all"; // Reset category when switching types
-        ApplyFilters();
-    }
-
+    private void SetCategory(string cat) { selectedCategory = cat; ApplyFilters(); }
+    private void SetProductType(string type) { productTypeFilter = type; selectedCategory = "all"; ApplyFilters(); }
     private void ToggleScanMenu() => showScanMenu = !showScanMenu;
+    private void SetSearchType(string type) { searchType = type; showScanMenu = false; searchQuery = ""; ApplyFilters(); }
 
-    private void SetSearchType(string type)
-    {
-        searchType = type;
-        showScanMenu = false;
-        searchQuery = "";
-        ApplyFilters();
-    }
-
+    // ── Search & Scan ─────────────────────────────────────────────────────────
     private void HandleSearchEnter(KeyboardEventArgs e) => HandleSearchKeyUp(e);
 
     private void HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (string.IsNullOrEmpty(searchQuery)) return;
 
-        // Auto-detect Receipt Scan (SALE_ or RETURN_)
-        if (searchQuery.ToUpper().StartsWith("SALE_") || searchQuery.ToUpper().StartsWith("RETURN_")) {
+        if (searchQuery.ToUpper().StartsWith("SALE_") || searchQuery.ToUpper().StartsWith("RETURN_"))
+        {
             _ = LoadFromReceipt(searchQuery);
             searchQuery = "";
             return;
         }
 
-        if (searchType == "item") {
+        if (searchType == "item")
+        {
             ApplyFilters();
-            
-            var query = searchQuery.ToLower();
-            var exact = allProducts.FirstOrDefault(p => p.Barcode != null && p.Barcode.ToLower() == query);
-            if (exact != null) {
+            var exact = allProducts.FirstOrDefault(p =>
+                p.Barcode != null && p.Barcode.ToLower() == searchQuery.ToLower());
+
+            if (exact != null)
+            {
                 AddToSale(exact);
                 searchQuery = "";
                 ApplyFilters();
             }
-        } else if (e.Key == "Enter" && searchType == "receipt") {
+        }
+        else if (e.Key == "Enter" && searchType == "receipt")
+        {
             _ = LoadFromReceipt(searchQuery);
             searchQuery = "";
         }
@@ -800,19 +891,22 @@
     {
         using var context = DbFactory.CreateDbContext();
         var sales = await context.sales.Where(s => s.billNo == billNo).ToListAsync();
-        if (sales.Any()) {
+
+        if (sales.Any())
+        {
             transMode = "return";
-            saleItems = sales.Select(s => {
+            saleItems = sales.Select(s =>
+            {
                 string prodName = "Item #" + s.id;
                 if (!string.IsNullOrEmpty(s.description))
                 {
                     var parts = s.description.Split(new[] { " | " }, StringSplitOptions.None);
                     if (parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]))
-                    {
                         prodName = parts[0];
-                    }
                 }
-                return new SaleItem {
+
+                return new SaleItem
+                {
                     prod_name_service = prodName,
                     qty = -s.qty,
                     price = s.price,
@@ -823,325 +917,558 @@
                     OriginalSaleId = s.id
                 };
             }).ToList();
+
             StateHasChanged();
         }
     }
 
+    // ── Cart Operations ───────────────────────────────────────────────────────
     private void AddToSale(ProductDisplay p)
     {
         int qty = transMode == "return" ? -1 : 1;
         var existing = saleItems.FirstOrDefault(i => i.prod_name_service == p.Name);
-        if (existing != null) {
-            if (transMode == "sale" && (existing.qty + 1) > p.Stock) { ShowAlert("Insufficient stock."); return; }
+
+        if (existing != null)
+        {
+            if (transMode == "sale" && (existing.qty + 1) > p.Stock)
+            {
+                ShowAlert("Insufficient stock.");
+                return;
+            }
             existing.qty += qty;
             if (existing.qty == 0) saleItems.Remove(existing);
             else existing.total_price = (existing.price * existing.qty) - (existing.discount * existing.qty);
-        } else {
-            if (transMode == "sale" && p.Stock < 1) { ShowAlert("Out of stock."); return; }
-            saleItems.Add(new SaleItem {
-                prod_name_service = p.Name, qty = qty, 
-                price = p.Price, discount = p.Discount, expiry_date = p.Expiry, 
-                maxStock = p.Stock, image = p.Image, total_price = (p.Price * qty) - (p.Discount * qty)
+        }
+        else
+        {
+            if (transMode == "sale" && p.Stock < 1)
+            {
+                ShowAlert("Out of stock.");
+                return;
+            }
+
+            saleItems.Add(new SaleItem
+            {
+                prod_name_service = p.Name,
+                qty = qty,
+                price = p.Price,
+                discount = p.Discount,
+                expiry_date = p.Expiry,
+                maxStock = p.Stock,
+                image = p.Image,
+                total_price = (p.Price * qty) - (p.Discount * qty)
             });
         }
     }
 
-    private void RemoveItem(SaleItem i) { saleItems.Remove(i); }
+    private void RemoveItem(SaleItem i) => saleItems.Remove(i);
+    private void ClearSaleItems() => saleItems.Clear();
 
-    private void ClearSaleItems() { saleItems.Clear(); }
-
-    private void CloseDropdowns() { showCustomerDropdown = false; showScanMenu = false; }
-    
-    private async Task ToggleCustomerDropdown() {
-        showCustomerDropdown = !showCustomerDropdown;
-        if (showCustomerDropdown) await FilterCustomers();
+    private void CloseDropdowns()
+    {
+        showCustomerDropdown = false;
+        showScanMenu = false;
     }
 
-    private void SetTransMode(string mode) {
+    private void SetTransMode(string mode)
+    {
         transMode = mode;
-        foreach (var item in saleItems) {
+        foreach (var item in saleItems)
+        {
             int abs = Math.Abs(item.qty);
             item.qty = mode == "return" ? -abs : abs;
             item.total_price = (item.price * item.qty) - (item.discount * item.qty);
         }
     }
 
-    private async Task OnCustomerSearchFocus() {
+    // ── Customer Management ───────────────────────────────────────────────────
+    private async Task ToggleCustomerDropdown()
+    {
+        showCustomerDropdown = !showCustomerDropdown;
+        if (showCustomerDropdown) await FilterCustomers();
+    }
+
+    private async Task OnCustomerSearchFocus()
+    {
         showCustomerDropdown = true;
         await FilterCustomers();
     }
 
-    private async Task FilterCustomers() {
+    private async Task FilterCustomers()
+    {
         showCustomerDropdown = true;
-        if (string.IsNullOrEmpty(customerSearchQuery)) {
+        if (string.IsNullOrEmpty(customerSearchQuery))
+        {
             filteredCustomersList = allCustomersList;
-            selectedCustomer = null; 
         }
-        else {
+        else
+        {
             var q = customerSearchQuery.ToLower();
             using var context = DbFactory.CreateDbContext();
-            filteredCustomersList = await context.customers
-                .AsNoTracking()
-                .Where(c => c.name.ToLower().Contains(q) || (c.contact != null && c.contact.ToLower().Contains(q)))
-                .Take(50)
-                .ToListAsync();
+            filteredCustomersList = await context.customers.AsNoTracking()
+                .Where(c => c.name.ToLower().Contains(q) ||
+                           (c.contact != null && c.contact.ToLower().Contains(q)))
+                .Take(50).ToListAsync();
         }
         StateHasChanged();
     }
 
-    private void SelectCustomer(customers c) { selectedCustomer = c; customerSearchQuery = c.name; showCustomerDropdown = false; }
+    private void SelectCustomer(customers c)
+    {
+        selectedCustomer = c;
+        customerSearchQuery = c.name;
+        showCustomerDropdown = false;
+    }
 
-    private void UpdateItemQty(SaleItem item, string? val) {
-        if (int.TryParse(val, out int q)) {
+    // ── Item Quantity & Price ─────────────────────────────────────────────────
+    private void UpdateItemQty(SaleItem item, string? val)
+    {
+        if (int.TryParse(val, out int q))
+        {
             q = Math.Abs(q);
             if (transMode == "return") q = -q;
             if (q == 0) { saleItems.Remove(item); return; }
-            if (transMode == "sale" && q > item.maxStock) { ShowAlert("Stock limit reached."); return; }
+            if (transMode == "sale" && q > item.maxStock)
+            {
+                ShowAlert("Stock limit reached.");
+                return;
+            }
             item.qty = q;
             item.total_price = (item.price * item.qty) - (item.discount * item.qty);
         }
     }
 
-    private void CalculateSaleItemTotal(SaleItem item) {
+    private void CalculateSaleItemTotal(SaleItem item)
+    {
         item.total_price = (item.price * item.qty) - (item.discount * item.qty);
     }
 
     private void IncreaseQty(SaleItem i) => UpdateItemQty(i, (Math.Abs(i.qty) + 1).ToString());
     private void DecreaseQty(SaleItem i) => UpdateItemQty(i, (Math.Abs(i.qty) - 1).ToString());
 
+    // ── Totals ────────────────────────────────────────────────────────────────
     private decimal totalSub => saleItems.Sum(i => i.price * i.qty);
     private decimal totalDisc => saleItems.Sum(i => i.discount * i.qty);
     private decimal currentTotal => totalSub - totalDisc;
 
-    private void OpenPaymentModal() { if (!saleItems.Any()) return; showPaymentModal = true; tenderedAmount = null; }
+    // ── Payment Flow ──────────────────────────────────────────────────────────
+    private void OpenPaymentModal()
+    {
+        if (!saleItems.Any()) return;
+        showPaymentModal = true;
+        tenderedAmount = null;
+    }
 
-    private void SetPaymentMethod(string m) { paymentMethod = m; }
+    private void SetPaymentMethod(string m)
+    {
+        paymentMethod = m;
 
-    private void ShowAlert(string msg) { _ = JSRuntime.InvokeVoidAsync("showToast", "Notice", msg, "warning"); }
+        if (m == "Credit")
+        {
+            creditSelectedCustomer = selectedCustomer;
+            creditCustomerSearch = selectedCustomer?.name ?? "";
+            filteredCreditCustomers = allCustomersList.Take(20).ToList();
 
-    private async Task SaveNewCustomer() {
+            creditEntry = new CreditEntry
+            {
+                paid_amount = 0,
+                discount = totalDisc
+            };
+            RecalcCredit();
+            showCreditModal = true;
+        }
+    }
+
+    // ── Credit Modal Logic ────────────────────────────────────────────────────
+    private void RecalcCredit()
+    {
+        var grandTotal = Math.Abs(currentTotal);
+        creditRemainingAmount = grandTotal - creditEntry.paid_amount - creditEntry.discount;
+        if (creditRemainingAmount < 0) creditRemainingAmount = 0;
+    }
+
+    private void OnCreditPaidAmountInput(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var v))
+            creditEntry.paid_amount = v;
+        RecalcCredit();
+    }
+
+    private void OnCreditDiscountInput(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var v))
+            creditEntry.discount = v;
+        RecalcCredit();
+    }
+
+    private async Task OnCreditCustomerInput(ChangeEventArgs e)
+    {
+        creditCustomerSearch = e.Value?.ToString() ?? "";
+        showCreditCustomerDropdown = true;
+
+        if (string.IsNullOrWhiteSpace(creditCustomerSearch))
+        {
+            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+        }
+        else
+        {
+            var q = creditCustomerSearch.ToLower();
+            using var context = DbFactory.CreateDbContext();
+            filteredCreditCustomers = await context.customers.AsNoTracking()
+                .Where(c => c.name.ToLower().Contains(q) ||
+                           (c.contact != null && c.contact.ToLower().Contains(q)))
+                .Take(20).ToListAsync();
+        }
+        StateHasChanged();
+    }
+
+    private void OnCreditCustomerFocus()
+    {
+        showCreditCustomerDropdown = true;
+        if (!filteredCreditCustomers.Any())
+            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+    }
+
+    private void ToggleCreditCustomerDropdown()
+    {
+        showCreditCustomerDropdown = !showCreditCustomerDropdown;
+        if (showCreditCustomerDropdown && !filteredCreditCustomers.Any())
+            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+    }
+
+    private void SelectCreditCustomer(customers c)
+    {
+        creditSelectedCustomer = c;
+        creditCustomerSearch = c.name;
+        showCreditCustomerDropdown = false;
+    }
+
+    private void CloseCreditDropdownOnly() => showCreditCustomerDropdown = false;
+
+    private void CancelCreditModal()
+    {
+        showCreditModal = false;
+        paymentMethod = "Cash";
+        creditEntry = new CreditEntry();
+        creditRemainingAmount = 0;
+        creditSelectedCustomer = null;
+        creditCustomerSearch = null;
+        showCreditCustomerDropdown = false;
+    }
+
+    private void ConfirmCreditAndProceed()
+    {
+        if (creditSelectedCustomer != null)
+        {
+            selectedCustomer = creditSelectedCustomer;
+            customerSearchQuery = creditSelectedCustomer.name;
+        }
+
+        RecalcCredit();
+        showCreditModal = false;
+        showCreditCustomerDropdown = false;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private void ShowAlert(string msg)
+    {
+        _ = JSRuntime.InvokeVoidAsync("showToast", "Notice", msg, "warning");
+    }
+
+    private async Task SaveNewCustomer()
+    {
         if (string.IsNullOrEmpty(newCustomer.name)) return;
+
         using var context = DbFactory.CreateDbContext();
         context.customers.Add(newCustomer);
         await context.SaveChangesAsync();
+
         await JSRuntime.InvokeVoidAsync("showToast", "Success", "Customer created successfully!", "success");
+
         allCustomersList.Add(newCustomer);
         SelectCustomer(newCustomer);
         newCustomer = new customers { status = "Active" };
         showAddCustomerModal = false;
     }
 
-    private async Task SubmitSale() {
-        if (isSubmitting) return;
-        if (!saleItems.Any()) { ShowAlert("Cannot complete an empty order."); return; }
+    // ── Submit Sale ───────────────────────────────────────────────────────────
+    // ── Submit Sale ───────────────────────────────────────────────────────────
+    private async Task SubmitSale()
+    {
+        if (isSubmitting || !saleItems.Any())
+            return;
 
         isSubmitting = true;
-        try {
+
+        try
+        {
             using var context = DbFactory.CreateDbContext();
-            
-            // Get Current User ID (Check both username and email as session might store either)
-            var user = await context.users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.username == UserName || u.email == UserName);
-            int? currentUserId = user?.id;
+
+            // =====================================
+            // CASH PAYMENT VALIDATION
+            // =====================================
+            if (paymentMethod == "Cash")
+            {
+                if ((tenderedAmount ?? 0) <= 0)
+                {
+                    ShowAlert("Please enter tender amount.");
+                    return;
+                }
+
+                if ((tenderedAmount ?? 0) < Math.Abs(currentTotal))
+                {
+                    ShowAlert("Tender amount cannot be less than total.");
+                    return;
+                }
+            }
+
+            // =====================================
+            // CREDIT VALIDATION
+            // =====================================
+            if (paymentMethod == "Credit")
+            {
+                var creditCust = creditSelectedCustomer ?? selectedCustomer;
+
+                if (creditCust == null)
+                {
+                    ShowAlert("Please select a customer for credit sale.");
+                    return;
+                }
+            }
+
+            // =====================================
+            // GENERATE BILL NUMBER
+            // =====================================
+            var prefix = transMode == "return"
+                ? "RETURN_"
+                : "SALE_";
 
             int nextIdNum = 1;
-            var prefix = transMode == "return" ? "RETURN_" : "SALE_";
-            
-            // OPTIMIZED: Fetch ONLY the most recent bill number instead of the entire list
+
             string? lastBillNo = null;
-            if (transMode == "return") {
+
+            if (transMode == "return")
+            {
                 lastBillNo = await context.returns
-                    .Where(r => r.billNo != null && r.billNo.StartsWith(prefix))
+                    .Where(r => r.billNo != null &&
+                                r.billNo.StartsWith(prefix))
                     .OrderByDescending(r => r.Id)
                     .Select(r => r.billNo)
                     .FirstOrDefaultAsync();
-            } else {
+            }
+            else
+            {
                 lastBillNo = await context.sales
-                    .Where(s => s.billNo != null && s.billNo.StartsWith(prefix))
+                    .Where(s => s.billNo != null &&
+                                s.billNo.StartsWith(prefix))
                     .OrderByDescending(s => s.id)
                     .Select(s => s.billNo)
                     .FirstOrDefaultAsync();
             }
 
-            if (!string.IsNullOrEmpty(lastBillNo)) {
-                var parts = lastBillNo.Split(new[] { '_', '-' });
-                if (parts.Length > 1 && int.TryParse(parts[1], out int n)) nextIdNum = n + 1;
+            if (!string.IsNullOrEmpty(lastBillNo))
+            {
+                var parts = lastBillNo.Split('_', '-');
+
+                if (parts.Length > 1 &&
+                    int.TryParse(parts[1], out int n))
+                {
+                    nextIdNum = n + 1;
+                }
             }
+
+            // FINAL BILL NO
             orderBillNo = $"{prefix}{nextIdNum}";
 
-            
-            string customerInfo = selectedCustomer != null ? $" [Customer: {selectedCustomer.name}]" : " [Walk-In]";
-            string saleDescription = ((notes ?? "") + customerInfo);
-            if (saleDescription.Length > 200) saleDescription = saleDescription.Substring(0, 200);
+            // =====================================
+            // LOAD PRODUCTS
+            // =====================================
+            var productNames = saleItems
+                .Select(i => i.prod_name_service)
+                .Distinct()
+                .ToList();
 
-            // OPTIMIZED: Batch fetch all products in the sale at once instead of N times in loop
-            var productNames = saleItems.Select(i => i.prod_name_service).Distinct().ToList();
             var productsInSale = await context.products_services
                 .Where(p => productNames.Contains(p.prod_name))
                 .ToListAsync();
-            
-            var barcodesInSale = productsInSale.Select(p => p.barcode).Where(b => b != null).ToList();
+
+            // =====================================
+            // LOAD STOCK
+            // =====================================
+            var barcodesInSale = productsInSale
+                .Select(p => p.barcode)
+                .Where(b => b != null)
+                .ToList();
+
             var stocksToUpdate = await context.stock_details
                 .Where(s => barcodesInSale.Contains(s.item_barcode))
                 .ToListAsync();
 
-            foreach (var item in saleItems) {
-                if (transMode == "return") {
-                    if (item.OriginalSaleId == 0) {
-                        var recentSale = await context.sales
-                            .Where(s => s.billNo != null && s.billNo.StartsWith("SALE_"))
-                            .OrderByDescending(s => s.id)
-                            .FirstOrDefaultAsync();
-                        if (recentSale != null) {
-                            item.OriginalSaleId = recentSale.id;
-                        }
-                    }
-
-                    // Update original sale record to mark as returned
-                    if (item.OriginalSaleId != 0) {
-                        var originalSale = await context.sales.FindAsync(item.OriginalSaleId);
-                        if (originalSale != null) {
-                            originalSale.is_returned = true;
-                            context.sales.Update(originalSale);
-                        }
-                    }
-
-                    var returnRec = new Models.ReturnDetail {
+            // =====================================
+            // PROCESS SALE ITEMS
+            // =====================================
+            foreach (var item in saleItems)
+            {
+                if (transMode != "return")
+                {
+                    context.sales.Add(new Models.Sale
+                    {
                         billNo = orderBillNo,
-                        SaleId = item.OriginalSaleId,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
-                        no_of_items = saleItems.Count,
-                        qty = Math.Abs(item.qty),
-                        total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
-                        Amount = Math.Abs(item.total_price),
-                        Method = paymentMethod,
-                        Status = item.prod_name_service
-                    };
-                    context.returns.Add(returnRec);
-                } else {
-                    string itemDescription = selectedCustomer?.name ?? "Walk-In";
-                    if (itemDescription.Length > 200) itemDescription = itemDescription.Substring(0, 200);
-
-                    var sale = new Models.Sale {
-                        billNo = orderBillNo, 
-                        date = DateTime.Now.ToString("yyyy-MM-dd"), 
                         no_of_items = saleItems.Count,
                         qty = item.qty,
                         total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
                         price = item.price,
-                        discount = item.discount, 
-                        total_price = item.total_price, 
-                        payment_method = paymentMethod, 
-                        status = (paymentMethod == "Credit" || paymentMethod == "Pending") ? "Pending" : "Paid",
-                        is_returned = false, 
-                        description = itemDescription,
-                        expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd")
+                        discount = item.discount,
+                        total_price = item.total_price,
+                        payment_method = paymentMethod,
+                        status = paymentMethod == "Credit"
+                            ? "Pending"
+                            : "Paid",
+                        is_returned = false,
+                        description = selectedCustomer?.name ?? "Walk-In",
+                        expiry_date = item.expiry_date
+                            ?? DateTime.Now.ToString("yyyy-MM-dd")
+                    });
+                }
+
+                // =====================================
+                // UPDATE STOCK
+                // =====================================
+                var prod = productsInSale
+                    .FirstOrDefault(p => p.prod_name == item.prod_name_service);
+
+                if (prod?.barcode != null)
+                {
+                    var stock = stocksToUpdate
+                        .FirstOrDefault(s => s.item_barcode == prod.barcode);
+
+                    if (stock != null)
+                    {
+                        stock.quantity -= item.qty;
+
+                        context.stock_details.Update(stock);
+                    }
+                }
+            }
+
+            // =====================================
+            // CREDIT ENTRY
+            // =====================================
+            if (paymentMethod == "Credit")
+            {
+                var creditCust = creditSelectedCustomer ?? selectedCustomer;
+
+                if (creditCust != null)
+                {
+                    var credit = new Models.Credit
+                    {
+                        bill_No = orderBillNo,
+                        customer_id = creditCust.id,
+                        grand_total = Math.Abs(currentTotal),
+                        paid_amount = creditEntry?.paid_amount ?? 0,
+                        discount = creditEntry?.discount ?? totalDisc,
+                        remaining_amount = creditRemainingAmount > 0
+                            ? creditRemainingAmount
+                            : 0,
+                        date = DateTime.Now.ToString("yyyy-MM-dd")
                     };
 
-                    context.sales.Add(sale);
-                }
-                
-                // OPTIMIZED: Use cached stock lookup
-                try {
-                    var prod = productsInSale.FirstOrDefault(p => p.prod_name == item.prod_name_service);
-                    if (prod != null && prod.barcode != null) {
-                        var stock = stocksToUpdate.FirstOrDefault(s => s.item_barcode == prod.barcode);
-                        if (stock != null) {
-                            var newQty = stock.quantity - item.qty;
-                            
-                            // CRITICAL: Check inventory before allowing sale
-                            if (transMode == "sale" && newQty < 0) {
-                                throw new Exception($"Insufficient stock for {item.prod_name_service}. Available: {stock.quantity}");
-                            }
-                            
-                            var oldQty = stock.quantity;
-                            stock.quantity = newQty;
-                            context.stock_details.Update(stock);
-
-// Stock history removed
-                        }
-                    }
-                } catch (Exception ex) { 
-                    Console.WriteLine("Stock Update Error: " + ex.Message); 
+                    context.credits.Add(credit);
                 }
             }
 
-            await context.SaveChangesAsync();
-            
-            // 1. Trigger Success Alert
-            await JSRuntime.InvokeVoidAsync("window.showToast", "Success", "Transaction successfully completed!", "success");
-            
-            // 2. Capture required data for receipt before clearing/resetting
-            var shouldPrint = shouldPrintReceipt;
-            var billNo = orderBillNo;
-            var mode = transMode;
-            
-            // 3. CLOSE MODAL IMMEDIATELY
-            showPaymentModal = false;
-            await InvokeAsync(StateHasChanged);
-            
-            // 4. PRINT (after a short delay to allow UI to update)
-            if (shouldPrint) {
-                try {
-                    await Task.Delay(500); // Wait for data binding
-                    
-                    // Force the barcode to render
-                    if (mode != "return") {
-                        await JSRuntime.InvokeVoidAsync("renderBarcode", "rcptBarcodeSvg", billNo);
-                    }
-                    
-                    await Task.Delay(300); // Wait for barcode
-                    await JSRuntime.InvokeVoidAsync("window.print");
-                } catch (Exception jsEx) {
-                    Console.WriteLine("Print Error: " + jsEx.Message);
+            // =====================================
+            // SAVE DATABASE
+            // =====================================
+            var changes = await context.SaveChangesAsync();
+
+            Console.WriteLine($"Saved Changes: {changes}");
+
+            // =====================================
+            // SUCCESS MESSAGE
+            // =====================================
+            await JSRuntime.InvokeVoidAsync(
+                "showToast",
+                "Success",
+                "Transaction completed successfully!",
+                "success"
+            );
+
+            // =====================================
+            // PRINT RECEIPT
+            // =====================================
+            if (shouldPrintReceipt)
+            {
+                await Task.Delay(400);
+
+                if (transMode != "return")
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "renderBarcode",
+                        "rcptBarcodeSvg",
+                        orderBillNo
+                    );
                 }
+
+                await JSRuntime.InvokeVoidAsync("window.print");
             }
 
-            // 5. AUTO-REFRESH: Reset the terminal cleanly without a hard reload to ensure print dialog finishes
+            // =====================================
+            // RESET
+            // =====================================
             ResetComponent();
-            await InvokeAsync(StateHasChanged);
-        } catch (Exception ex) { 
-            string errMessage = ex.Message;
-            if (ex.InnerException != null) errMessage += " | " + ex.InnerException.Message;
-            await JSRuntime.InvokeVoidAsync("window.showToast", "Error", "Save Error: " + errMessage, "error"); 
-            StateHasChanged();
-        } finally {
+
+            tenderedAmount = 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] SubmitSale: {ex.Message}");
+
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner: {ex.InnerException.Message}");
+            }
+
+            await JSRuntime.InvokeVoidAsync(
+                "showToast",
+                "Error",
+                $"Save failed: {ex.Message}",
+                "error"
+            );
+        }
+        finally
+        {
             isSubmitting = false;
+
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    private void ResetComponent()
+    private string FormatCurrency(decimal val) =>
+        (val < 0 ? "-" : "") + CurrencyService.GetSymbol() + Math.Abs(val).ToString("N2");
+
+    private async Task ToggleFullScreen() =>
+        await JSRuntime.InvokeVoidAsync("eval",
+            "if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();");
+
+    // ── Inner Classes ─────────────────────────────────────────────────────────
+    public class ProductDisplay
     {
-        transMode = "sale";
-        selectedCustomer = null;
-        customerSearchQuery = "";
-        searchQuery = "";
-        paymentMethod = "Cash";
-        tenderedAmount = null;
-        notes = "";
-        showPaymentModal = false;
-        filteredProducts = allProducts;
-        StateHasChanged();
-    }
-
-    private string FormatCurrency(decimal val) => (val < 0 ? "-" : "") + CurrencyService.GetSymbol() + Math.Abs(val).ToString("N2");
-
-    private async Task ToggleFullScreen() => await JSRuntime.InvokeVoidAsync("eval", "if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();");
-
-    public class ProductDisplay {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public decimal Price { get; set; }
         public decimal Discount { get; set; }
         public string? Expiry { get; set; }
         public int Stock { get; set; }
         public bool IsService { get; set; }
         public string? Image { get; set; }
-        public string Category { get; set; }
+        public string Category { get; set; } = "";
         public string? Barcode { get; set; }
     }
 
-    public class SaleItem {
+    public class SaleItem
+    {
         public string prod_name_service { get; set; } = "";
         public int qty { get; set; }
         public decimal price { get; set; }
@@ -1151,5 +1478,34 @@
         public string? image { get; set; }
         public decimal total_price { get; set; }
         public int OriginalSaleId { get; set; }
+    }
+
+    public class CreditEntry
+    {
+        public decimal paid_amount { get; set; }
+        public decimal discount { get; set; }
+    }
+    private void ResetComponent()
+    {
+        saleItems.Clear();
+        selectedCustomer = null;
+        customerSearchQuery = null;
+        searchQuery = "";
+        paymentMethod = "Cash";
+        tenderedAmount = null;
+        notes = "";
+        shouldPrintReceipt = true;
+        showPaymentModal = false;
+        showCreditModal = false;
+        showAddCustomerModal = false;
+        creditEntry = new CreditEntry();
+        creditSelectedCustomer = null;
+        creditCustomerSearch = null;
+        transMode = "sale";
+    
+        // Reset any other temporary states
+        ApplyFilters(); // Refresh product list if needed
+    
+        StateHasChanged();
     }
 }

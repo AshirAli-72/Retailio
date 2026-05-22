@@ -31,37 +31,65 @@
                         <th>Name</th>
                         <th>CNIC</th>
                         <th>Contact</th>
-                        <th>Email</th>
-                        <th>Status</th>
+                            <th>Email</th>
+                            <th>Credit Limit</th>
+                            <th>Status</th>
                         <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in customerList)
-                    {
-                        <tr>
-                            <td class="font-bold" style="padding-left: 1.5rem;">@item.id</td>
-                            <td class="font-medium">@item.name</td>
-                            <td>@item.cnic</td>
-                            <td>@item.contact</td>
-                            <td class="text-muted font-sm">@item.email</td>
-                            <td>
-                                <span class="status-badge @(item.status == "Active" ? "status-active" : "status-inactive")">
-                                    @(item.status ?? "Inactive")
-                                </span>
-                            </td>
-                            <td class="text-right" style="padding-right: 1.5rem;">
-                                <div class="actions-container actions-right">
-                                    <button class="btn-icon-sm btn-edit" @onclick="() => EditCustomer(item)" title="Edit">
-                                        <i class="ph-pencil"></i>
-                                    </button>
-                                    <button class="btn-icon-sm btn-delete" @onclick="() => DeleteCustomer(item.id)" title="Delete">
-                                        <i class="ph-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
+                        @foreach (var item in customerList)
+                        {
+                            <tr>
+                                <td class="font-bold" style="padding-left: 1.5rem;">
+                                    @item.id
+                                </td>
+
+                                <td class="font-medium">
+                                    @item.name
+                                </td>
+
+                                <td>
+                                    @item.cnic
+                                </td>
+
+                                <td>
+                                    @item.contact
+                                </td>
+
+                                <td class="text-muted font-sm">
+                                    @item.email
+                                </td>
+
+                                <td>
+                                    @(item.credit_limit?.ToString("N2") ?? "0.00")
+                                </td>
+
+                                <td>
+                                    <span class="status-badge @(item.status == "Active" ? "status-active" : "status-inactive")">
+                                        @(item.status ?? "Inactive")
+                                    </span>
+                                </td>
+
+                                <td class="text-right" style="padding-right: 1.5rem;">
+                                    <div class="actions-container actions-right">
+
+                                        <button class="btn-icon-sm btn-edit"
+                                                @onclick="() => EditCustomer(item)"
+                                                title="Edit">
+                                            <i class="ph-pencil"></i>
+                                        </button>
+
+                                        <button class="btn-icon-sm btn-delete"
+                                                @onclick="() => DeleteCustomer(item.id)"
+                                                title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     @if (!customerList.Any())
                     {
                         <tr>
@@ -150,7 +178,14 @@
                     <label class="form-label">Email Address</label>
                     <input type="email" @bind="customerModel.email" class="form-control" placeholder="Enter email address" />
                 </div>
-
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Credit Limit</label>
+                    <input type="number"
+                           step="0.01"
+                           @bind="customerModel.credit_limit"
+                           class="form-control"
+                           placeholder="Enter credit limit" />
+                </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Address</label>
                     <textarea class="form-control" rows="3" @bind="customerModel.address" placeholder="Enter physical address"></textarea>
@@ -255,6 +290,7 @@
     {
         editingCustomer = customer;
         originalName = customer.name;
+
         customerModel = new customers
         {
             id = customer.id,
@@ -263,9 +299,10 @@
             contact = customer.contact,
             email = customer.email,
             address = customer.address,
+            credit_limit = customer.credit_limit,
             status = customer.status
         };
-        errorMessage = null;
+
         errorMessage = null;
         showForm = true;
     }
@@ -283,10 +320,19 @@
             return;
         }
 
+        // Optional: prevent negative credit limit
+        if (customerModel.credit_limit < 0)
+        {
+            errorMessage = "Credit Limit cannot be negative.";
+            return;
+        }
+
         isSubmitting = true;
+
         try
         {
             using var context = DbFactory.CreateDbContext();
+
             if (editingCustomer == null)
             {
                 context.customers.Add(customerModel);
@@ -297,11 +343,24 @@
             }
 
             await context.SaveChangesAsync();
+
             await JSRuntime.InvokeVoidAsync("clearNavCache");
+
             await LoadCustomers();
+
             HideForm();
-            var msg = editingCustomer == null ? "Customer created successfully!" : "Customer updated successfully!";
-            await JSRuntime.InvokeVoidAsync("showToast", "Success", msg, "success");
+
+            var msg = editingCustomer == null
+                ? "Customer created successfully!"
+                : "Customer updated successfully!";
+
+            await JSRuntime.InvokeVoidAsync(
+                "showToast",
+                "Success",
+                msg,
+                "success"
+            );
+
             errorMessage = null;
         }
         catch (Exception ex)

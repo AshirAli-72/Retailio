@@ -10,16 +10,13 @@ namespace E_Invoice_system.Data
         {
         }
 
- 
         public DbSet<customers> customers { get; set; }
         public DbSet<ProductService> products_services { get; set; }
         public DbSet<Category> categories { get; set; }
         public DbSet<Brand> brands { get; set; }
         public DbSet<users> users { get; set; }
-       
         public DbSet<Sale> sales { get; set; }
         public DbSet<ReturnDetail> returns { get; set; }
-
         public DbSet<Currency> currencies { get; set; }
         public DbSet<Role> roles { get; set; }
         public DbSet<RolePermission> roles_permissions { get; set; }
@@ -31,34 +28,50 @@ namespace E_Invoice_system.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            optionsBuilder.ConfigureWarnings(warnings =>
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Product decimal columns removed - no price/discount/tax in new schema
+            // Customers Configuration
+            modelBuilder.Entity<customers>(entity =>
+            {
+                entity.HasKey(e => e.id);
+
+                entity.Property(e => e.id)
+                      .ValueGeneratedOnAdd()
+                      .UseIdentityColumn();
+
+                entity.Property(e => e.name).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.cnic).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.contact).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.address).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.email).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.credit_limit)
+                      .HasColumnType("decimal(18,2)");
+                entity.Property(e => e.status).HasColumnType("nvarchar(max)");
+
+                entity.ToTable("customers");
+            });
+
+            // Other configurations
+            modelBuilder.Entity<Sale>()
+                .Property(s => s.price).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Sale>()
-                .Property(s => s.price)
-                .HasColumnType("decimal(18,2)");
+                .Property(s => s.discount).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Sale>()
-                .Property(s => s.discount)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<Sale>()
-                .Property(s => s.total_price)
-                .HasColumnType("decimal(18,2)");
+                .Property(s => s.total_price).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<ReturnDetail>()
-                .Property(r => r.Amount)
-                .HasColumnType("decimal(18,2)");
+                .Property(r => r.Amount).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Currency>()
-                .Property(c => c.exchange_rate)
-                .HasColumnType("decimal(18,2)");
+                .Property(c => c.exchange_rate).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<StockDetail>(entity =>
             {
@@ -89,12 +102,9 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.salary).HasColumnType("decimal(18,2)");
             });
 
-            // Seed Roles
-            modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, RoleTitle = "Admin" }
-            );
+            // Seed Data
+            modelBuilder.Entity<Role>().HasData(new Role { Id = 1, RoleTitle = "Admin" });
 
-            // Seed RolePermissions
             modelBuilder.Entity<RolePermission>().HasData(
                 new RolePermission
                 {
@@ -108,10 +118,8 @@ namespace E_Invoice_system.Data
                     Reports = true,
                     Settings = true,
                     Inventory = true
-                }
-            );
+                });
 
-            // Seed Employee
             modelBuilder.Entity<Employee>().HasData(
                 new Employee
                 {
@@ -125,10 +133,8 @@ namespace E_Invoice_system.Data
                     address = "Admin Address",
                     salary = 0,
                     status = "Active"
-                }
-            );
+                });
 
-            // Seed Users
             modelBuilder.Entity<users>().HasData(
                 new users
                 {
@@ -139,9 +145,7 @@ namespace E_Invoice_system.Data
                     role_id = 1,
                     emp_id = 1,
                     status = "Active"
-                }
-            );
+                });
         }
     }
 }
-

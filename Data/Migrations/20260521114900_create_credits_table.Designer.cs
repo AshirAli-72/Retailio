@@ -65,42 +65,46 @@ namespace E_Invoice_system.Migrations
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.Credit", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
+            {
+                b.Property<int>("id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int")
+                    .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<int>("customer_id")
-                        .HasColumnType("int")
-                        .HasColumnName("customer_id");
+                b.Property<string>("bill_No")
+                    .HasColumnType("nvarchar(max)")
+                    .HasColumnName("bill_No");
 
-                    b.Property<string>("date")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
+                b.Property<int>("customer_id")
+                    .HasColumnType("int")
+                    .HasColumnName("customer_id");
 
-                    b.Property<decimal>("discount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("discount");
+                b.Property<string>("date")
+                    .HasColumnType("nvarchar(max)")
+                    .HasColumnName("date");
 
-                    b.Property<decimal>("grand_total")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("grand_total");
+                b.Property<decimal>("discount")
+                    .HasColumnType("decimal(18,2)")
+                    .HasColumnName("discount");
 
-                    b.Property<decimal>("paid_amount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("paid_amount");
+                b.Property<decimal>("grand_total")
+                    .HasColumnType("decimal(18,2)")
+                    .HasColumnName("grand_total");
 
-                    b.Property<decimal>("remaining_amount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("remaining_amount");
+                b.Property<decimal>("paid_amount")
+                    .HasColumnType("decimal(18,2)")
+                    .HasColumnName("paid_amount");
 
-                    b.HasKey("id");
+                b.Property<decimal>("remaining_amount")
+                    .HasColumnType("decimal(18,2)")
+                    .HasColumnName("remaining_amount");
 
-                    b.ToTable("credits");
-                });
+                b.HasKey("id");
+
+                b.ToTable("credits");
+            });
 
             modelBuilder.Entity("E_Invoice_system.Models.Currency", b =>
                 {

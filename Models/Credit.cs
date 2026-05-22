@@ -10,6 +10,9 @@ namespace E_Invoice_system.Models
         [Column("id")]
         public int id { get; set; }
 
+        [Column("bill_No")]
+        public string? bill_No { get; set; }
+
         [Column("customer_id")]
         public int customer_id { get; set; }
 
@@ -26,6 +29,6 @@ namespace E_Invoice_system.Models
         public decimal remaining_amount { get; set; }
 
         [Column("date")]
-        public string date { get; set; }
+        public string? date { get; set; }
     }
 }
