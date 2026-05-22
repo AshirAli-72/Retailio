@@ -38,3 +38,24 @@
     color: var(--primary);
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
+
+@media (max-width: 768px) {
+    .index-header-row {
+        padding: 0 1rem;
+    }
+
+    .index-toggle-pill {
+        width: 100%;
+    }
+
+    .toggle-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+
+    .table-container .styled-table {
+        min-width: 720px;
+    }
+}

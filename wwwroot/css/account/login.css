@@ -382,10 +382,56 @@ body {
 }
 
 @media (max-width: 1100px) {
+    body { overflow-y: auto; height: auto; min-height: 100vh; }
+    .login-wrapper { flex-direction: column; min-height: 100vh; }
     .right-side { display: none; }
-    .left-side { flex: 1; padding: 0 8%; align-items: center; }
+    .left-side {
+        flex: 1;
+        padding: 6rem 6% 8rem;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .brand-header {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 2rem;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .login-content { margin-top: 0; }
     .welcome-title { font-size: 2.8rem; text-align: center; }
     .subtitle { text-align: center; }
     .subtitle-line { margin-inline: auto; }
-    .footer-tagline { left: 50%; transform: translateX(-50%); text-align: center; border: none; padding: 0; }
+    .footer-tagline {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        transform: none;
+        text-align: center;
+        border: none;
+        padding: 0;
+        margin-top: 3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .left-side { padding: 4rem 5% 6rem; }
+    .brand-main-text { font-size: 2.2rem; }
+    .brand-sub-text span { font-size: 1.2rem; letter-spacing: 3px; }
+    .document-icon { font-size: 3.5rem; }
+    .welcome-title { font-size: 2.2rem; }
+    .btn-login { margin-top: 2rem; padding: 16px; font-size: 1.1rem; }
+}
+
+@media (max-width: 480px) {
+    .left-side { padding: 3rem 1.25rem 5rem; }
+    .brand-logo-container { flex-direction: column; text-align: center; gap: 1rem; }
+    .brand-sub-text { justify-content: center; }
+    .welcome-title { font-size: 1.85rem; letter-spacing: -0.5px; }
+    .subtitle { font-size: 0.95rem; }
+    .input-box input { padding: 14px 16px 14px 52px; font-size: 1rem; }
+    .input-box i { left: 16px; font-size: 1.2rem; }
+    .footer-tagline { font-size: 1rem; }
 }

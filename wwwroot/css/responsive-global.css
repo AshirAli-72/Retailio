@@ -1,0 +1,116 @@
+/* Global responsive utilities — loaded on all app pages */
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+img, video, svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Horizontal scroll for wide tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive .styled-table {
+    min-width: 640px;
+}
+
+/* Sale terminal layout */
+.sale-layout-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sale-main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.sale-content-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+.sale-layout-container .top-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 60px;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.sale-layout-container .top-bar-left,
+.sale-layout-container .top-bar-center,
+.sale-layout-container .top-bar-right {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sale-layout-container .top-bar-center {
+    text-align: center;
+    order: 3;
+    flex-basis: 100%;
+}
+
+@media (min-width: 769px) {
+    .sale-layout-container .top-bar-center {
+        order: 0;
+        flex-basis: auto;
+        text-align: center;
+    }
+}
+
+/* Modals */
+.modal-overlay,
+.modal-form-overlay {
+    padding: 1rem;
+    align-items: flex-start;
+    overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+    .modal-form-card,
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0.5rem 0;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+
+    .form-grid,
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+
+    .page-header .btn-primary,
+    .page-header a.btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 479px) {
+    .dashboard-panel {
+        padding: 0.25rem;
+    }
+
+    .card-no-padding .page-header {
+        padding: 1rem;
+    }
+}

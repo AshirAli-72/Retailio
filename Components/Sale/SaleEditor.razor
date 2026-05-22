@@ -233,7 +233,7 @@
                     <div class="total-value">@FormatCurrency(currentTotal)</div>
                 </div>
             </div>
-            <button type="button" class="btn-pay-v2" @onclick="OpenPaymentModal">
+            <button type="button" class="btn-pay-v2" @onclick="OpenPaymentModalAsync">
                 <i class="ph-credit-card"></i> <span>Proceed to Payment</span>
             </button>
         </div>
@@ -1052,11 +1052,50 @@
     private decimal currentTotal => totalSub - totalDisc;
 
     // ── Payment Flow ──────────────────────────────────────────────────────────
-    private void OpenPaymentModal()
+    private async Task OpenPaymentModalAsync()
     {
         if (!saleItems.Any()) return;
+
+        using var context = DbFactory.CreateDbContext();
+        orderBillNo = await GenerateNextBillNoAsync(context);
+
         showPaymentModal = true;
         tenderedAmount = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task<string> GenerateNextBillNoAsync(ApplicationDbContext context)
+    {
+        var prefix = transMode == "return" ? "RETURN_" : "SALE_";
+        int nextIdNum = 1;
+
+        string? lastBillNo;
+
+        if (transMode == "return")
+        {
+            lastBillNo = await context.returns
+                .Where(r => r.billNo != null && r.billNo.StartsWith(prefix))
+                .OrderByDescending(r => r.Id)
+                .Select(r => r.billNo)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            lastBillNo = await context.sales
+                .Where(s => s.billNo != null && s.billNo.StartsWith(prefix))
+                .OrderByDescending(s => s.id)
+                .Select(s => s.billNo)
+                .FirstOrDefaultAsync();
+        }
+
+        if (!string.IsNullOrEmpty(lastBillNo))
+        {
+            var parts = lastBillNo.Split('_', '-');
+            if (parts.Length > 1 && int.TryParse(parts[1], out int n))
+                nextIdNum = n + 1;
+        }
+
+        return $"{prefix}{nextIdNum}";
     }
 
     private void SetPaymentMethod(string m)
@@ -1237,48 +1276,10 @@
             }
 
             // =====================================
-            // GENERATE BILL NUMBER
+            // GENERATE BILL NUMBER (fresh at submit)
             // =====================================
-            var prefix = transMode == "return"
-                ? "RETURN_"
-                : "SALE_";
-
-            int nextIdNum = 1;
-
-            string? lastBillNo = null;
-
-            if (transMode == "return")
-            {
-                lastBillNo = await context.returns
-                    .Where(r => r.billNo != null &&
-                                r.billNo.StartsWith(prefix))
-                    .OrderByDescending(r => r.Id)
-                    .Select(r => r.billNo)
-                    .FirstOrDefaultAsync();
-            }
-            else
-            {
-                lastBillNo = await context.sales
-                    .Where(s => s.billNo != null &&
-                                s.billNo.StartsWith(prefix))
-                    .OrderByDescending(s => s.id)
-                    .Select(s => s.billNo)
-                    .FirstOrDefaultAsync();
-            }
-
-            if (!string.IsNullOrEmpty(lastBillNo))
-            {
-                var parts = lastBillNo.Split('_', '-');
-
-                if (parts.Length > 1 &&
-                    int.TryParse(parts[1], out int n))
-                {
-                    nextIdNum = n + 1;
-                }
-            }
-
-            // FINAL BILL NO
-            orderBillNo = $"{prefix}{nextIdNum}";
+            orderBillNo = await GenerateNextBillNoAsync(context);
+            await InvokeAsync(StateHasChanged);
 
             // =====================================
             // LOAD PRODUCTS
@@ -1400,6 +1401,7 @@
             // =====================================
             if (shouldPrintReceipt)
             {
+                await InvokeAsync(StateHasChanged);
                 await Task.Delay(400);
 
                 if (transMode != "return")
@@ -1502,7 +1504,8 @@
         creditSelectedCustomer = null;
         creditCustomerSearch = null;
         transMode = "sale";
-    
+        orderBillNo = "";
+
         // Reset any other temporary states
         ApplyFilters(); // Refresh product list if needed
     

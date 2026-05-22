@@ -207,3 +207,9 @@
     font-size: 0.7rem;
     text-transform: uppercase;
 }
+
+@media (max-width: 768px) {
+    .management-container { padding: 0.75rem; }
+    .page-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .table-container { overflow-x: auto; }
+}
