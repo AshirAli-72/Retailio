@@ -319,6 +319,13 @@
                         <h3>Payment Summary</h3>
                         <p>Transaction overview</p>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(orderBillNo))
+                    {
+                        <div class="summary-line-v4" style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 0.5rem;">
+                            <span>Bill No</span>
+                            <strong style="font-family: monospace; color: var(--primary);">@orderBillNo</strong>
+                        </div>
+                    }
                     <div class="summary-line-v4">
                         <span>Total Amount</span>
                         <strong>@FormatCurrency(currentTotal)</strong>
@@ -647,11 +654,7 @@
         <div class="rcpt-meta">
             <div class="rcpt-meta-row">
                 <span>Bill No:</span>
-                <span>
-                    @(string.IsNullOrWhiteSpace(orderBillNo)
-                        ? "N/A"
-                        : orderBillNo)
-                </span>
+                <span id="rcpt-bill-no">@(string.IsNullOrWhiteSpace(orderBillNo) ? "—" : orderBillNo)</span>
             </div>
             <div class="rcpt-meta-row"><span>Date:</span> <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span></div>
             <div class="rcpt-meta-row"><span>Customer:</span> <span>@(selectedCustomer?.name ?? "Walking Customer")</span></div>
@@ -973,6 +976,7 @@
     private void SetTransMode(string mode)
     {
         transMode = mode;
+        orderBillNo = "";
         foreach (var item in saleItems)
         {
             int abs = Math.Abs(item.qty);
@@ -1327,9 +1331,24 @@
                             ? "Pending"
                             : "Paid",
                         is_returned = false,
-                        description = selectedCustomer?.name ?? "Walk-In",
+                        description = item.prod_name_service,
                         expiry_date = item.expiry_date
                             ?? DateTime.Now.ToString("yyyy-MM-dd")
+                    });
+                }
+                else
+                {
+                    context.returns.Add(new ReturnDetail
+                    {
+                        billNo = orderBillNo,
+                        SaleId = item.OriginalSaleId,
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        no_of_items = saleItems.Count,
+                        qty = item.qty,
+                        total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
+                        Amount = Math.Abs(item.total_price),
+                        Method = paymentMethod,
+                        Status = item.prod_name_service
                     });
                 }
 
@@ -1354,9 +1373,44 @@
             }
 
             // =====================================
+            // MARK ORIGINAL SALES AS RETURNED
+            // =====================================
+            if (transMode == "return")
+            {
+                var originalSaleIds = saleItems
+                    .Where(i => i.OriginalSaleId > 0)
+                    .Select(i => i.OriginalSaleId)
+                    .Distinct()
+                    .ToList();
+
+                if (originalSaleIds.Any())
+                {
+                    var originalSales = await context.sales
+                        .Where(s => originalSaleIds.Contains(s.id))
+                        .ToListAsync();
+
+                    var billNos = originalSales
+                        .Select(s => s.billNo)
+                        .Where(b => !string.IsNullOrEmpty(b))
+                        .Distinct()
+                        .ToList();
+
+                    if (billNos.Any())
+                    {
+                        var salesToMark = await context.sales
+                            .Where(s => s.billNo != null && billNos.Contains(s.billNo))
+                            .ToListAsync();
+
+                        foreach (var s in salesToMark)
+                            s.is_returned = true;
+                    }
+                }
+            }
+
+            // =====================================
             // CREDIT ENTRY
             // =====================================
-            if (paymentMethod == "Credit")
+            if (paymentMethod == "Credit" && transMode != "return")
             {
                 var creditCust = creditSelectedCustomer ?? selectedCustomer;
 
@@ -1399,21 +1453,11 @@
             // =====================================
             // PRINT RECEIPT
             // =====================================
-            if (shouldPrintReceipt)
+            if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderBillNo))
             {
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(400);
-
-                if (transMode != "return")
-                {
-                    await JSRuntime.InvokeVoidAsync(
-                        "renderBarcode",
-                        "rcptBarcodeSvg",
-                        orderBillNo
-                    );
-                }
-
-                await JSRuntime.InvokeVoidAsync("window.print");
+                await Task.Delay(300);
+                await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderBillNo);
             }
 
             // =====================================
