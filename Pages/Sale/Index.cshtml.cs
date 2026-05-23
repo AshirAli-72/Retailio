@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Data;
 using E_Invoice_system.Models;
-using System.Text.RegularExpressions;
 
 namespace E_Invoice_system.Pages.Sale
 {
@@ -20,20 +19,25 @@ namespace E_Invoice_system.Pages.Sale
 
         public IList<SaleDisplayItem> Sales { get; set; } = new List<SaleDisplayItem>();
         public IList<ReturnDetail> Returns { get; set; } = new List<ReturnDetail>();
+        public IList<CreditDisplayItem> Credits { get; set; } = new List<CreditDisplayItem>();
 
-        // --- Sales Pagination ---
         [BindProperty(SupportsGet = true)]
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
 
-        // --- Returns Pagination ---
         [BindProperty(SupportsGet = true)]
         public int ReturnPageNumber { get; set; } = 1;
         public int ReturnPageSize { get; set; } = 10;
         public int ReturnTotalPages { get; set; }
         public int ReturnTotalCount { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int CreditPageNumber { get; set; } = 1;
+        public int CreditPageSize { get; set; } = 10;
+        public int CreditTotalPages { get; set; }
+        public int CreditTotalCount { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string Tab { get; set; } = "sales";
@@ -50,9 +54,25 @@ namespace E_Invoice_system.Pages.Sale
             public decimal total_qty { get; set; }
             public decimal Price { get; set; }
             public decimal TotalPrice { get; set; }
+            public string? CustomerName { get; set; }
             public string? PaymentMethod { get; set; }
             public string? Status { get; set; }
             public bool IsReturned { get; set; }
+        }
+
+        public class CreditDisplayItem
+        {
+            public int id { get; set; }
+            public string? InvNo { get; set; }
+            public string? CustomerName { get; set; }
+            public string? Date { get; set; }
+            public int no_of_items { get; set; }
+            public decimal total_qty { get; set; }
+            public decimal Price { get; set; }
+            public decimal TotalPrice { get; set; }
+            public decimal PaidAmount { get; set; }
+            public decimal RemainingAmount { get; set; }
+            public string? Status { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -63,12 +83,12 @@ namespace E_Invoice_system.Pages.Sale
 
             try
             {
-                // ── Sales Pagination ──────────────────────────────────────────────
-                IQueryable<E_Invoice_system.Models.Sale> salesQuery = _context.sales.AsNoTracking();
+                var salesQuery = _context.sales.AsNoTracking()
+                    .Where(s => s.payment_method != "Credit"
+                        && (s.status == null || s.status != "Pending"));
 
                 TotalCount = await salesQuery.CountAsync();
                 TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-
                 if (PageNumber < 1) PageNumber = 1;
                 if (TotalPages > 0 && PageNumber > TotalPages) PageNumber = TotalPages;
 
@@ -86,6 +106,7 @@ namespace E_Invoice_system.Pages.Sale
                         total_qty = s.total_qty,
                         Price = s.price,
                         TotalPrice = s.total_price,
+                        CustomerName = s.description ?? "Walk in",
                         PaymentMethod = s.payment_method,
                         Status = s.status,
                         IsReturned = s.is_returned
@@ -94,24 +115,56 @@ namespace E_Invoice_system.Pages.Sale
 
                 Sales = salesList.Where(s => s.qty > 0 && !s.IsReturned).ToList();
 
-                // ── Returns Pagination ────────────────────────────────────────────
-                IQueryable<ReturnDetail> returnsQuery = _context.returns.AsNoTracking();
-
+                var returnsQuery = _context.returns.AsNoTracking();
                 ReturnTotalCount = await returnsQuery.CountAsync();
                 ReturnTotalPages = (int)Math.Ceiling(ReturnTotalCount / (double)ReturnPageSize);
-
                 if (ReturnPageNumber < 1) ReturnPageNumber = 1;
                 if (ReturnTotalPages > 0 && ReturnPageNumber > ReturnTotalPages) ReturnPageNumber = ReturnTotalPages;
 
                 Returns = await returnsQuery
-                    .OrderByDescending(r => r.date)
+                    .OrderByDescending(r => r.Id)
                     .Skip((ReturnPageNumber - 1) * ReturnPageSize)
                     .Take(ReturnPageSize)
                     .ToListAsync();
+
+                var creditsQuery = _context.credits_details.AsNoTracking()
+                    .Where(c => c.status == null || c.status != "Returned");
+                CreditTotalCount = await creditsQuery.CountAsync();
+                CreditTotalPages = (int)Math.Ceiling(CreditTotalCount / (double)CreditPageSize);
+                if (CreditPageNumber < 1) CreditPageNumber = 1;
+                if (CreditTotalPages > 0 && CreditPageNumber > CreditTotalPages) CreditPageNumber = CreditTotalPages;
+
+                Credits = await creditsQuery
+                    .OrderByDescending(c => c.id)
+                    .Skip((CreditPageNumber - 1) * CreditPageSize)
+                    .Take(CreditPageSize)
+                    .GroupJoin(
+                        _context.customers.AsNoTracking(),
+                        c => c.customer_id,
+                        cust => cust.id,
+                        (c, custs) => new { c, custs }
+                    )
+                    .SelectMany(
+                        x => x.custs.DefaultIfEmpty(),
+                        (x, cust) => new CreditDisplayItem
+                        {
+                            id = x.c.id,
+                            InvNo = x.c.inv_no,
+                            CustomerName = cust != null ? cust.name : "Walk in",
+                            Date = x.c.date,
+                            no_of_items = x.c.no_of_items,
+                            total_qty = x.c.total_qty,
+                            Price = x.c.price,
+                            TotalPrice = x.c.total_price,
+                            PaidAmount = x.c.paid_amount,
+                            RemainingAmount = x.c.remaining_amount,
+                            Status = x.c.status ?? "Pending"
+                        })
+                    .ToListAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Silence error for UI but keep logic
+                ErrorMessage = "Unable to load transaction data. Please refresh the page.";
             }
 
             return Page();
@@ -119,24 +172,13 @@ namespace E_Invoice_system.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            try
+            var sale = await _context.sales.FindAsync(id);
+            if (sale != null)
             {
-                var sale = await _context.sales.FindAsync(id);
-                if (sale != null)
-                {
-                    _context.sales.Remove(sale);
-                    await _context.SaveChangesAsync();
-                }
+                _context.sales.Remove(sale);
+                await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.sales.Any(s => s.id == id))
-                {
-                    return RedirectToPage();
-                }
-                throw;
-            }
-            return RedirectToPage();
+            return RedirectToPage(new { Tab = "sales", PageNumber, ReturnPageNumber, CreditPageNumber });
         }
 
         public async Task<IActionResult> OnPostDeleteReturnAsync(int id)
@@ -147,8 +189,18 @@ namespace E_Invoice_system.Pages.Sale
                 _context.returns.Remove(returnRecord);
                 await _context.SaveChangesAsync();
             }
-            return RedirectToPage();
+            return RedirectToPage(new { Tab = "returns", PageNumber, ReturnPageNumber, CreditPageNumber });
+        }
+
+        public async Task<IActionResult> OnPostDeleteCreditAsync(int id)
+        {
+            var credit = await _context.credits_details.FindAsync(id);
+            if (credit != null)
+            {
+                _context.credits_details.Remove(credit);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToPage(new { Tab = "credits", PageNumber, ReturnPageNumber, CreditPageNumber });
         }
     }
-
 }

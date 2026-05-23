@@ -8,8 +8,6 @@ namespace E_Invoice_system.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "customers");   // Drop old table
-
             migrationBuilder.CreateTable(
                 name: "customers",
                 columns: table => new

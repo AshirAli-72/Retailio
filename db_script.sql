@@ -247,6 +247,25 @@ CREATE TABLE [credits] (
     CONSTRAINT [PK_customers] PRIMARY KEY ([id])
 );
 GO
+CREATE TABLE [credits_details] (
+    [id] int NOT NULL IDENTITY,
+    [inv_no] nvarchar(max) NULL,
+    [customer_id] int NOT NULL,
+    [date] nvarchar(max) NOT NULL,
+    [no_of_items] int NOT NULL,
+    [qty] int NOT NULL,
+    [total_qty] int NOT NULL,
+    [price] decimal(18,2) NOT NULL,
+    [discount] decimal(18,2) NOT NULL,
+    [expiry_date] nvarchar(max) NULL,
+    [total_price] decimal(18,2) NOT NULL,
+    [payment_method] nvarchar(max) NULL,
+    [status] nvarchar(max) NULL,
+    [paid_amount] decimal(18,2) NOT NULL,
+    [remaining_amount] decimal(18,2) NOT NULL,
+    CONSTRAINT [PK_credits_details] PRIMARY KEY ([id])
+);
+GO
 
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'address', N'cnic', N'date', N'email', N'emp_code', N'full_name', N'image_path', N'mobile_no', N'salary', N'status') AND [object_id] = OBJECT_ID(N'[employee]'))
     SET IDENTITY_INSERT [employee] ON;

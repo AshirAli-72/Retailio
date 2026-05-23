@@ -388,7 +388,7 @@
             }
 
             // Top Products
-            topProducts = reportData.GroupBy(s => s.description ?? "Walk-In")
+            topProducts = reportData.GroupBy(s => s.inv_no ?? "Unknown")
                 .Select(g => new TopProduct { Name = g.Key, Count = g.Count(), Revenue = g.Sum(s => s.total_price) })
                 .OrderByDescending(p => p.Revenue)
                 .ToList();

@@ -497,158 +497,106 @@ function exportTableToCSV(tableId, filename) {
     document.body.removeChild(downloadLink);
 }
 
+function escapeHtml(text) {
+    if (text == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
+/** Print report: opens system print dialog directly (no preview). Table + summary only. */
 function printElement(elementId, reportTitle, storeInfo) {
     const element = document.getElementById(elementId);
     if (!element) return;
 
-    // Create Modal Overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'print-preview-overlay';
-    Object.assign(overlay.style, {
-        position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-        background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)',
-        zIndex: '100000', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        opacity: '0', transition: 'opacity 0.4s ease'
+    const table = element.querySelector('table.premium-table, table.premium-table, .premium-table');
+    if (!table || !table.querySelector('tbody tr')) {
+        if (typeof showToast === 'function') {
+            showToast('Print', 'Generate the report first — no data to print.', 'warning');
+        }
+        return;
+    }
+
+    const stats = [];
+    element.querySelectorAll('.stat-card-premium').forEach((card) => {
+        const label = card.querySelector('.label');
+        const value = card.querySelector('.value');
+        if (label && value) {
+            stats.push({ label: label.innerText.trim(), value: value.innerText.trim() });
+        }
     });
 
-    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    let logoHtml = storeInfo?.logoUrl ? `<img src="${storeInfo.logoUrl}" style="height: 60px; object-fit: contain;" />` : '';
+    const today = new Date().toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    });
 
-    overlay.innerHTML = `
-        <div class="print-preview-modal" style="width: 90%; max-width: 1000px; height: 90vh; background: white; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; transform: translateY(20px); transition: transform 0.4s ease; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-            <!-- Modal Header -->
-            <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 40px; height: 40px; background: #BC1823; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
-                        <i class="ph-printer" style="font-size: 1.25rem;"></i>
-                    </div>
+    const logoHtml = storeInfo?.logoUrl
+        ? `<img src="${escapeHtml(storeInfo.logoUrl)}" alt="Logo" class="rp-logo" />`
+        : '';
+
+    let summaryHtml = '';
+    if (stats.length) {
+        summaryHtml = `
+            <section class="rp-summary">
+                <h3 class="rp-section-title">Summary</h3>
+                <div class="rp-summary-grid">
+                    ${stats.map((s) => `
+                        <div class="rp-summary-item">
+                            <span class="rp-sum-label">${escapeHtml(s.label)}</span>
+                            <strong class="rp-sum-value">${escapeHtml(s.value)}</strong>
+                        </div>`).join('')}
+                </div>
+            </section>`;
+    }
+
+    const existing = document.getElementById('report-print-root');
+    if (existing) existing.remove();
+
+    const printRoot = document.createElement('div');
+    printRoot.id = 'report-print-root';
+    printRoot.className = 'report-print-root';
+    printRoot.innerHTML = `
+        <article class="rp-document">
+            <header class="rp-header">
+                <div class="rp-brand">
+                    ${logoHtml}
                     <div>
-                        <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Print Preview</h3>
-                        <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 600;">${reportTitle}</p>
+                        <h1 class="rp-store">${escapeHtml(storeInfo?.shopName || 'E-Invoice System')}</h1>
+                        ${storeInfo?.address ? `<p class="rp-meta-line">${escapeHtml(storeInfo.address)}</p>` : ''}
+                        ${storeInfo?.phone ? `<p class="rp-meta-line">Tel: ${escapeHtml(storeInfo.phone)}</p>` : ''}
                     </div>
                 </div>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button id="close-preview" style="padding: 0.6rem 1.25rem; background: white; border: 1px solid #e2e8f0; border-radius: 10px; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                        <i class="ph-x"></i> Cancel
-                    </button>
-                    <button id="confirm-print" style="padding: 0.6rem 2rem; background: #BC1823; border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(188, 24, 35, 0.2); transition: all 0.2s;">
-                        <i class="ph-printer"></i> Print Now
-                    </button>
+                <div class="rp-report-title-block">
+                    <h2 class="rp-title">${escapeHtml(reportTitle)}</h2>
+                    <p class="rp-date">Generated: ${escapeHtml(today)}</p>
                 </div>
-            </div>
+            </header>
+            ${summaryHtml}
+            <section class="rp-table-section">
+                <h3 class="rp-section-title">Report Details</h3>
+                <div class="rp-table-wrap">${table.outerHTML}</div>
+            </section>
+            <footer class="rp-footer">E-Invoice System · Confidential business report</footer>
+        </article>`;
 
-            <!-- Modal Content (Scrollable Paper) -->
-            <div id="print-preview-content" style="flex: 1; overflow-y: auto; background: #cbd5e1; padding: 40px 20px; display: flex; justify-content: center;">
-                <div class="paper-page" style="width: 100%; max-width: 800px; background: white; min-height: 1100px; padding: 60px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-radius: 2px; opacity: 0; transform: translateY(10px); transition: all 0.6s ease 0.2s;">
-                    <!-- Report Header -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #BC1823; padding-bottom: 20px;">
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            ${logoHtml}
-                            <div>
-                                <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #BC1823; text-transform: uppercase;">${storeInfo?.shopName || 'E-Invoice System'}</h1>
-                                <p style="margin: 4px 0; font-size: 13px; color: #64748b; font-weight: 500;">${storeInfo?.address || ''}</p>
-                                <p style="margin: 4px 0; font-size: 13px; color: #64748b; font-weight: 500;">${storeInfo?.phone || ''}</p>
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">${reportTitle}</h2>
-                            <p style="margin: 4px 0; font-size: 12px; color: #94a3b8; font-weight: 600;">Date: ${today}</p>
-                        </div>
-                    </div>
+    document.body.appendChild(printRoot);
+    document.body.classList.add('printing-report');
 
-                    <!-- Main Data -->
-                    <div class="printable-data-wrapper">
-                        ${element.innerHTML}
-                    </div>
-
-                    <div style="margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 11px; color: #94a3b8; text-align: center; font-style: italic;">
-                        This document is generated by the E-Invoice Hub. Standard terms and conditions apply.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <style>
-            @media print {
-                /* Hide everything except the print overlay */
-                body > *:not(#print-preview-overlay) { display: none !important; }
-                body { overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
-                #print-preview-overlay { 
-                    position: static !important; 
-                    display: block !important; 
-                    background: white !important; 
-                    padding: 0 !important; 
-                    margin: 0 !important; 
-                    width: 100% !important; 
-                    height: auto !important;
-                    overflow: visible !important;
-                }
-                .print-preview-modal { 
-                    position: static !important;
-                    width: 100% !important; 
-                    max-width: none !important; 
-                    height: auto !important; 
-                    transform: none !important; 
-                    box-shadow: none !important; 
-                    background: white !important;
-                    display: block !important;
-                    overflow: visible !important;
-                }
-                #print-preview-content { 
-                    background: white !important; 
-                    padding: 0 !important; 
-                    overflow: visible !important; 
-                    display: block !important;
-                    height: auto !important;
-                }
-                .paper-page { 
-                    box-shadow: none !important; 
-                    padding: 0 !important; 
-                    margin: 0 !important;
-                    width: 100% !important; 
-                    max-width: none !important; 
-                    opacity: 1 !important; 
-                    transform: none !important; 
-                    display: block !important;
-                    overflow: visible !important;
-                }
-                /* Hide UI controls during print */
-                #close-preview, #confirm-print, .print-preview-modal > div:first-child, .no-print { 
-                    display: none !important; 
-                }
-                
-                table { width: 100% !important; border-collapse: collapse !important; margin-top: 20px; }
-                th { background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #BC1823 !important; padding: 10px !important; text-align: left !important; }
-                td { border-bottom: 1px solid #f1f5f9 !important; padding: 10px !important; }
-            }
-        </style>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Trigger Fade-In
-    requestAnimationFrame(() => {
-        overlay.style.opacity = '1';
-        overlay.querySelector('.print-preview-modal').style.transform = 'translateY(0)';
-        setTimeout(() => {
-            overlay.querySelector('.paper-page').style.opacity = '1';
-            overlay.querySelector('.paper-page').style.transform = 'translateY(0)';
-        }, 400);
-    });
-
-    // Close logic
-    const closeBtn = overlay.querySelector('#close-preview');
-    closeBtn.onclick = () => {
-        overlay.style.opacity = '0';
-        overlay.querySelector('.print-preview-modal').style.transform = 'translateY(20px)';
-        setTimeout(() => overlay.remove(), 400);
+    let finished = false;
+    const cleanup = () => {
+        if (finished) return;
+        finished = true;
+        window.removeEventListener('afterprint', cleanup);
+        document.body.classList.remove('printing-report');
+        if (printRoot.parentNode) printRoot.remove();
     };
 
-    // Print logic
-    const printBtn = overlay.querySelector('#confirm-print');
-    printBtn.onclick = () => {
+    setTimeout(() => {
+        window.addEventListener('afterprint', cleanup);
         window.print();
-    };
+        setTimeout(cleanup, 3000);
+    }, 250);
 }
 
 function renderReportChart(canvasId, data) {
