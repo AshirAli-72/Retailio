@@ -40,32 +40,96 @@ img, video, svg {
     overflow: hidden;
 }
 
-.sale-layout-container .top-bar {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+/* Sale terminal header — profile always on the right */
+.sale-terminal-top-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 1rem;
+    width: 100%;
     min-height: 60px;
-    height: auto !important;
-    padding: 0.5rem 1rem !important;
+    height: 60px !important;
+    padding: 0 1.5rem !important;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    position: relative;
+    z-index: 200;
+    box-sizing: border-box;
 }
 
-.sale-layout-container .top-bar-left,
-.sale-layout-container .top-bar-center,
-.sale-layout-container .top-bar-right {
+.sale-terminal-top-bar .top-bar-left {
+    flex: 0 1 auto;
+    min-width: 0;
+    order: 1;
+}
+
+.sale-terminal-top-bar .sale-terminal-clock {
     flex: 1 1 auto;
     min-width: 0;
-}
-
-.sale-layout-container .top-bar-center {
     text-align: center;
-    order: 3;
-    flex-basis: 100%;
+    order: 2;
 }
 
-@media (min-width: 769px) {
-    .sale-layout-container .top-bar-center {
-        order: 0;
-        flex-basis: auto;
+.sale-terminal-top-bar .sale-terminal-clock .live-clock {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.sale-terminal-top-bar .sale-terminal-profile {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 3;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.sale-terminal-top-bar .user-profile-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sale-terminal-top-bar .user-avatar-initial {
+    background: #BC1823 !important;
+    color: #fff !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.sale-terminal-top-bar .profile-dropdown {
+    right: 0;
+    left: auto;
+}
+
+@media (max-width: 768px) {
+    .sale-terminal-top-bar {
+        flex-wrap: wrap !important;
+        height: auto !important;
+        min-height: 56px;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .sale-terminal-top-bar .sale-terminal-clock {
+        order: 3;
+        flex-basis: 100%;
         text-align: center;
+    }
+
+    .sale-terminal-top-bar .sale-terminal-profile {
+        order: 2;
     }
 }
 

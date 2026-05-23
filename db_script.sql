@@ -103,7 +103,7 @@ GO
 
 CREATE TABLE [return_details] (
     [id] int NOT NULL IDENTITY,
-    [billNo] nvarchar(max) NULL,
+    [inv_no] nvarchar(max) NULL,
     [sale_id] int NOT NULL,
     [date] nvarchar(max) NOT NULL,
     [no_of_items] int NOT NULL,
@@ -127,7 +127,7 @@ GO
 
 CREATE TABLE [sale_details] (
     [id] int NOT NULL IDENTITY,
-    [billNo] nvarchar(max) NULL,
+    [inv_no] nvarchar(max) NULL,
     [date] nvarchar(max) NOT NULL,
     [no_of_items] int NOT NULL,
     [qty] decimal(18,2) NOT NULL,
@@ -243,7 +243,7 @@ CREATE TABLE [credits] (
     [discount] nvarchar(max) NULL,
     [remaining_amount] nvarchar(max) NULL,
     [date] nvarchar(max) NULL,
-    [bill_No] nvarchar(max) NULL,
+    [inv_no] nvarchar(max) NULL,
     CONSTRAINT [PK_customers] PRIMARY KEY ([id])
 );
 GO

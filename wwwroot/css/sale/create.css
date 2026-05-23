@@ -617,12 +617,18 @@ body {
 .rcpt-barcode-wrap {
     display: flex;
     justify-content: center;
+    align-items: center;
     margin: 12px 0;
+    padding: 8px 4px;
+    background: #fff;
 }
 
     .rcpt-barcode-wrap svg {
+        display: block;
+        width: 72mm;
         max-width: 100%;
         height: auto;
+        min-height: 70px;
     }
 
 .rcpt-tagline {
@@ -664,6 +670,27 @@ body {
 
     .receipt-hidden {
         display: block !important;
+    }
+
+    .rcpt-barcode-wrap {
+        display: flex !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .rcpt-barcode-wrap svg,
+    .rcpt-barcode-wrap svg * {
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .rcpt-barcode-wrap svg {
+        width: 72mm !important;
+        max-width: 72mm !important;
+        height: auto !important;
+        min-height: 60px !important;
     }
 }
 

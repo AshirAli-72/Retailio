@@ -14,7 +14,7 @@
                 
                 <div class="search-bar-v2">
                     <i class="ph-magnifying-glass"></i>
-                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by receipt barcode")"
+                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by invoice no (e.g. inv001)")"
                            @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchEnter" />
                 </div>
 
@@ -319,11 +319,11 @@
                         <h3>Payment Summary</h3>
                         <p>Transaction overview</p>
                     </div>
-                    @if (!string.IsNullOrWhiteSpace(orderBillNo))
+                    @if (!string.IsNullOrWhiteSpace(orderInvNo))
                     {
                         <div class="summary-line-v4" style="border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 0.5rem;">
-                            <span>Bill No</span>
-                            <strong style="font-family: monospace; color: var(--primary);">@orderBillNo</strong>
+                            <span>Invoice No</span>
+                            <strong style="font-family: monospace; color: var(--primary);">@orderInvNo</strong>
                         </div>
                     }
                     <div class="summary-line-v4">
@@ -653,8 +653,8 @@
         </div>
         <div class="rcpt-meta">
             <div class="rcpt-meta-row">
-                <span>Bill No:</span>
-                <span id="rcpt-bill-no">@(string.IsNullOrWhiteSpace(orderBillNo) ? "—" : orderBillNo)</span>
+                <span>Invoice No:</span>
+                <span id="rcpt-inv-no">@(string.IsNullOrWhiteSpace(orderInvNo) ? "—" : orderInvNo)</span>
             </div>
             <div class="rcpt-meta-row"><span>Date:</span> <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span></div>
             <div class="rcpt-meta-row"><span>Customer:</span> <span>@(selectedCustomer?.name ?? "Walking Customer")</span></div>
@@ -730,7 +730,7 @@
     private string notes = "";
     private bool shouldPrintReceipt = true;
     private bool isSubmitting = false;
-    private string orderBillNo = "";
+    private string orderInvNo = "";
     private customers newCustomer = new customers { status = "Active" };
     private StoreConfiguration? currentStore;
     private bool isLoading = true;
@@ -863,7 +863,7 @@
     {
         if (string.IsNullOrEmpty(searchQuery)) return;
 
-        if (searchQuery.ToUpper().StartsWith("SALE_") || searchQuery.ToUpper().StartsWith("RETURN_"))
+        if (searchQuery.StartsWith("inv", StringComparison.OrdinalIgnoreCase))
         {
             _ = LoadFromReceipt(searchQuery);
             searchQuery = "";
@@ -890,10 +890,10 @@
         }
     }
 
-    private async Task LoadFromReceipt(string billNo)
+    private async Task LoadFromReceipt(string invNo)
     {
         using var context = DbFactory.CreateDbContext();
-        var sales = await context.sales.Where(s => s.billNo == billNo).ToListAsync();
+        var sales = await context.sales.Where(s => s.inv_no == invNo).ToListAsync();
 
         if (sales.Any())
         {
@@ -976,7 +976,7 @@
     private void SetTransMode(string mode)
     {
         transMode = mode;
-        orderBillNo = "";
+        orderInvNo = "";
         foreach (var item in saleItems)
         {
             int abs = Math.Abs(item.qty);
@@ -1061,45 +1061,40 @@
         if (!saleItems.Any()) return;
 
         using var context = DbFactory.CreateDbContext();
-        orderBillNo = await GenerateNextBillNoAsync(context);
+        orderInvNo = await GenerateNextInvNoAsync(context);
 
         showPaymentModal = true;
         tenderedAmount = null;
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task<string> GenerateNextBillNoAsync(ApplicationDbContext context)
+    private static int ParseInvSequence(string? invNo)
     {
-        var prefix = transMode == "return" ? "RETURN_" : "SALE_";
-        int nextIdNum = 1;
+        if (string.IsNullOrWhiteSpace(invNo)) return 0;
+        var value = invNo.Trim().ToLowerInvariant();
+        if (!value.StartsWith("inv")) return 0;
+        return int.TryParse(value[3..], out int n) ? n : 0;
+    }
 
-        string? lastBillNo;
+    private async Task<string> GenerateNextInvNoAsync(ApplicationDbContext context)
+    {
+        const string prefix = "inv";
+        var lastSaleInv = await context.sales
+            .Where(s => s.inv_no != null && s.inv_no.ToLower().StartsWith(prefix))
+            .OrderByDescending(s => s.id)
+            .Select(s => s.inv_no)
+            .FirstOrDefaultAsync();
 
-        if (transMode == "return")
-        {
-            lastBillNo = await context.returns
-                .Where(r => r.billNo != null && r.billNo.StartsWith(prefix))
-                .OrderByDescending(r => r.Id)
-                .Select(r => r.billNo)
-                .FirstOrDefaultAsync();
-        }
-        else
-        {
-            lastBillNo = await context.sales
-                .Where(s => s.billNo != null && s.billNo.StartsWith(prefix))
-                .OrderByDescending(s => s.id)
-                .Select(s => s.billNo)
-                .FirstOrDefaultAsync();
-        }
+        var lastReturnInv = await context.returns
+            .Where(r => r.inv_no != null && r.inv_no.ToLower().StartsWith(prefix))
+            .OrderByDescending(r => r.Id)
+            .Select(r => r.inv_no)
+            .FirstOrDefaultAsync();
 
-        if (!string.IsNullOrEmpty(lastBillNo))
-        {
-            var parts = lastBillNo.Split('_', '-');
-            if (parts.Length > 1 && int.TryParse(parts[1], out int n))
-                nextIdNum = n + 1;
-        }
+        var nextNum = Math.Max(ParseInvSequence(lastSaleInv), ParseInvSequence(lastReturnInv)) + 1;
+        if (nextNum < 1) nextNum = 1;
 
-        return $"{prefix}{nextIdNum}";
+        return $"{prefix}{nextNum:D3}";
     }
 
     private void SetPaymentMethod(string m)
@@ -1280,9 +1275,9 @@
             }
 
             // =====================================
-            // GENERATE BILL NUMBER (fresh at submit)
+            // GENERATE INVOICE NUMBER (fresh at submit)
             // =====================================
-            orderBillNo = await GenerateNextBillNoAsync(context);
+            orderInvNo = await GenerateNextInvNoAsync(context);
             await InvokeAsync(StateHasChanged);
 
             // =====================================
@@ -1318,7 +1313,7 @@
                 {
                     context.sales.Add(new Models.Sale
                     {
-                        billNo = orderBillNo,
+                        inv_no = orderInvNo,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
                         no_of_items = saleItems.Count,
                         qty = item.qty,
@@ -1340,7 +1335,7 @@
                 {
                     context.returns.Add(new ReturnDetail
                     {
-                        billNo = orderBillNo,
+                        inv_no = orderInvNo,
                         SaleId = item.OriginalSaleId,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
                         no_of_items = saleItems.Count,
@@ -1389,16 +1384,16 @@
                         .Where(s => originalSaleIds.Contains(s.id))
                         .ToListAsync();
 
-                    var billNos = originalSales
-                        .Select(s => s.billNo)
+                    var invNos = originalSales
+                        .Select(s => s.inv_no)
                         .Where(b => !string.IsNullOrEmpty(b))
                         .Distinct()
                         .ToList();
 
-                    if (billNos.Any())
+                    if (invNos.Any())
                     {
                         var salesToMark = await context.sales
-                            .Where(s => s.billNo != null && billNos.Contains(s.billNo))
+                            .Where(s => s.inv_no != null && invNos.Contains(s.inv_no))
                             .ToListAsync();
 
                         foreach (var s in salesToMark)
@@ -1418,7 +1413,7 @@
                 {
                     var credit = new Models.Credit
                     {
-                        bill_No = orderBillNo,
+                        inv_no = orderInvNo,
                         customer_id = creditCust.id,
                         grand_total = Math.Abs(currentTotal),
                         paid_amount = creditEntry?.paid_amount ?? 0,
@@ -1453,11 +1448,11 @@
             // =====================================
             // PRINT RECEIPT
             // =====================================
-            if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderBillNo))
+            if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderInvNo))
             {
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(300);
-                await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderBillNo);
+                await Task.Delay(350);
+                await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderInvNo);
             }
 
             // =====================================
@@ -1548,7 +1543,7 @@
         creditSelectedCustomer = null;
         creditCustomerSearch = null;
         transMode = "sale";
-        orderBillNo = "";
+        orderInvNo = "";
 
         // Reset any other temporary states
         ApplyFilters(); // Refresh product list if needed

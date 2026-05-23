@@ -16,7 +16,7 @@ namespace E_Invoice_system.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    bill_No = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     customer_id = table.Column<int>(type: "int", nullable: false),
                     grand_total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     paid_amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),

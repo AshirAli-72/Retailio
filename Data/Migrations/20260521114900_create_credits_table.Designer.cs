@@ -73,9 +73,9 @@ namespace E_Invoice_system.Migrations
 
                 SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                b.Property<string>("bill_No")
+                b.Property<string>("inv_no")
                     .HasColumnType("nvarchar(max)")
-                    .HasColumnName("bill_No");
+                    .HasColumnName("inv_no");
 
                 b.Property<int>("customer_id")
                     .HasColumnType("int")
@@ -309,9 +309,9 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
-                    b.Property<string>("billNo")
+                    b.Property<string>("inv_no")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("billNo")
+                        .HasColumnName("inv_no")
                         .HasColumnOrder(1);
 
                     b.Property<string>("date")
@@ -440,9 +440,9 @@ namespace E_Invoice_system.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<string>("billNo")
+                    b.Property<string>("inv_no")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("billNo")
+                        .HasColumnName("inv_no")
                         .HasColumnOrder(1);
 
                     b.Property<string>("date")

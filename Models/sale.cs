@@ -10,8 +10,8 @@ namespace E_Invoice_system.Models
         [Column("id", Order = 0)]
         public int id { get; set; }
 
-        [Column("billNo", Order = 1)]
-        public string? billNo { get; set; }
+        [Column("inv_no", Order = 1)]
+        public string? inv_no { get; set; }
 
         [Column("date")]
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");

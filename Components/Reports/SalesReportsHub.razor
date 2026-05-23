@@ -235,7 +235,7 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Bill Number</th>
+                                    <th>Invoice No</th>
                                     <th>Items</th>
                                     <th>Subtotal</th>
                                     <th>Discount</th>
@@ -249,7 +249,7 @@
                                 {
                                     <tr>
                                         <td class="td-date">@sale.date</td>
-                                        <td><span class="badge-bill">@sale.billNo</span></td>
+                                        <td><span class="badge-bill">@sale.inv_no</span></td>
                                         <td class="td-center">@sale.no_of_items</td>
                                         <td>@currencySymbol@sale.price.ToString("N2")</td>
                                         <td class="text-orange">@currencySymbol@sale.discount.ToString("N2")</td>

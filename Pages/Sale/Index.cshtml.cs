@@ -43,7 +43,7 @@ namespace E_Invoice_system.Pages.Sale
         public class SaleDisplayItem
         {
             public int id { get; set; }
-            public string? BillNo { get; set; }
+            public string? InvNo { get; set; }
             public string? Date { get; set; }
             public int no_of_items { get; set; }
             public decimal qty { get; set; }
@@ -79,7 +79,7 @@ namespace E_Invoice_system.Pages.Sale
                     .Select(s => new SaleDisplayItem
                     {
                         id = s.id,
-                        BillNo = s.billNo,
+                        InvNo = s.inv_no,
                         Date = s.date,
                         no_of_items = s.no_of_items,
                         qty = s.qty,

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -16,7 +16,7 @@ namespace E_Invoice_system.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    billNo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     date = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     no_of_items = table.Column<int>(type: "int", nullable: false),
                     qty = table.Column<int>(type: "int", nullable: false),

@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="~/css/dashboard/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/responsive-global.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sale/create.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/invoice/index.css" asp-append-version="true" />
     <link rel="icon" type="image/png" href="~/favicon.png" />
     
     <!-- jQuery -->
@@ -26,7 +25,7 @@
     <div class="sale-layout-container">
         <!-- Main Content Area (Now Full Width) -->
         <div class="sale-main-wrapper">
-            <header class="top-bar" style="background: white; border-bottom: 1px solid #f1f5f9; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between;">
+            <header class="top-bar sale-terminal-top-bar">
 
                 <div class="top-bar-left">
                     @using Microsoft.EntityFrameworkCore
@@ -48,19 +47,19 @@
                     </div>
                 </div>
 
-                <div class="top-bar-center">
-                    <span id="liveClock" class="live-clock" style="font-weight: 700; font-size: 0.95rem; color: #0f172a;"></span>
+                <div class="top-bar-center sale-terminal-clock">
+                    <span id="liveClock" class="live-clock"></span>
                 </div>
 
-                <div class="top-bar-right">
+                <div class="top-bar-right sale-terminal-profile">
                     @{
                         var userName = Context.Session.GetString("UserName") ?? "User";
                         var userRole = Context.Session.GetString("UserRole") ?? "Staff";
                         var userEmail = Context.Session.GetString("UserEmail") ?? (userName + "@system.com");
                         var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";
                     }
-                    <div class="user-profile-wrapper" style="position: relative;">
-                        <div class="user-avatar-initial" id="profileDropdownToggle" style="cursor: pointer; background: #BC1823; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+                    <div class="user-profile-wrapper">
+                        <div class="user-avatar-initial" id="profileDropdownToggle" title="Account">
                             @initial
                         </div>
 
@@ -90,7 +89,8 @@
                             </form>
                         </div>
                     </div>
-                </header>
+                </div>
+            </header>
 
             <main class="sale-content-body">
                 @RenderBody()
@@ -176,6 +176,46 @@
                 e.stopPropagation();
             });
         }
+    </script>
+    <script src="~/lib/jsbarcode/JsBarcode.all.min.js" asp-append-version="true"></script>
+    <script>
+        window.renderBarcode = function (elementId, value) {
+            var el = document.getElementById(elementId);
+            if (!el || !value) return false;
+            var code = String(value).trim().toUpperCase();
+            el.innerHTML = '';
+            try {
+                JsBarcode(el, code, {
+                    format: 'CODE128',
+                    width: 2.5,
+                    height: 70,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 12,
+                    background: '#ffffff',
+                    lineColor: '#000000'
+                });
+                return true;
+            } catch (e) {
+                console.warn('Barcode render failed:', e);
+                return false;
+            }
+        };
+
+        window.printSaleReceipt = function (invNo) {
+            var invEl = document.getElementById('rcpt-inv-no');
+            if (invEl && invNo) invEl.textContent = invNo;
+
+            var receipt = document.getElementById('invoice-to-print');
+            if (receipt) receipt.classList.remove('receipt-hidden');
+
+            window.renderBarcode('rcptBarcodeSvg', invNo);
+
+            setTimeout(function () {
+                window.print();
+                if (receipt) receipt.classList.add('receipt-hidden');
+            }, 600);
+        };
     </script>
     <script src="_framework/blazor.server.js"></script>
     <script src="~/js/app-main.js" asp-append-version="true"></script>

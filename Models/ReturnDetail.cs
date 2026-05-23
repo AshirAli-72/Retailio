@@ -10,8 +10,8 @@ namespace E_Invoice_system.Models
         [Column("id", Order = 0)]
         public int Id { get; set; }
 
-        [Column("billNo", Order = 1)]
-        public string? billNo { get; set; }
+        [Column("inv_no", Order = 1)]
+        public string? inv_no { get; set; }
 
         [Column("sale_id")]
         public int SaleId { get; set; }
