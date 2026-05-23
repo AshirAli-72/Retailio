@@ -16,13 +16,14 @@ namespace E_Invoice_system.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     customer_id = table.Column<int>(type: "int", nullable: false),
                     grand_total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     paid_amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     discount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     remaining_amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    date = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    date = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true)
+
                 },
                 constraints: table =>
                 {

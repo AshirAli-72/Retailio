@@ -202,19 +202,60 @@
             }
         };
 
+        window.saleReceiptPrint = {
+            dotNetRef: null,
+            init: function (ref) { this.dotNetRef = ref; },
+            onFinished: function () {
+                if (this.dotNetRef) {
+                    this.dotNetRef.invokeMethodAsync('OnReceiptPrintFinished').catch(function () { });
+                }
+            }
+        };
+
         window.printSaleReceipt = function (invNo) {
+            var receipt = document.getElementById('invoice-to-print');
+            if (!receipt) {
+                console.warn('Invoice element #invoice-to-print not found');
+                if (window.saleReceiptPrint) window.saleReceiptPrint.onFinished();
+                return;
+            }
+
             var invEl = document.getElementById('rcpt-inv-no');
             if (invEl && invNo) invEl.textContent = invNo;
 
-            var receipt = document.getElementById('invoice-to-print');
-            if (receipt) receipt.classList.remove('receipt-hidden');
+            /* Move invoice to body so print CSS is not blocked by layout wrappers */
+            var marker = document.createComment('invoice-print-marker');
+            var originalParent = receipt.parentNode;
+            if (originalParent) {
+                originalParent.insertBefore(marker, receipt);
+            }
+            document.body.appendChild(receipt);
+            receipt.classList.add('invoice-printing');
+            document.body.classList.add('printing-invoice');
 
             window.renderBarcode('rcptBarcodeSvg', invNo);
 
+            var finished = false;
+            var finish = function () {
+                if (finished) return;
+                finished = true;
+                window.removeEventListener('afterprint', finish);
+                receipt.classList.remove('invoice-printing');
+                document.body.classList.remove('printing-invoice');
+                if (marker.parentNode) {
+                    marker.parentNode.insertBefore(receipt, marker);
+                    marker.remove();
+                } else if (originalParent) {
+                    originalParent.appendChild(receipt);
+                }
+                if (window.saleReceiptPrint) window.saleReceiptPrint.onFinished();
+            };
+
             setTimeout(function () {
+                window.addEventListener('afterprint', finish);
                 window.print();
-                if (receipt) receipt.classList.add('receipt-hidden');
-            }, 600);
+                setTimeout(finish, 3000);
+            }, 450);
         };
     </script>
     <script src="_framework/blazor.server.js"></script>

@@ -1,6 +1,7 @@
 @namespace E_Invoice_system.Components.Sale
 @using Microsoft.EntityFrameworkCore
 @using System.Text.RegularExpressions
+@implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
@@ -638,69 +639,104 @@
     </div>
 }
 
-<!-- INVOICE / RECEIPT -->
-<div id="invoice-to-print" class="receipt-hidden">
-    <div class="thermal-receipt">
-        <div class="rcpt-header">
-            @if (!string.IsNullOrEmpty(currentStore?.LogoPath))
-            {
-                <img src="/store-logo/@System.IO.Path.GetFileName(currentStore.LogoPath)" alt="Logo" class="rcpt-logo" />
-            }
-            <p class="rcpt-store-info">@(currentStore?.Address ?? "Gilgit, Pakistan")</p>
-            <p class="rcpt-store-info">Phone: @(currentStore?.Phone1 ?? "+92 345 6781267")</p>
-            <div class="rcpt-divider"></div>
-            <h3 class="rcpt-title">@(transMode == "return" ? "RETURN RECEIPT" : "SALE RECEIPT")</h3>
-        </div>
-        <div class="rcpt-meta">
-            <div class="rcpt-meta-row">
-                <span>Invoice No:</span>
-                <span id="rcpt-inv-no">@(string.IsNullOrWhiteSpace(orderInvNo) ? "—" : orderInvNo)</span>
-            </div>
-            <div class="rcpt-meta-row"><span>Date:</span> <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span></div>
-            <div class="rcpt-meta-row"><span>Customer:</span> <span>@(selectedCustomer?.name ?? "Walking Customer")</span></div>
-            <div class="rcpt-meta-row"><span>Payment:</span> <span>@paymentMethod</span></div>
-        </div>
-        <div class="rcpt-divider"></div>
-        <table class="rcpt-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th style="text-align:center;">Qty</th>
-                    <th style="text-align:right;">Price</th>
-                    <th style="text-align:right;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in saleItems)
-                {
+<!-- INVOICE (print snapshot — survives cart reset) -->
+@if (_receiptSnapshot != null)
+{
+    <div id="invoice-to-print" class="invoice-print-root">
+        <article class="invoice-doc">
+            <header class="inv-header">
+                <div class="inv-brand">
+                    @if (!string.IsNullOrEmpty(_receiptSnapshot.LogoFileName))
+                    {
+                        <img src="/store-logo/@_receiptSnapshot.LogoFileName" alt="Logo" class="inv-logo" />
+                    }
+                    <div class="inv-brand-text">
+                        <h1 class="inv-store-name">@(_receiptSnapshot.StoreName ?? "E-Invoice Store")</h1>
+                        @if (!string.IsNullOrWhiteSpace(_receiptSnapshot.Address))
+                        {
+                            <p class="inv-store-line">@_receiptSnapshot.Address</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_receiptSnapshot.Phone))
+                        {
+                            <p class="inv-store-line">Tel: @_receiptSnapshot.Phone</p>
+                        }
+                    </div>
+                </div>
+                <div class="inv-title-badge">@_receiptSnapshot.Title</div>
+            </header>
+
+            <section class="inv-meta-grid">
+                <div class="inv-meta-item">
+                    <span class="inv-label">Invoice No</span>
+                    <strong id="rcpt-inv-no" class="inv-value inv-mono">@_receiptSnapshot.InvNo</strong>
+                </div>
+                <div class="inv-meta-item">
+                    <span class="inv-label">Date</span>
+                    <strong class="inv-value">@_receiptSnapshot.Date</strong>
+                </div>
+                <div class="inv-meta-item inv-meta-wide">
+                    <span class="inv-label">Customer</span>
+                    <strong class="inv-value">@_receiptSnapshot.Customer</strong>
+                </div>
+                <div class="inv-meta-item">
+                    <span class="inv-label">Payment</span>
+                    <strong class="inv-value">@_receiptSnapshot.Payment</strong>
+                </div>
+            </section>
+
+            <table class="inv-items-table">
+                <thead>
                     <tr>
-                        <td colspan="4" class="rcpt-item-name">@item.prod_name_service</td>
+                        <th class="col-item">Item</th>
+                        <th class="col-qty">Qty</th>
+                        <th class="col-price">Price</th>
+                        <th class="col-total">Total</th>
                     </tr>
-                    <tr class="rcpt-item-details">
-                        <td></td>
-                        <td style="text-align:center;">@Math.Abs(item.qty)</td>
-                        <td style="text-align:right;">@item.price.ToString("N2")</td>
-                        <td style="text-align:right;">@((item.price * Math.Abs(item.qty)).ToString("N2"))</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <div class="rcpt-divider"></div>
-        <div class="rcpt-summary">
-            <div class="rcpt-sum-row"><span>Subtotal:</span> <span>@FormatCurrency(totalSub)</span></div>
-            <div class="rcpt-sum-row"><span>Discount:</span> <span>-@FormatCurrency(totalDisc)</span></div>
-            <div class="rcpt-sum-row total"><span>TOTAL:</span> <span>@FormatCurrency(currentTotal)</span></div>
-        </div>
-        <div class="rcpt-footer">
-            <div class="rcpt-divider"></div>
-            <p>Thank You For Your Business!</p>
-            <div class="rcpt-barcode-wrap">
-                <svg id="rcptBarcodeSvg"></svg>
-            </div>
-            <p class="rcpt-tagline">Powered by SATA Technologies</p>
-        </div>
+                </thead>
+                <tbody>
+                    @foreach (var line in _receiptSnapshot.Lines)
+                    {
+                        <tr>
+                            <td class="col-item">@line.Name</td>
+                            <td class="col-qty">@line.Qty</td>
+                            <td class="col-price">@FormatReceiptAmount(line.Price, _receiptSnapshot)</td>
+                            <td class="col-total">@FormatReceiptAmount(line.LineTotal, _receiptSnapshot)</td>
+                        </tr>
+                        @if (line.Discount > 0)
+                        {
+                            <tr class="inv-discount-row">
+                                <td colspan="4">Discount on line: -@FormatReceiptAmount(line.Discount, _receiptSnapshot)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <section class="inv-totals">
+                <div class="inv-total-row">
+                    <span>Subtotal</span>
+                    <span>@FormatReceiptAmount(_receiptSnapshot.Subtotal, _receiptSnapshot)</span>
+                </div>
+                <div class="inv-total-row">
+                    <span>Discount</span>
+                    <span>-@FormatReceiptAmount(_receiptSnapshot.Discount, _receiptSnapshot)</span>
+                </div>
+                <div class="inv-total-row inv-grand-total">
+                    <span>GRAND TOTAL</span>
+                    <span>@FormatReceiptAmount(_receiptSnapshot.Total, _receiptSnapshot)</span>
+                </div>
+            </section>
+
+            <footer class="inv-footer">
+                <p class="inv-thanks">Thank you for your business!</p>
+                <div class="inv-barcode-wrap">
+                    <svg id="rcptBarcodeSvg"></svg>
+                </div>
+                <p class="inv-powered">Powered by SATA Technologies</p>
+            </footer>
+        </article>
     </div>
-</div>
+}
 
 <link href="/css/sale/create.css" rel="stylesheet" />
 
@@ -731,6 +767,8 @@
     private bool shouldPrintReceipt = true;
     private bool isSubmitting = false;
     private string orderInvNo = "";
+    private ReceiptSnapshot? _receiptSnapshot;
+    private DotNetObjectReference<SaleEditor>? _dotNetRef;
     private customers newCustomer = new customers { status = "Active" };
     private StoreConfiguration? currentStore;
     private bool isLoading = true;
@@ -752,6 +790,25 @@
     {
         await CurrencyService.GetSymbolAsync();
         _ = LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("saleReceiptPrint.init", _dotNetRef);
+        }
+    }
+
+    public void Dispose() => _dotNetRef?.Dispose();
+
+    [JSInvokable]
+    public void OnReceiptPrintFinished()
+    {
+        _receiptSnapshot = null;
+        ResetComponent();
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadDataAsync()
@@ -1450,15 +1507,15 @@
             // =====================================
             if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderInvNo))
             {
+                _receiptSnapshot = BuildReceiptSnapshot();
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(350);
+                await Task.Delay(400);
                 await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderInvNo);
             }
-
-            // =====================================
-            // RESET
-            // =====================================
-            ResetComponent();
+            else
+            {
+                ResetComponent();
+            }
 
             tenderedAmount = 0;
         }
@@ -1488,6 +1545,40 @@
 
     private string FormatCurrency(decimal val) =>
         (val < 0 ? "-" : "") + CurrencyService.GetSymbol() + Math.Abs(val).ToString("N2");
+
+    private static string FormatReceiptAmount(decimal val, ReceiptSnapshot r) =>
+        r.CurrencySymbol + Math.Abs(val).ToString("N2");
+
+    private ReceiptSnapshot BuildReceiptSnapshot()
+    {
+        var symbol = CurrencyService.GetSymbol();
+        return new ReceiptSnapshot
+        {
+            InvNo = orderInvNo,
+            Title = transMode == "return" ? "RETURN INVOICE" : "SALES INVOICE",
+            Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+            Customer = selectedCustomer?.name ?? "Walking Customer",
+            Payment = paymentMethod,
+            StoreName = currentStore?.ShopName ?? "E-Invoice Store",
+            Address = currentStore?.Address ?? "Gilgit, Pakistan",
+            Phone = currentStore?.Phone1 ?? "+92 345 6781267",
+            LogoFileName = !string.IsNullOrEmpty(currentStore?.LogoPath)
+                ? System.IO.Path.GetFileName(currentStore.LogoPath)
+                : null,
+            CurrencySymbol = symbol,
+            Subtotal = saleItems.Sum(i => i.price * Math.Abs(i.qty)),
+            Discount = totalDisc,
+            Total = Math.Abs(currentTotal),
+            Lines = saleItems.Select(i => new ReceiptLine
+            {
+                Name = i.prod_name_service,
+                Qty = Math.Abs(i.qty),
+                Price = i.price,
+                Discount = i.discount * Math.Abs(i.qty),
+                LineTotal = Math.Abs(i.total_price)
+            }).ToList()
+        };
+    }
 
     private async Task ToggleFullScreen() =>
         await JSRuntime.InvokeVoidAsync("eval",
@@ -1544,10 +1635,36 @@
         creditCustomerSearch = null;
         transMode = "sale";
         orderInvNo = "";
+        _receiptSnapshot = null;
 
-        // Reset any other temporary states
-        ApplyFilters(); // Refresh product list if needed
-    
+        ApplyFilters();
         StateHasChanged();
+    }
+
+    private sealed class ReceiptSnapshot
+    {
+        public string InvNo { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Date { get; set; } = "";
+        public string Customer { get; set; } = "";
+        public string Payment { get; set; } = "";
+        public string? StoreName { get; set; }
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? LogoFileName { get; set; }
+        public string CurrencySymbol { get; set; } = "$";
+        public decimal Subtotal { get; set; }
+        public decimal Discount { get; set; }
+        public decimal Total { get; set; }
+        public List<ReceiptLine> Lines { get; set; } = new();
+    }
+
+    private sealed class ReceiptLine
+    {
+        public string Name { get; set; } = "";
+        public int Qty { get; set; }
+        public decimal Price { get; set; }
+        public decimal Discount { get; set; }
+        public decimal LineTotal { get; set; }
     }
 }
