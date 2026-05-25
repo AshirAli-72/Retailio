@@ -13,9 +13,6 @@ namespace E_Invoice_system.Models
         [Column("credit_id")]
         public int credit_id { get; set; }
 
-        [Column("sale_id")]
-        public int sale_id { get; set; }
-
         [Column("date")]
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
 

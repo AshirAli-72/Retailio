@@ -138,10 +138,6 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("expiry_date");
 
-                    b.Property<int>("sale_id")
-                        .HasColumnType("int")
-                        .HasColumnName("sale_id");
-
                     b.Property<int>("no_of_items")
                         .HasColumnType("int")
                         .HasColumnName("no_of_items");

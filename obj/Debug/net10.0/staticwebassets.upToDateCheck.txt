@@ -1,4 +1,4 @@
-wwwroot\css\responsive-global.css
+wwwroot\css\account\login.css
 wwwroot\css\customer\index.css
 wwwroot\css\dashboard\dashboard.css
 wwwroot\css\employee\index.css
@@ -7,9 +7,11 @@ wwwroot\css\reports\centerreport.css
 wwwroot\css\reports\customerreport.css
 wwwroot\css\reports\employeereport.css
 wwwroot\css\reports\inventoryreport.css
+wwwroot\css\reports\print-report.css
 wwwroot\css\reports\productreport.css
 wwwroot\css\reports\salereport.css
-wwwroot\js\app-main.js
+wwwroot\css\responsive-global.css
+wwwroot\css\sale\create.css
 wwwroot\css\sale\index.css
 wwwroot\css\settings\about.css
 wwwroot\css\settings\currency.css
@@ -20,7 +22,7 @@ wwwroot\e_invoice_logo.png
 wwwroot\favicon.png
 wwwroot\images\invoice-illustration.png
 wwwroot\images\login-bg.jpg
-wwwroot\css\reports\print-report.css
+wwwroot\js\app-main.js
 wwwroot\js\site.js
 wwwroot\js\sw.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
@@ -72,7 +74,7 @@ wwwroot\lib\chartjs\chart.js
 wwwroot\lib\inter-font\inter-500.ttf
 wwwroot\lib\inter-font\inter-600.ttf
 wwwroot\lib\inter-font\inter-700.ttf
-wwwroot\lib\jquery\dist\jquery.slim.min.js
+wwwroot\lib\inter-font\inter-800.ttf
 wwwroot\lib\inter-font\inter-regular.ttf
 wwwroot\lib\inter-font\inter.css
 wwwroot\lib\jquery-validation-unobtrusive\dist\jquery.validate.unobtrusive.js
@@ -87,7 +89,7 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\dist\jquery.slim.js
-wwwroot\lib\inter-font\inter-800.ttf
+wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\lib\jsbarcode\JsBarcode.all.min.js
@@ -97,8 +99,6 @@ wwwroot\sata_s_logo.png
 wwwroot\savepic\bac7a766-3665-4267-96ab-868ef05fdc77.png
 wwwroot\s_wavy_logo.png
 wwwroot\user_logo.png
-wwwroot\css\account\login.css
-wwwroot\css\sale\create.css
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.web.js
 C:\Users\SATA Technologies\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.server.js
 D:\netcore\E-Invoice_system\wwwroot\lib\phosphor\icons.css
