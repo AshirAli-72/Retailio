@@ -340,52 +340,21 @@ namespace E_Invoice_system.Migrations
                     b.Property<int>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasColumnName("id")
-                        .HasColumnOrder(0);
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<string>("inv_no")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("inv_no")
-                        .HasColumnOrder(1);
-
-                    b.Property<string>("date")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
-
-                    b.Property<string>("description")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
-
-                    b.Property<decimal>("discount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("discount");
-
-                    b.Property<string>("expiry_date")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("expiry_date");
-
-                    b.Property<bool>("is_returned")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_returned");
-
-                    b.Property<int>("no_of_items")
+                    b.Property<int>("item_id")
                         .HasColumnType("int")
-                        .HasColumnName("no_of_items");
-
-                    b.Property<string>("payment_method")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("payment_method");
-
-                    b.Property<decimal>("price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("price");
+                        .HasColumnName("item_id");
 
                     b.Property<int>("qty")
                         .HasColumnType("int")
                         .HasColumnName("qty");
+
+                    b.Property<int>("sale_id")
+                        .HasColumnType("int")
+                        .HasColumnName("sale_id");
 
                     b.Property<string>("status")
                         .HasColumnType("nvarchar(max)")
@@ -395,13 +364,72 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_price");
 
-                    b.Property<int>("total_qty")
-                        .HasColumnType("int")
-                        .HasColumnName("total_qty");
+                    b.Property<decimal>("unit_price")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("unit_price");
 
                     b.HasKey("id");
 
-                    b.ToTable("sale_details");
+                    b.HasIndex("sale_id");
+
+                    b.ToTable("sale_details", (string)null);
+                });
+
+            modelBuilder.Entity("E_Invoice_system.Models.SaleHeader", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id")
+                        .HasColumnOrder(0);
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<int?>("customer_id")
+                        .HasColumnType("int")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("date")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("date");
+
+                    b.Property<decimal>("discount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("discount");
+
+                    b.Property<decimal>("due")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("due");
+
+                    b.Property<decimal>("gross_total")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("gross_total");
+
+                    b.Property<string>("inv_no")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("inv_no")
+                        .HasColumnOrder(1);
+
+                    b.Property<decimal>("net_payable")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("net_payable");
+
+                    b.Property<decimal>("paid")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("paid");
+
+                    b.Property<string>("payment_method")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("payment_method");
+
+                    b.Property<string>("status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
+                    b.HasKey("id");
+
+                    b.ToTable("sales", (string)null);
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.StockDetail", b =>
@@ -677,6 +705,22 @@ namespace E_Invoice_system.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("E_Invoice_system.Models.Sale", b =>
+                {
+                    b.HasOne("E_Invoice_system.Models.SaleHeader", "SaleHeader")
+                        .WithMany("SaleDetails")
+                        .HasForeignKey("sale_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SaleHeader");
+                });
+
+            modelBuilder.Entity("E_Invoice_system.Models.SaleHeader", b =>
+                {
+                    b.Navigation("SaleDetails");
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.users", b =>

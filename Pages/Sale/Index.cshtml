@@ -168,10 +168,9 @@
                     <th style="padding-left: 1.5rem;">Invoice No</th>
                     <th>Item Name</th>
                     <th>Date</th>
-                    <th>No. of Items</th>
-                    <th>Total Qty</th>
-                    <th>Amount</th>
-                    <th class="text-center">Method</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th class="text-center">Payment</th>
                     <th class="text-center">Status</th>
                     <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
                 </tr>
@@ -183,23 +182,22 @@
                     {
                         <tr>
                             <td style="padding-left: 1.5rem;">
-                                <div class="font-bold font-sm font-monospace">@ret.inv_no</div>
+                                <div class="font-bold font-sm font-monospace">@ret.InvNo</div>
                             </td>
                             <td>
-                                <div class="font-bold text-danger font-sm">@ret.Status</div>
+                                <div class="font-bold text-danger font-sm">@(ret.ItemName ?? "—")</div>
                             </td>
                             <td>
-                                <div class="font-bold font-sm">@ret.date</div>
+                                <div class="font-bold font-sm">@ret.Date</div>
                             </td>
                             <td>
-                                <div class="font-bold">@ret.no_of_items</div>
+                                <div class="font-bold">@ret.qty</div>
                             </td>
-                            <td>@ret.total_qty.ToString("N0")</td>
                             <td>
-                                <div class="font-bold text-danger">@CurrencyService.GetSymbol()@Math.Abs(ret.Amount).ToString("N2")</div>
+                                <div class="font-bold text-danger">@CurrencyService.GetSymbol()@Math.Abs(ret.total_price).ToString("N2")</div>
                             </td>
                             <td class="text-center">
-                                <span class="font-medium font-sm">@ret.Method</span>
+                                <span class="font-medium font-sm">@ret.payment_method</span>
                             </td>
                             <td class="text-center">
                                 <span class="status-badge status-inactive">Returned</span>
@@ -219,7 +217,7 @@
                 }
                 else
                 {
-                    <tr><td colspan="9" class="empty-state"><p>No return records found.</p></td></tr>
+                    <tr><td colspan="8" class="empty-state"><p>No return records found.</p></td></tr>
                 }
             </tbody>
         </table>

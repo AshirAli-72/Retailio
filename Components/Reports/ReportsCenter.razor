@@ -210,9 +210,9 @@
             var todayStr = DateTime.Now.ToString("yyyy-MM-dd");
             var monthPrefix = DateTime.Now.ToString("yyyy-MM");
 
-            var allSales = await context.sales.AsNoTracking().ToListAsync();
-            todayRevenue = allSales.Where(s => s.date == todayStr && !s.is_returned).Sum(s => s.total_price);
-            monthlyRevenue = allSales.Where(s => s.date != null && s.date.StartsWith(monthPrefix) && !s.is_returned).Sum(s => s.total_price);
+            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+            todayRevenue = allSalesHeaders.Where(s => s.date == todayStr).Sum(s => s.net_payable);
+            monthlyRevenue = allSalesHeaders.Where(s => s.date != null && s.date.StartsWith(monthPrefix)).Sum(s => s.net_payable);
 
             // SKUs - Use StockDetail count as that's where the actual inventory resides
             activeSkus = await context.products_services.CountAsync();

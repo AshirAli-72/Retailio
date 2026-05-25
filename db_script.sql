@@ -101,22 +101,6 @@ CREATE TABLE [products_services] (
 GO
 
 
-CREATE TABLE [return_details] (
-    [id] int NOT NULL IDENTITY,
-    [inv_no] nvarchar(max) NULL,
-    [sale_id] int NOT NULL,
-    [date] nvarchar(max) NOT NULL,
-    [no_of_items] int NOT NULL,
-    [qty] decimal(18,2) NOT NULL,
-    [total_qty] decimal(18,2) NOT NULL,
-    [amount] decimal(18,2) NOT NULL,
-    [method] nvarchar(max) NULL,
-    [status] nvarchar(max) NULL,
-    CONSTRAINT [PK_return_details] PRIMARY KEY ([id])
-);
-GO
-
-
 CREATE TABLE [roles] (
     [id] int NOT NULL IDENTITY,
     [role_title] nvarchar(100) NOT NULL,
@@ -125,23 +109,50 @@ CREATE TABLE [roles] (
 GO
 
 
+CREATE TABLE [sales] (
+    [id] int NOT NULL IDENTITY,
+    [inv_no] nvarchar(max) NULL,
+    [customer_id] int NULL,
+    [date] nvarchar(max) NOT NULL,
+    [gross_total] decimal(18,2) NOT NULL,
+    [discount] decimal(18,2) NOT NULL,
+    [net_payable] decimal(18,2) NOT NULL,
+    [paid] decimal(18,2) NOT NULL,
+    [due] decimal(18,2) NOT NULL,
+    [status] nvarchar(max) NULL,
+    [payment_method] nvarchar(max) NULL,
+    CONSTRAINT [PK_sales] PRIMARY KEY ([id])
+);
+GO
+
 CREATE TABLE [sale_details] (
+    [id] int NOT NULL IDENTITY,
+    [sale_id] int NOT NULL,
+    [item_id] int NOT NULL,
+    [qty] int NOT NULL,
+    [unit_price] decimal(18,2) NOT NULL,
+    [total_price] decimal(18,2) NOT NULL,
+    [status] nvarchar(max) NULL,
+    CONSTRAINT [PK_sale_details] PRIMARY KEY ([id]),
+    CONSTRAINT [FK_sale_details_sales_sale_id] FOREIGN KEY ([sale_id]) REFERENCES [sales] ([id]) ON DELETE CASCADE
+);
+GO
+
+CREATE TABLE [return_details] (
     [id] int NOT NULL IDENTITY,
     [inv_no] nvarchar(max) NULL,
     [date] nvarchar(max) NOT NULL,
-    [no_of_items] int NOT NULL,
-    [qty] decimal(18,2) NOT NULL,
-    [total_qty] decimal(18,2) NOT NULL,
-    [price] decimal(18,2) NOT NULL,
-    [discount] decimal(18,2) NOT NULL,
-    [expiry_date] nvarchar(max) NULL,
+    [sale_id] int NOT NULL,
+    [sale_detail_id] int NOT NULL,
+    [item_id] int NOT NULL,
+    [qty] int NOT NULL,
+    [unit_price] decimal(18,2) NOT NULL,
     [total_price] decimal(18,2) NOT NULL,
-    [description] nvarchar(max) NULL,
     [payment_method] nvarchar(max) NULL,
     [status] nvarchar(max) NULL,
-    [is_returned] bit NOT NULL,
-    [user_id] int NULL,
-    CONSTRAINT [PK_sale_details] PRIMARY KEY ([id])
+    CONSTRAINT [PK_return_details] PRIMARY KEY ([id]),
+    CONSTRAINT [FK_return_details_sales_sale_id] FOREIGN KEY ([sale_id]) REFERENCES [sales] ([id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_return_details_sale_details_sale_detail_id] FOREIGN KEY ([sale_detail_id]) REFERENCES [sale_details] ([id])
 );
 GO
 
@@ -263,6 +274,7 @@ CREATE TABLE [credits_details] (
     [status] nvarchar(max) NULL,
     [paid_amount] decimal(18,2) NOT NULL,
     [remaining_amount] decimal(18,2) NOT NULL,
+    [prod_name] nvarchar(max) NULL,
     CONSTRAINT [PK_credits_details] PRIMARY KEY ([id])
 );
 GO

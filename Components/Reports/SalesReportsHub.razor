@@ -248,16 +248,15 @@
                                 @foreach (var sale in reportData)
                                 {
                                     <tr>
-                                        <td class="td-date">@sale.date</td>
-                                        <td><span class="badge-bill">@sale.inv_no</span></td>
-                                        <td class="td-center">@sale.no_of_items</td>
-                                        <td>@currencySymbol@sale.price.ToString("N2")</td>
-                                        <td class="text-orange">@currencySymbol@sale.discount.ToString("N2")</td>
-                                        <td><strong class="text-primary">@currencySymbol@sale.total_price.ToString("N2")</strong></td>
-                                        <td><span class="badge-method">@sale.payment_method</span></td>
+                                        <td class="td-date">@sale.Date</td>
+                                        <td><span class="badge-bill">SALE_@sale.Id</span></td>
+                                        <td class="td-center">@sale.ItemCount</td>
+                                        <td>@currencySymbol@sale.GrossTotal.ToString("N2")</td>
+                                        <td class="text-orange">@currencySymbol@sale.Discount.ToString("N2")</td>
+                                        <td><strong class="text-primary">@currencySymbol@sale.NetPayable.ToString("N2")</strong></td>
+                                        <td><span class="badge-method">@sale.PaymentMethod</span></td>
                                         <td>
-                                            @if (sale.is_returned) { <span class="badge-status return">Returned</span> }
-                                            else { <span class="badge-status sale">Success</span> }
+                                            <span class="badge-status sale">@sale.Status</span>
                                         </td>
                                     </tr>
                                 }
@@ -306,7 +305,7 @@
 
     private List<Category> categories = new();
     private List<E_Invoice_system.Models.Employee> employees = new();
-    private List<Sale> reportData = new();
+    private List<SaleReportRow> reportData = new();
     private bool isLoading = false;
     private bool isGenerated = false;
     private StoreConfiguration storeInfo = new();
@@ -316,6 +315,18 @@
 
     private class PaymentStat { public string Method { get; set; } = ""; public decimal Percent { get; set; } public string Color { get; set; } = ""; }
     private List<PaymentStat> paymentStats = new();
+
+    private class SaleReportRow
+    {
+        public int Id { get; set; }
+        public string Date { get; set; } = "";
+        public int ItemCount { get; set; }
+        public decimal GrossTotal { get; set; }
+        public decimal Discount { get; set; }
+        public decimal NetPayable { get; set; }
+        public string PaymentMethod { get; set; } = "";
+        public string Status { get; set; } = "";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -357,26 +368,35 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var allSales = await context.sales.AsNoTracking().ToListAsync();
+            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
 
-            var filtered = allSales.Where(s => {
+            var filtered = allSalesHeaders.Where(s => {
                 if (!DateTime.TryParse(s.date, out var d)) return false;
                 bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
                 bool matchPayment = selectedPayment == "All" || s.payment_method == selectedPayment;
-                bool matchType = selectedType == "Return" ? s.is_returned : !s.is_returned;
-                return inRange && matchPayment && matchType;
+                return inRange && matchPayment;
             }).ToList();
 
-            reportData = filtered.OrderByDescending(s => s.date).ToList();
-            
-            totalRevenue = reportData.Sum(s => s.total_price);
+            reportData = filtered.OrderByDescending(s => s.date).Select(s => new SaleReportRow
+            {
+                Id = s.id,
+                Date = s.date,
+                ItemCount = context.sales.Count(d => d.sale_id == s.id),
+                GrossTotal = s.gross_total,
+                Discount = s.discount,
+                NetPayable = s.net_payable,
+                PaymentMethod = s.payment_method ?? "Cash",
+                Status = s.status ?? "Paid"
+            }).ToList();
+
+            totalRevenue = reportData.Sum(s => s.NetPayable);
             totalTransactions = reportData.Count;
             avgTransaction = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
-            totalDiscounts = reportData.Sum(s => s.discount);
+            totalDiscounts = reportData.Sum(s => s.Discount);
 
             // Chart Data Calculation
-            var chartGroups = reportData.GroupBy(s => s.date)
-                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.total_price) })
+            var chartGroups = reportData.GroupBy(s => s.Date)
+                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.NetPayable) })
                 .OrderBy(g => g.Date)
                 .ToList();
 
@@ -387,14 +407,15 @@
                 await JSRuntime.InvokeVoidAsync("renderReportChart", "salesHubChart", new { labels, values, label = "Revenue" });
             }
 
-            // Top Products
-            topProducts = reportData.GroupBy(s => s.inv_no ?? "Unknown")
-                .Select(g => new TopProduct { Name = g.Key, Count = g.Count(), Revenue = g.Sum(s => s.total_price) })
-                .OrderByDescending(p => p.Revenue)
+            // Top Products - group by sale and show top earning sales
+            topProducts = reportData
+                .OrderByDescending(p => p.NetPayable)
+                .Take(5)
+                .Select(s => new TopProduct { Name = "SALE_" + s.Id, Count = s.ItemCount, Revenue = s.NetPayable })
                 .ToList();
 
             // Payment Mix
-            var methods = reportData.GroupBy(s => s.payment_method ?? "Other")
+            var methods = reportData.GroupBy(s => s.PaymentMethod)
                 .Select(g => new { Method = g.Key, Count = g.Count() })
                 .ToList();
             

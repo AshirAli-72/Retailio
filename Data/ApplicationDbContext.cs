@@ -15,6 +15,7 @@ namespace E_Invoice_system.Data
         public DbSet<Category> categories { get; set; }
         public DbSet<Brand> brands { get; set; }
         public DbSet<users> users { get; set; }
+        public DbSet<SaleHeader> SalesHeader { get; set; }
         public DbSet<Sale> sales { get; set; }
         public DbSet<ReturnDetail> returns { get; set; }
         public DbSet<Currency> currencies { get; set; }
@@ -59,17 +60,33 @@ namespace E_Invoice_system.Data
             });
 
             // Other configurations
-            modelBuilder.Entity<Sale>()
-                .Property(s => s.price).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<SaleHeader>(entity =>
+            {
+                entity.ToTable("sales");
+                entity.Property(s => s.gross_total).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.discount).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.net_payable).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.paid).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.due).HasColumnType("decimal(18,2)");
+                entity.HasMany(s => s.SaleDetails)
+                    .WithOne(d => d.SaleHeader)
+                    .HasForeignKey(d => d.sale_id)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<Sale>()
-                .Property(s => s.discount).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Sale>(entity =>
+            {
+                entity.ToTable("sale_details");
+                entity.Property(s => s.unit_price).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.total_price).HasColumnType("decimal(18,2)");
+            });
 
-            modelBuilder.Entity<Sale>()
-                .Property(s => s.total_price).HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<ReturnDetail>()
-                .Property(r => r.Amount).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<ReturnDetail>(entity =>
+            {
+                entity.ToTable("return_details");
+                entity.Property(r => r.unit_price).HasColumnType("decimal(18,2)");
+                entity.Property(r => r.total_price).HasColumnType("decimal(18,2)");
+            });
 
             modelBuilder.Entity<Currency>()
                 .Property(c => c.exchange_rate).HasColumnType("decimal(18,2)");

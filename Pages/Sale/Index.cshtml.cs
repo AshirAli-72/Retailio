@@ -18,7 +18,7 @@ namespace E_Invoice_system.Pages.Sale
         }
 
         public IList<SaleDisplayItem> Sales { get; set; } = new List<SaleDisplayItem>();
-        public IList<ReturnDetail> Returns { get; set; } = new List<ReturnDetail>();
+        public IList<ReturnDisplayItem> Returns { get; set; } = new List<ReturnDisplayItem>();
         public IList<CreditDisplayItem> Credits { get; set; } = new List<CreditDisplayItem>();
 
         [BindProperty(SupportsGet = true)]
@@ -60,6 +60,18 @@ namespace E_Invoice_system.Pages.Sale
             public bool IsReturned { get; set; }
         }
 
+        public class ReturnDisplayItem
+        {
+            public int Id { get; set; }
+            public string? InvNo { get; set; }
+            public string? ItemName { get; set; }
+            public string? Date { get; set; }
+            public int qty { get; set; }
+            public decimal total_price { get; set; }
+            public string? payment_method { get; set; }
+            public string? Status { get; set; }
+        }
+
         public class CreditDisplayItem
         {
             public int id { get; set; }
@@ -83,7 +95,7 @@ namespace E_Invoice_system.Pages.Sale
 
             try
             {
-                var salesQuery = _context.sales.AsNoTracking()
+                var salesQuery = _context.SalesHeader.AsNoTracking()
                     .Where(s => s.payment_method != "Credit"
                         && (s.status == null || s.status != "Pending"));
 
@@ -99,21 +111,21 @@ namespace E_Invoice_system.Pages.Sale
                     .Select(s => new SaleDisplayItem
                     {
                         id = s.id,
-                        InvNo = s.inv_no,
+                        InvNo = s.inv_no ?? ("inv" + s.id.ToString("D3")),
                         Date = s.date,
-                        no_of_items = s.no_of_items,
-                        qty = s.qty,
-                        total_qty = s.total_qty,
-                        Price = s.price,
-                        TotalPrice = s.total_price,
-                        CustomerName = s.description ?? "Walk in",
+                        no_of_items = _context.sales.Count(d => d.sale_id == s.id),
+                        qty = 0,
+                        total_qty = _context.sales.Where(d => d.sale_id == s.id).Sum(d => d.qty),
+                        Price = s.gross_total,
+                        TotalPrice = s.net_payable,
+                        CustomerName = _context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault() ?? "Walk in",
                         PaymentMethod = s.payment_method,
                         Status = s.status,
-                        IsReturned = s.is_returned
+                        IsReturned = false
                     })
                     .ToListAsync();
 
-                Sales = salesList.Where(s => s.qty > 0 && !s.IsReturned).ToList();
+                Sales = salesList.ToList();
 
                 var returnsQuery = _context.returns.AsNoTracking();
                 ReturnTotalCount = await returnsQuery.CountAsync();
@@ -125,6 +137,25 @@ namespace E_Invoice_system.Pages.Sale
                     .OrderByDescending(r => r.Id)
                     .Skip((ReturnPageNumber - 1) * ReturnPageSize)
                     .Take(ReturnPageSize)
+                    .GroupJoin(
+                        _context.products_services.AsNoTracking(),
+                        r => r.item_id,
+                        p => p.id,
+                        (r, prods) => new { r, prods }
+                    )
+                    .SelectMany(
+                        x => x.prods.DefaultIfEmpty(),
+                        (x, p) => new ReturnDisplayItem
+                        {
+                            Id = x.r.Id,
+                            InvNo = x.r.inv_no,
+                            ItemName = p != null ? p.prod_name : "Item #" + x.r.item_id,
+                            Date = x.r.date,
+                            qty = x.r.qty,
+                            total_price = x.r.total_price,
+                            payment_method = x.r.payment_method,
+                            Status = x.r.status
+                        })
                     .ToListAsync();
 
                 var creditsQuery = _context.credits_details.AsNoTracking()
@@ -139,17 +170,27 @@ namespace E_Invoice_system.Pages.Sale
                     .Skip((CreditPageNumber - 1) * CreditPageSize)
                     .Take(CreditPageSize)
                     .GroupJoin(
+                        _context.credits.AsNoTracking(),
+                        c => c.credit_id,
+                        cr => cr.id,
+                        (c, crs) => new { c, crs }
+                    )
+                    .SelectMany(
+                        x => x.crs.DefaultIfEmpty(),
+                        (x, cr) => new { x.c, cr }
+                    )
+                    .GroupJoin(
                         _context.customers.AsNoTracking(),
-                        c => c.customer_id,
+                        x => x.cr != null ? x.cr.customer_id : 0,
                         cust => cust.id,
-                        (c, custs) => new { c, custs }
+                        (x, custs) => new { x.c, x.cr, custs }
                     )
                     .SelectMany(
                         x => x.custs.DefaultIfEmpty(),
                         (x, cust) => new CreditDisplayItem
                         {
                             id = x.c.id,
-                            InvNo = x.c.inv_no,
+                            InvNo = x.cr != null ? x.cr.inv_no : "",
                             CustomerName = cust != null ? cust.name : "Walk in",
                             Date = x.c.date,
                             no_of_items = x.c.no_of_items,
@@ -172,10 +213,12 @@ namespace E_Invoice_system.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var sale = await _context.sales.FindAsync(id);
+            var sale = await _context.SalesHeader.FindAsync(id);
             if (sale != null)
             {
-                _context.sales.Remove(sale);
+                var details = await _context.sales.Where(d => d.sale_id == id).ToListAsync();
+                _context.sales.RemoveRange(details);
+                _context.SalesHeader.Remove(sale);
                 await _context.SaveChangesAsync();
             }
             return RedirectToPage(new { Tab = "sales", PageNumber, ReturnPageNumber, CreditPageNumber });

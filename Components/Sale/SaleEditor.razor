@@ -15,7 +15,7 @@
                 
                 <div class="search-bar-v2">
                     <i class="ph-magnifying-glass"></i>
-                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by invoice no (e.g. SALE_1, RETURN_1, CREDIT_1)")"
+                    <input type="text" placeholder="@(searchType == "item" ? "Scan by item barcode" : "Scan by invoice no")"
                            @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchKeyUp" />
                 </div>
 
@@ -512,7 +512,7 @@
                 </div>
 
                 <div class="c-form-group">
-                    <label>Credit Discount</label>
+                    <label>Discount</label>
                     <input type="number" step="0.01" value="@creditEntry.discount" @oninput="OnCreditDiscountInput" placeholder="Additional discount (optional)" />
                 </div>
 
@@ -833,51 +833,109 @@
 
     private async Task LoadFromReceipt(string invNo)
     {
+        if (string.IsNullOrWhiteSpace(invNo))
+            return;
+
+        invNo = invNo.Trim();
         using var context = DbFactory.CreateDbContext();
-        var sales = await context.sales.Where(s => s.inv_no == invNo).ToListAsync();
 
-        if (sales.Any())
+        if (invNo.StartsWith("SALE_", StringComparison.OrdinalIgnoreCase))
         {
-            returnFromCredit = false;
-            transMode = "return";
-            saleItems = sales.Select(s => new SaleItem
+            var parts = invNo.Split('_');
+            if (parts.Length < 2 || !int.TryParse(parts[1], out int saleHeaderId))
             {
-                prod_name_service = "Item #" + s.id,
-                qty = -s.qty,
-                price = s.price,
-                discount = s.qty != 0 ? s.discount / s.qty : 0,
-                expiry_date = s.expiry_date,
-                maxStock = s.qty,
-                total_price = Math.Abs(s.total_price),
-                OriginalSaleId = s.id
-            }).ToList();
+                ShowAlert("Invalid sale receipt format.");
+                return;
+            }
 
-            StateHasChanged();
+            var headerById = await context.SalesHeader.FindAsync(saleHeaderId);
+            if (headerById != null)
+            {
+                await LoadSaleHeaderForReturn(context, headerById);
+                return;
+            }
+        }
+
+        var credit = await context.credits
+            .FirstOrDefaultAsync(c => c.inv_no == invNo);
+
+        if (credit != null)
+        {
+            var creditLines = await context.credits_details
+                .Where(c => c.credit_id == credit.id && (c.status == null || c.status != "Returned"))
+                .ToListAsync();
+
+            if (creditLines.Any())
+            {
+                returnFromCredit = true;
+                transMode = "return";
+                saleItems = creditLines.Select(c => new SaleItem
+                {
+                    prod_name_service = "Item #" + c.id,
+                    qty = -Math.Abs(c.qty),
+                    price = c.price,
+                    discount = c.qty != 0 ? c.discount / c.qty : 0,
+                    expiry_date = c.expiry_date,
+                    maxStock = c.qty,
+                    total_price = Math.Abs(c.total_price),
+                    OriginalSaleId = c.id
+                }).ToList();
+                StateHasChanged();
+                return;
+            }
+        }
+
+        var header = await context.SalesHeader
+            .FirstOrDefaultAsync(s => s.inv_no == invNo);
+
+        if (header == null)
+        {
+            ShowAlert("Receipt not found.");
             return;
         }
 
-        var creditLines = await context.credits_details
-            .Where(c => c.inv_no == invNo)
-            .ToListAsync();
+        await LoadSaleHeaderForReturn(context, header);
+    }
 
-        if (creditLines.Any())
+    private async Task LoadSaleHeaderForReturn(ApplicationDbContext context, SaleHeader header)
+    {
+        var details = await context.sales.Where(d => d.sale_id == header.id).ToListAsync();
+        if (!details.Any())
         {
-            returnFromCredit = true;
-            transMode = "return";
-            saleItems = creditLines.Select(c => new SaleItem
-            {
-                prod_name_service = "Item #" + c.id,
-                qty = -c.qty,
-                price = c.price,
-                discount = c.qty != 0 ? c.discount / c.qty : 0,
-                expiry_date = c.expiry_date,
-                maxStock = c.qty,
-                total_price = Math.Abs(c.total_price),
-                OriginalSaleId = c.id
-            }).ToList();
-
-            StateHasChanged();
+            ShowAlert("No items found for this sale.");
+            return;
         }
+
+        var itemIds = details.Select(d => d.item_id).Distinct().ToList();
+        var products = await context.products_services
+            .Where(p => itemIds.Contains(p.id))
+            .ToDictionaryAsync(p => p.id, p => p.prod_name ?? "Item #" + p.id);
+
+        returnFromCredit = false;
+        transMode = "return";
+        saleItems = details.Select(d => new SaleItem
+        {
+            prod_name_service = products.ContainsKey(d.item_id) ? products[d.item_id] : "Item #" + d.item_id,
+            qty = -Math.Abs(d.qty),
+            price = Math.Abs(d.unit_price),
+            discount = 0,
+            maxStock = Math.Abs(d.qty),
+            total_price = -Math.Abs(d.total_price),
+            OriginalSaleId = d.id
+        }).ToList();
+
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private int? ResolveCurrentUserId(ApplicationDbContext context)
+    {
+        if (string.IsNullOrWhiteSpace(UserName))
+            return null;
+
+        var user = context.users.AsNoTracking()
+            .FirstOrDefault(u => u.username == UserName || u.email == UserName);
+        return user?.id;
     }
 
     private void AddToSale(ProductDisplay p)
@@ -1020,29 +1078,52 @@
 
     private async Task<string> GenerateNextInvNoAsync(ApplicationDbContext context)
     {
-        string prefix = transMode == "return" ? "RETURN" : (paymentMethod == "Credit" ? "CREDIT" : "SALE");
+        string prefix = transMode == "return" ? "RETURN_"
+                      : paymentMethod == "Credit" ? "CREDIT_"
+                      : "SALE_";
 
         var sequences = new List<int>();
 
-        if (prefix == "SALE")
-            sequences = await context.sales.Where(s => s.inv_no != null && s.inv_no.StartsWith("SALE_"))
-                .Select(s => ParseInvSequence(s.inv_no)).ToListAsync();
-        else if (prefix == "RETURN")
-            sequences = await context.returns.Where(r => r.inv_no != null && r.inv_no.StartsWith("RETURN_"))
-                .Select(r => ParseInvSequence(r.inv_no)).ToListAsync();
-        else if (prefix == "CREDIT")
-            sequences = await context.credits.Where(c => c.inv_no != null && c.inv_no.StartsWith("CREDIT_"))
-                .Select(c => ParseInvSequence(c.inv_no)).ToListAsync();
+        if (prefix == "SALE_")
+        {
+            var invs = await context.SalesHeader
+                .Where(s => s.inv_no != null && s.inv_no.ToUpper().StartsWith("SALE_"))
+                .Select(s => s.inv_no).ToListAsync();
+            foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "SALE_"));
+        }
+        else if (prefix == "RETURN_")
+        {
+            var invs = await context.returns
+                .Where(r => r.inv_no != null && r.inv_no.ToUpper().StartsWith("RETURN_"))
+                .Select(r => r.inv_no).ToListAsync();
+            foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "RETURN_"));
+        }
+        else // CREDIT_
+        {
+            var invs = await context.credits
+                .Where(c => c.inv_no != null && c.inv_no.ToUpper().StartsWith("CREDIT_"))
+                .Select(c => c.inv_no).ToListAsync();
+            foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "CREDIT_"));
+        }
 
-        int nextNum = (sequences.Any() ? sequences.Max() : 0) + 1;
-        return $"{prefix}_{nextNum}";
+        var nextNum = (sequences.Count > 0 ? sequences.Max() : 0) + 1;
+        return $"{prefix}{nextNum}";
+    }
+
+    private static int ParseInvSequence(string? invNo, string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(invNo)) return 0;
+        var value = invNo.Trim().ToUpperInvariant();
+        if (!value.StartsWith(prefix.ToUpperInvariant())) return 0;
+        return int.TryParse(value[prefix.Length..], out int n) ? n : 0;
     }
 
     private static int ParseInvSequence(string? invNo)
     {
         if (string.IsNullOrWhiteSpace(invNo)) return 0;
-        var parts = invNo.Split('_');
-        return parts.Length > 1 && int.TryParse(parts[1], out int n) ? n : 0;
+        var value = invNo.Trim().ToLowerInvariant();
+        if (!value.StartsWith("inv")) return 0;
+        return int.TryParse(value[3..], out int n) ? n : 0;
     }
 
     private void SetPaymentMethod(string m)
@@ -1051,6 +1132,8 @@
 
         if (m == "Credit")
         {
+            orderInvNo = "";  // ← clear so modal shows no stale SALE_ number
+
             creditSelectedCustomer = selectedCustomer;
             creditCustomerSearch = selectedCustomer?.name ?? "";
             filteredCreditCustomers = allCustomersList.Take(20).ToList();
@@ -1141,7 +1224,7 @@
         showCreditCustomerDropdown = false;
     }
 
-    private void ConfirmCreditAndProceed()
+    private async void ConfirmCreditAndProceed()
     {
         if (creditSelectedCustomer != null)
         {
@@ -1150,8 +1233,14 @@
         }
 
         RecalcCredit();
+
+        // Regenerate with CREDIT_ prefix now that method is confirmed
+        using var context = DbFactory.CreateDbContext();
+        orderInvNo = await GenerateNextInvNoAsync(context);
+
         showCreditModal = false;
         showCreditCustomerDropdown = false;
+        StateHasChanged();
     }
 
     private void ShowAlert(string msg)
@@ -1211,12 +1300,8 @@
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(orderInvNo) || 
-                (paymentMethod == "Credit" && !orderInvNo.StartsWith("CREDIT_")) ||
-                (paymentMethod != "Credit" && transMode != "return" && !orderInvNo.StartsWith("SALE_")))
-            {
+            if (string.IsNullOrWhiteSpace(orderInvNo))
                 orderInvNo = await GenerateNextInvNoAsync(context);
-            }
             await InvokeAsync(StateHasChanged);
 
             var productNames = saleItems
@@ -1237,8 +1322,24 @@
                 .Where(s => barcodesInSale.Contains(s.item_barcode))
                 .ToListAsync();
 
-            var currentUser = await context.users.FirstOrDefaultAsync(u => u.username == UserName);
-            int? currentUserId = currentUser?.id;
+            int? currentUserId = ResolveCurrentUserId(context);
+
+            Credit? newCredit = null;
+            if (paymentMethod == "Credit" && transMode != "return" && creditCust != null)
+            {
+                newCredit = new Credit
+                {
+                    inv_no = orderInvNo,
+                    customer_id = creditCust.id,
+                    date = DateTime.Now.ToString("yyyy-MM-dd"),
+                    grand_total = Math.Abs(currentTotal),
+                    paid_amount = creditEntry.paid_amount,
+                    discount = creditEntry.discount,
+                    remaining_amount = creditRemainingAmount
+                };
+                context.credits.Add(newCredit);
+                await context.SaveChangesAsync();
+            }
 
             foreach (var item in saleItems)
             {
@@ -1248,8 +1349,8 @@
                     {
                         context.credits_details.Add(new CreditDetail
                         {
-                            inv_no = orderInvNo,
-                            customer_id = creditCust!.id,
+                            credit_id = newCredit!.id,
+                            sale_id = 0,
                             date = DateTime.Now.ToString("yyyy-MM-dd"),
                             no_of_items = saleItems.Count,
                             qty = item.qty,
@@ -1260,43 +1361,35 @@
                             payment_method = "Credit",
                             status = "Pending",
                             expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd"),
-                            paid_amount = creditEntry.paid_amount,
-                            remaining_amount = creditRemainingAmount
+                            paid_amount = 0,
+                            remaining_amount = item.total_price
                         });
                     }
                     else
                     {
-                        context.sales.Add(new Models.Sale
-                        {
-                            inv_no = orderInvNo,
-                            date = DateTime.Now.ToString("yyyy-MM-dd"),
-                            no_of_items = saleItems.Count,
-                            qty = item.qty,
-                            total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
-                            price = item.price,
-                            discount = item.discount,
-                            total_price = item.total_price,
-                            payment_method = paymentMethod,
-                            status = "Paid",
-                            is_returned = false,
-                            description = selectedCustomer?.name ?? "Walk-in",
-                            expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd")
-                        });
+                        // Will be handled after the loop — we create a SaleHeader first
                     }
                 }
                 else
                 {
+                    var saleLine = item.OriginalSaleId > 0
+                        ? await context.sales.FindAsync(item.OriginalSaleId)
+                        : null;
+                    var returnProd = productsInSale
+                        .FirstOrDefault(p => p.prod_name == item.prod_name_service);
+
                     context.returns.Add(new ReturnDetail
                     {
                         inv_no = orderInvNo,
-                        SaleId = item.OriginalSaleId,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
-                        no_of_items = saleItems.Count,
+                        sale_id = saleLine?.sale_id ?? 0,
+                        sale_detail_id = item.OriginalSaleId,
+                        item_id = returnProd?.id ?? 0,
                         qty = Math.Abs(item.qty),
-                        total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
-                        Amount = Math.Abs(item.total_price),
-                        Method = paymentMethod,
-                        Status = "RETURN"
+                        unit_price = item.price,
+                        total_price = Math.Abs(item.total_price),
+                        payment_method = paymentMethod,
+                        status = "Returned"
                     });
                 }
 
@@ -1331,18 +1424,38 @@
                 }
             }
 
-            if (paymentMethod == "Credit" && transMode != "return" && creditCust != null)
+            // Create SaleHeader + Sale details for regular (non-credit, non-return) sales
+            if (transMode != "return" && paymentMethod != "Credit")
             {
-                context.credits.Add(new Credit
+                var saleHeader = new SaleHeader
                 {
                     inv_no = orderInvNo,
-                    customer_id = creditCust.id,
+                    customer_id = selectedCustomer?.id,
                     date = DateTime.Now.ToString("yyyy-MM-dd"),
-                    grand_total = Math.Abs(currentTotal),
-                    paid_amount = creditEntry.paid_amount,
-                    discount = creditEntry.discount,
-                    remaining_amount = creditRemainingAmount
-                });
+                    gross_total = saleItems.Sum(i => Math.Abs(i.price * i.qty)),
+                    discount = saleItems.Sum(i => Math.Abs(i.discount * i.qty)),
+                    net_payable = Math.Abs(currentTotal),
+                    paid = (tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal),
+                    due = Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
+                    status = "Paid",
+                    payment_method = paymentMethod
+                };
+                context.SalesHeader.Add(saleHeader);
+                await context.SaveChangesAsync();
+
+                foreach (var item in saleItems)
+                {
+                    var prod = productsInSale.FirstOrDefault(p => p.prod_name == item.prod_name_service);
+                    context.sales.Add(new Models.Sale
+                    {
+                        sale_id = saleHeader.id,
+                        item_id = prod?.id ?? 0,
+                        qty = item.qty,
+                        unit_price = item.price,
+                        total_price = item.total_price,
+                        status = "Paid"
+                    });
+                }
             }
 
             if (transMode == "return")
@@ -1364,42 +1477,19 @@
                         foreach (var line in creditLines)
                             line.status = "Returned";
 
-                        var creditInvNos = creditLines
-                            .Select(c => c.inv_no)
-                            .Where(n => !string.IsNullOrEmpty(n))
+                        var creditIds = creditLines
+                            .Select(c => c.credit_id)
                             .Distinct()
                             .ToList();
 
-                        if (creditInvNos.Any())
+                        if (creditIds.Any())
                         {
                             var summaries = await context.credits
-                                .Where(c => c.inv_no != null && creditInvNos.Contains(c.inv_no))
+                                .Where(c => creditIds.Contains(c.id))
                                 .ToListAsync();
 
                             foreach (var summary in summaries)
                                 summary.remaining_amount = 0;
-                        }
-                    }
-                    else
-                    {
-                        var originalSales = await context.sales
-                            .Where(s => originalIds.Contains(s.id))
-                            .ToListAsync();
-
-                        var invNos = originalSales
-                            .Select(s => s.inv_no)
-                            .Where(b => !string.IsNullOrEmpty(b))
-                            .Distinct()
-                            .ToList();
-
-                        if (invNos.Any())
-                        {
-                            var salesToMark = await context.sales
-                                .Where(s => s.inv_no != null && invNos.Contains(s.inv_no))
-                                .ToListAsync();
-
-                            foreach (var s in salesToMark)
-                                s.is_returned = true;
                         }
                     }
                 }

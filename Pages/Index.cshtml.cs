@@ -94,9 +94,8 @@ namespace E_Invoice_system.Pages
             // 4. Total Sales
             try 
             { 
-                stats.TotalSales = await context.sales.AsNoTracking()
-                    .Where(s => s.total_price > 0)
-                    .SumAsync(s => (decimal?)s.total_price) ?? 0; 
+                stats.TotalSales = await context.SalesHeader.AsNoTracking()
+                    .SumAsync(s => (decimal?)s.net_payable) ?? 0; 
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalSales"); }
 
@@ -106,9 +105,9 @@ namespace E_Invoice_system.Pages
                 var startDate = DateTime.Today.AddDays(-6);
                 var startDateStr = startDate.ToString("yyyy-MM-dd");
 
-                var trendResultsFromDb = await context.sales
+                var trendResultsFromDb = await context.SalesHeader
                     .AsNoTracking()
-                    .Where(s => s.date != null && s.date.CompareTo(startDateStr) >= 0 && !s.is_returned)
+                    .Where(s => s.date != null && s.date.CompareTo(startDateStr) >= 0)
                     .GroupBy(s => s.date)
                     .Select(g => new { Date = g.Key, Count = g.Count() })
                     .ToListAsync();
@@ -134,7 +133,7 @@ namespace E_Invoice_system.Pages
             // 8. Sale vs Return
             try
             {
-                stats.SaleCount = await context.sales.AsNoTracking().CountAsync(s => !s.is_returned);
+                stats.SaleCount = await context.SalesHeader.AsNoTracking().CountAsync();
                 stats.ReturnCount = await context.returns.AsNoTracking().CountAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Sale/Return counts"); }

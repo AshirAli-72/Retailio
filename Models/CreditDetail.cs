@@ -10,11 +10,11 @@ namespace E_Invoice_system.Models
         [Column("id", Order = 0)]
         public int id { get; set; }
 
-        [Column("inv_no", Order = 1)]
-        public string? inv_no { get; set; }
+        [Column("credit_id")]
+        public int credit_id { get; set; }
 
-        [Column("customer_id")]
-        public int customer_id { get; set; }
+        [Column("sale_id")]
+        public int sale_id { get; set; }
 
         [Column("date")]
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
@@ -51,5 +51,6 @@ namespace E_Invoice_system.Models
 
         [Column("remaining_amount")]
         public decimal remaining_amount { get; set; }
+
     }
 }

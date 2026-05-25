@@ -16,8 +16,8 @@ namespace E_Invoice_system.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    customer_id = table.Column<int>(type: "int", nullable: false),
+                    credit_id = table.Column<int>(type: "int", nullable: false),
+                    sale_id = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     no_of_items = table.Column<int>(type: "int", nullable: false),
                     qty = table.Column<int>(type: "int", nullable: false),
@@ -35,11 +35,65 @@ namespace E_Invoice_system.Migrations
                 {
                     table.PrimaryKey("PK_credits_details", x => x.id);
                 });
+
+            // If table already exists, alter it
+            migrationBuilder.DropColumn(
+                name: "inv_no",
+                table: "credits_details");
+
+            migrationBuilder.DropColumn(
+                name: "customer_id",
+                table: "credits_details");
+
+            migrationBuilder.DropColumn(
+                name: "prod_name",
+                table: "credits_details");
+
+            migrationBuilder.AddColumn<int>(
+                name: "credit_id",
+                table: "credits_details",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<int>(
+                name: "sale_id",
+                table: "credits_details",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropColumn(
+                name: "credit_id",
+                table: "credits_details");
+
+            migrationBuilder.DropColumn(
+                name: "sale_id",
+                table: "credits_details");
+
+            migrationBuilder.AddColumn<string>(
+                name: "inv_no",
+                table: "credits_details",
+                type: "nvarchar(max)",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "customer_id",
+                table: "credits_details",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<string>(
+                name: "prod_name",
+                table: "credits_details",
+                type: "nvarchar(max)",
+                nullable: true);
+
             migrationBuilder.DropTable(
                 name: "credits_details");
         }

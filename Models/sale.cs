@@ -7,44 +7,28 @@ namespace E_Invoice_system.Models
     public class Sale
     {
         [Key]
-        [Column("id", Order = 0)]
+        [Column("id")]
         public int id { get; set; }
 
-        [Column("inv_no", Order = 1)]
-        public string? inv_no { get; set; }
+        [Column("sale_id")]
+        public int sale_id { get; set; }
 
-        [Column("date")]
-        public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
-   
-        [Column("no_of_items")]
-        public int no_of_items { get; set; }
+        [Column("item_id")]
+        public int item_id { get; set; }
 
         [Column("qty")]
         public int qty { get; set; }
 
-        [Column("total_qty")]
-        public int total_qty { get; set; }
-
-        [Column("price")]
-        public decimal price { get; set; }
-
-        [Column("discount")]
-        public decimal discount { get; set; }
-        [Column("expiry_date")]
-        public string? expiry_date { get; set; }
+        [Column("unit_price")]
+        public decimal unit_price { get; set; }
 
         [Column("total_price")]
         public decimal total_price { get; set; }
-        [Column("description")]
-        public string? description { get; set; }
 
-        [Column("payment_method")]
-        public string? payment_method { get; set; }
         [Column("status")]
         public string? status { get; set; }
 
-        [Column("is_returned")]
-        public bool is_returned { get; set; } = false;
-
+        [ForeignKey(nameof(sale_id))]
+        public SaleHeader? SaleHeader { get; set; }
     }
 }
