@@ -109,19 +109,16 @@ namespace E_Invoice_system.Data
 
             modelBuilder.Entity<Credit>(entity =>
             {
-                entity.Property(e => e.grand_total).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.paid_amount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.discount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.remaining_amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<CreditDetail>(entity =>
             {
-                entity.Property(e => e.price).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.discount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.total_price).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.paid_amount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.remaining_amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.due).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Employee>(entity =>

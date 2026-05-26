@@ -79,25 +79,29 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("date");
 
-                    b.Property<decimal>("discount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("discount");
-
-                    b.Property<decimal>("grand_total")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("grand_total");
-
-                    b.Property<string>("inv_no")
+                    b.Property<string>("file")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("inv_no");
+                        .HasColumnName("file");
 
-                    b.Property<decimal>("paid_amount")
+                    b.Property<decimal>("paid")
                         .HasColumnType("decimal(18,2)")
-                        .HasColumnName("paid_amount");
+                        .HasColumnName("paid");
 
-                    b.Property<decimal>("remaining_amount")
+                    b.Property<string>("payment_method")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("payment_method");
+
+                    b.Property<decimal>("remaining")
                         .HasColumnType("decimal(18,2)")
-                        .HasColumnName("remaining_amount");
+                        .HasColumnName("remaining");
+
+                    b.Property<string>("status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("total_credit")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total_credit");
 
                     b.HasKey("id");
 
@@ -109,10 +113,13 @@ namespace E_Invoice_system.Migrations
                     b.Property<int>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasColumnName("id")
-                        .HasColumnOrder(0);
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<decimal>("amount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amount");
 
                     b.Property<int>("credit_id")
                         .HasColumnType("int")
@@ -123,49 +130,29 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("date");
 
-                    b.Property<decimal>("discount")
+                    b.Property<decimal>("due")
                         .HasColumnType("decimal(18,2)")
-                        .HasColumnName("discount");
+                        .HasColumnName("due");
 
-                    b.Property<string>("expiry_date")
+                    b.Property<string>("file")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("expiry_date");
+                        .HasColumnName("file");
 
-                    b.Property<int>("no_of_items")
-                        .HasColumnType("int")
-                        .HasColumnName("no_of_items");
-
-                    b.Property<decimal>("paid_amount")
+                    b.Property<decimal>("paid")
                         .HasColumnType("decimal(18,2)")
-                        .HasColumnName("paid_amount");
+                        .HasColumnName("paid");
 
                     b.Property<string>("payment_method")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("payment_method");
 
-                    b.Property<decimal>("price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("price");
-
-                    b.Property<int>("qty")
+                    b.Property<int>("sale_id")
                         .HasColumnType("int")
-                        .HasColumnName("qty");
-
-                    b.Property<decimal>("remaining_amount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("remaining_amount");
+                        .HasColumnName("sale_id");
 
                     b.Property<string>("status")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
-
-                    b.Property<decimal>("total_price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("total_price");
-
-                    b.Property<int>("total_qty")
-                        .HasColumnType("int")
-                        .HasColumnName("total_qty");
 
                     b.HasKey("id");
 

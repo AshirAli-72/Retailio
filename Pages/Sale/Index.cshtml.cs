@@ -75,15 +75,12 @@ namespace E_Invoice_system.Pages.Sale
         public class CreditDisplayItem
         {
             public int id { get; set; }
-            public string? InvNo { get; set; }
+            public int SaleId { get; set; }
             public string? CustomerName { get; set; }
             public string? Date { get; set; }
-            public int no_of_items { get; set; }
-            public decimal total_qty { get; set; }
-            public decimal Price { get; set; }
-            public decimal TotalPrice { get; set; }
-            public decimal PaidAmount { get; set; }
-            public decimal RemainingAmount { get; set; }
+            public decimal amount { get; set; }
+            public decimal paid { get; set; }
+            public decimal due { get; set; }
             public string? Status { get; set; }
         }
 
@@ -190,15 +187,12 @@ namespace E_Invoice_system.Pages.Sale
                         (x, cust) => new CreditDisplayItem
                         {
                             id = x.c.id,
-                            InvNo = x.cr != null ? x.cr.inv_no : "",
+                            SaleId = x.c.sale_id,
                             CustomerName = cust != null ? cust.name : "Walk in",
                             Date = x.c.date,
-                            no_of_items = x.c.no_of_items,
-                            total_qty = x.c.total_qty,
-                            Price = x.c.price,
-                            TotalPrice = x.c.total_price,
-                            PaidAmount = x.c.paid_amount,
-                            RemainingAmount = x.c.remaining_amount,
+                            amount = x.c.amount,
+                            paid = x.c.paid,
+                            due = x.c.due,
                             Status = x.c.status ?? "Pending"
                         })
                     .ToListAsync();

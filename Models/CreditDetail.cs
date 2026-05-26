@@ -7,7 +7,7 @@ namespace E_Invoice_system.Models
     public class CreditDetail
     {
         [Key]
-        [Column("id", Order = 0)]
+        [Column("id")]
         public int id { get; set; }
 
         [Column("credit_id")]
@@ -16,38 +16,25 @@ namespace E_Invoice_system.Models
         [Column("date")]
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
 
-        [Column("no_of_items")]
-        public int no_of_items { get; set; }
+        [Column("sale_id")]
+        public int sale_id { get; set; }
 
-        [Column("qty")]
-        public int qty { get; set; }
+        [Column("amount")]
+        public decimal amount { get; set; }
 
-        [Column("total_qty")]
-        public int total_qty { get; set; }
+        [Column("paid")]
+        public decimal paid { get; set; }
 
-        [Column("price")]
-        public decimal price { get; set; }
-
-        [Column("discount")]
-        public decimal discount { get; set; }
-
-        [Column("expiry_date")]
-        public string? expiry_date { get; set; }
-
-        [Column("total_price")]
-        public decimal total_price { get; set; }
+        [Column("due")]
+        public decimal due { get; set; }
 
         [Column("payment_method")]
-        public string? payment_method { get; set; } = "Credit";
+        public string? payment_method { get; set; }
 
         [Column("status")]
-        public string? status { get; set; } = "Pending";
+        public string? status { get; set; }
 
-        [Column("paid_amount")]
-        public decimal paid_amount { get; set; }
-
-        [Column("remaining_amount")]
-        public decimal remaining_amount { get; set; }
-
+        [Column("file")]
+        public string? file { get; set; }
     }
 }

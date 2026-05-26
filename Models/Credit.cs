@@ -10,25 +10,28 @@ namespace E_Invoice_system.Models
         [Column("id")]
         public int id { get; set; }
 
-        [Column("inv_no")]
-        public string? inv_no { get; set; }
-
         [Column("customer_id")]
         public int customer_id { get; set; }
 
-        [Column("grand_total")]
-        public decimal grand_total { get; set; }
+        [Column("total_credit")]
+        public decimal total_credit { get; set; }
 
-        [Column("paid_amount")]
-        public decimal paid_amount { get; set; }
+        [Column("paid")]
+        public decimal paid { get; set; }
 
-        [Column("discount")]
-        public decimal discount { get; set; }
-
-        [Column("remaining_amount")]
-        public decimal remaining_amount { get; set; }
+        [Column("remaining")]
+        public decimal remaining { get; set; }
 
         [Column("date")]
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
+
+        [Column("payment_method")]
+        public string? payment_method { get; set; }
+
+        [Column("status")]
+        public string? status { get; set; }
+
+        [Column("file")]
+        public string? file { get; set; }
     }
 }

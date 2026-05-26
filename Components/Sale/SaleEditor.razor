@@ -224,6 +224,43 @@
             }
         </div>
 
+        @if (loadedCredit != null)
+        {
+            <div style="margin: 0 24px 12px; padding: 14px 18px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-weight:700; color:#c2410c; font-size:0.85rem;">CREDIT ACCOUNT</span>
+                    <span style="font-weight:700; font-size:0.8rem; color:#c2410c;">Status: @loadedCredit.status</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                    <span style="color:#64748b;">Total Credit</span>
+                    <span style="font-weight:600;">@FormatCurrency(loadedCredit.total_credit)</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                    <span style="color:#64748b;">Paid</span>
+                    <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.paid)</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                    <span style="color:#64748b;">Remaining</span>
+                    <span style="font-weight:800; color:#dc2626;">@FormatCurrency(loadedCredit.remaining)</span>
+                </div>
+                @if (loadedCredit.remaining > 0)
+                {
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #fed7aa;">
+                        <div class="c-form-group" style="margin:0;">
+                            <label style="font-size:0.8rem;">Additional Payment</label>
+                            <input type="number" step="0.01" value="@additionalPayment"
+                                   @oninput="OnAdditionalPaymentInput"
+                                   placeholder="Enter payment amount" />
+                        </div>
+                        <button type="button" style="width:100%;margin-top:8px;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
+                                @onclick="ConfirmAdditionalPayment">
+                            <i class="ph-check-bold"></i> Confirm Payment
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
         <!-- Checkout Footer -->
         <div class="checkout-footer-v2">
             <div class="price-summary-v2">
@@ -511,11 +548,6 @@
                     <input type="number" step="0.01" value="@creditEntry.paid_amount" @oninput="OnCreditPaidAmountInput" placeholder="Enter amount paid now" />
                 </div>
 
-                <div class="c-form-group">
-                    <label>Discount</label>
-                    <input type="number" step="0.01" value="@creditEntry.discount" @oninput="OnCreditDiscountInput" placeholder="Additional discount (optional)" />
-                </div>
-
                 <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="color:#c2410c; font-size:0.9rem; font-weight:700;">Remaining Amount</span>
@@ -676,6 +708,8 @@
     private bool showCreditCustomerDropdown = false;
     private List<customers> filteredCreditCustomers = new();
     private customers? creditSelectedCustomer;
+    private Credit? loadedCredit;
+    private decimal additionalPayment = 0;
 
     [Parameter] public string? UserEmail { get; set; }
     [Parameter] public string? UserName { get; set; }
@@ -851,13 +885,26 @@
             var headerById = await context.SalesHeader.FindAsync(saleHeaderId);
             if (headerById != null)
             {
+                if (headerById.payment_method == "Credit")
+                {
+                    loadedCredit = await context.credits
+                        .Where(c => c.customer_id == headerById.customer_id && c.status != "Paid")
+                        .FirstOrDefaultAsync();
+                    await LoadSaleHeaderForView(context, headerById);
+                    return;
+                }
+
                 await LoadSaleHeaderForReturn(context, headerById);
                 return;
             }
         }
 
-        var credit = await context.credits
-            .FirstOrDefaultAsync(c => c.inv_no == invNo);
+        Credit? credit = null;
+        if (invNo != null && invNo.ToUpper().StartsWith("CREDIT_") &&
+            int.TryParse(invNo["CREDIT_".Length..], out var creditId))
+        {
+            credit = await context.credits.FindAsync(creditId);
+        }
 
         if (credit != null)
         {
@@ -872,12 +919,11 @@
                 saleItems = creditLines.Select(c => new SaleItem
                 {
                     prod_name_service = "Item #" + c.id,
-                    qty = -Math.Abs(c.qty),
-                    price = c.price,
-                    discount = c.qty != 0 ? c.discount / c.qty : 0,
-                    expiry_date = c.expiry_date,
-                    maxStock = c.qty,
-                    total_price = Math.Abs(c.total_price),
+                    qty = -1,
+                    price = c.amount,
+                    discount = 0,
+                    maxStock = 1,
+                    total_price = Math.Abs(c.amount),
                     OriginalSaleId = c.id
                 }).ToList();
                 StateHasChanged();
@@ -895,6 +941,36 @@
         }
 
         await LoadSaleHeaderForReturn(context, header);
+    }
+
+    private async Task LoadSaleHeaderForView(ApplicationDbContext context, SaleHeader header)
+    {
+        var details = await context.sales.Where(d => d.sale_id == header.id).ToListAsync();
+        if (!details.Any())
+        {
+            ShowAlert("No items found for this sale.");
+            return;
+        }
+
+        var itemIds = details.Select(d => d.item_id).Distinct().ToList();
+        var products = await context.products_services
+            .Where(p => itemIds.Contains(p.id))
+            .ToDictionaryAsync(p => p.id, p => p.prod_name ?? "Item #" + p.id);
+
+        transMode = "sale";
+        saleItems = details.Select(d => new SaleItem
+        {
+            prod_name_service = products.ContainsKey(d.item_id) ? products[d.item_id] : "Item #" + d.item_id,
+            qty = Math.Abs(d.qty),
+            price = Math.Abs(d.unit_price),
+            discount = 0,
+            maxStock = 99999,
+            total_price = Math.Abs(d.total_price),
+            OriginalSaleId = d.id
+        }).ToList();
+
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 
     private async Task LoadSaleHeaderForReturn(ApplicationDbContext context, SaleHeader header)
@@ -1078,9 +1154,7 @@
 
     private async Task<string> GenerateNextInvNoAsync(ApplicationDbContext context)
     {
-        string prefix = transMode == "return" ? "RETURN_"
-                      : paymentMethod == "Credit" ? "CREDIT_"
-                      : "SALE_";
+        string prefix = transMode == "return" ? "RETURN_" : "SALE_";
 
         var sequences = new List<int>();
 
@@ -1091,19 +1165,12 @@
                 .Select(s => s.inv_no).ToListAsync();
             foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "SALE_"));
         }
-        else if (prefix == "RETURN_")
+        else // RETURN_
         {
             var invs = await context.returns
                 .Where(r => r.inv_no != null && r.inv_no.ToUpper().StartsWith("RETURN_"))
                 .Select(r => r.inv_no).ToListAsync();
             foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "RETURN_"));
-        }
-        else // CREDIT_
-        {
-            var invs = await context.credits
-                .Where(c => c.inv_no != null && c.inv_no.ToUpper().StartsWith("CREDIT_"))
-                .Select(c => c.inv_no).ToListAsync();
-            foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "CREDIT_"));
         }
 
         var nextNum = (sequences.Count > 0 ? sequences.Max() : 0) + 1;
@@ -1140,8 +1207,7 @@
 
             creditEntry = new CreditEntry
             {
-                paid_amount = 0,
-                discount = totalDisc
+                paid_amount = 0
             };
             RecalcCredit();
             showCreditModal = true;
@@ -1150,8 +1216,8 @@
 
     private void RecalcCredit()
     {
-        var grandTotal = Math.Abs(currentTotal);
-        creditRemainingAmount = grandTotal - creditEntry.paid_amount - creditEntry.discount;
+        var creditTotal = Math.Abs(currentTotal);
+        creditRemainingAmount = creditTotal - creditEntry.paid_amount;
         if (creditRemainingAmount < 0) creditRemainingAmount = 0;
     }
 
@@ -1159,13 +1225,6 @@
     {
         if (decimal.TryParse(e.Value?.ToString(), out var v))
             creditEntry.paid_amount = v;
-        RecalcCredit();
-    }
-
-    private void OnCreditDiscountInput(ChangeEventArgs e)
-    {
-        if (decimal.TryParse(e.Value?.ToString(), out var v))
-            creditEntry.discount = v;
         RecalcCredit();
     }
 
@@ -1224,6 +1283,77 @@
         showCreditCustomerDropdown = false;
     }
 
+    private void OnAdditionalPaymentInput(ChangeEventArgs e)
+    {
+        decimal.TryParse(e.Value?.ToString(), out additionalPayment);
+    }
+
+    private async void ConfirmAdditionalPayment()
+    {
+        if (loadedCredit == null || additionalPayment <= 0)
+        {
+            ShowAlert("Enter a valid payment amount.");
+            return;
+        }
+
+        if (additionalPayment > loadedCredit.remaining)
+        {
+            ShowAlert("Payment cannot exceed remaining balance.");
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+
+        var credit = await context.credits.FindAsync(loadedCredit.id);
+        if (credit == null) return;
+
+        credit.paid += additionalPayment;
+        credit.remaining = credit.total_credit - credit.paid;
+        credit.status = credit.remaining > 0 ? "Pending" : "Paid";
+
+        // Find first sale_id associated with this credit
+        var firstDetail = await context.credits_details
+            .Where(d => d.credit_id == credit.id)
+            .FirstOrDefaultAsync();
+
+        context.credits_details.Add(new CreditDetail
+        {
+            credit_id = credit.id,
+            date = DateTime.Now.ToString("yyyy-MM-dd"),
+            sale_id = firstDetail?.sale_id ?? 0,
+            amount = additionalPayment,
+            paid = additionalPayment,
+            due = 0,
+            payment_method = "Credit",
+            status = "Paid"
+        });
+
+        await context.SaveChangesAsync();
+
+        loadedCredit = credit;
+        additionalPayment = 0;
+        ShowAlert("Payment recorded successfully.");
+        StateHasChanged();
+    }
+
+    private async void OpenCreditPaymentForLoaded()
+    {
+        if (loadedCredit == null) return;
+
+        using var context = DbFactory.CreateDbContext();
+        var cust = await context.customers.FindAsync(loadedCredit.customer_id);
+        if (cust != null)
+        {
+            creditSelectedCustomer = cust;
+            creditCustomerSearch = cust.name;
+        }
+
+        // Set the current sale total to 0 — user is just adding payment, not new items
+        creditEntry = new CreditEntry { paid_amount = 0 };
+        creditRemainingAmount = loadedCredit.remaining;
+        showCreditModal = true;
+    }
+
     private async void ConfirmCreditAndProceed()
     {
         if (creditSelectedCustomer != null)
@@ -1233,10 +1363,6 @@
         }
 
         RecalcCredit();
-
-        // Regenerate with CREDIT_ prefix now that method is confirmed
-        using var context = DbFactory.CreateDbContext();
-        orderInvNo = await GenerateNextInvNoAsync(context);
 
         showCreditModal = false;
         showCreditCustomerDropdown = false;
@@ -1300,6 +1426,20 @@
                 return;
             }
 
+            if (paymentMethod == "Credit" && creditCust!.credit_limit.HasValue)
+            {
+                var existing = await context.credits
+                    .Where(c => c.customer_id == creditCust.id && c.status != "Paid")
+                    .FirstOrDefaultAsync();
+                var outstanding = existing?.remaining ?? 0;
+                var newCreditTotal = Math.Abs(currentTotal) - creditEntry.paid_amount;
+                if (outstanding + newCreditTotal > creditCust.credit_limit.Value)
+                {
+                    ShowAlert($"Credit limit exceeded! Outstanding: {outstanding:N0}, New credit: {newCreditTotal:N0}, Limit: {creditCust.credit_limit:N0}");
+                    return;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(orderInvNo))
                 orderInvNo = await GenerateNextInvNoAsync(context);
             await InvokeAsync(StateHasChanged);
@@ -1325,49 +1465,77 @@
             int? currentUserId = ResolveCurrentUserId(context);
 
             Credit? newCredit = null;
-            if (paymentMethod == "Credit" && transMode != "return" && creditCust != null)
+            SaleHeader? saleHeader = null;
+
+            // Create SaleHeader for all non-return sales (cash + credit)
+            if (transMode != "return")
             {
-                newCredit = new Credit
+                bool isCredit = paymentMethod == "Credit" && creditCust != null;
+                saleHeader = new SaleHeader
                 {
                     inv_no = orderInvNo,
-                    customer_id = creditCust.id,
+                    customer_id = isCredit ? creditCust!.id : selectedCustomer?.id,
                     date = DateTime.Now.ToString("yyyy-MM-dd"),
-                    grand_total = Math.Abs(currentTotal),
-                    paid_amount = creditEntry.paid_amount,
-                    discount = creditEntry.discount,
-                    remaining_amount = creditRemainingAmount
+                    gross_total = saleItems.Sum(i => Math.Abs(i.price * i.qty)),
+                    discount = saleItems.Sum(i => Math.Abs(i.discount * i.qty)),
+                    net_payable = Math.Abs(currentTotal),
+                    paid = isCredit ? creditEntry.paid_amount : (tenderedAmount ?? Math.Abs(currentTotal)),
+                    due = isCredit ? creditRemainingAmount : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
+                    status = isCredit ? (creditRemainingAmount > 0 ? "Pending" : "Paid") : "Paid",
+                    payment_method = paymentMethod
                 };
-                context.credits.Add(newCredit);
+                context.SalesHeader.Add(saleHeader);
+
+                if (isCredit)
+                {
+                    newCredit = await context.credits
+                        .Where(c => c.customer_id == creditCust!.id && c.status != "Paid")
+                        .FirstOrDefaultAsync();
+
+                    if (newCredit != null)
+                    {
+                        newCredit.total_credit += Math.Abs(currentTotal);
+                        newCredit.paid += creditEntry.paid_amount;
+                        newCredit.remaining = newCredit.total_credit - newCredit.paid;
+                        newCredit.status = newCredit.remaining > 0 ? "Pending" : "Paid";
+                    }
+                    else
+                    {
+                        newCredit = new Credit
+                        {
+                            customer_id = creditCust!.id,
+                            date = DateTime.Now.ToString("yyyy-MM-dd"),
+                            total_credit = Math.Abs(currentTotal),
+                            paid = creditEntry.paid_amount,
+                            remaining = creditRemainingAmount,
+                            payment_method = "Credit",
+                            status = creditRemainingAmount > 0 ? "Pending" : "Paid"
+                        };
+                        context.credits.Add(newCredit);
+                    }
+                }
+
                 await context.SaveChangesAsync();
             }
+
+            var saleRecords = new List<(Sale sale, int itemIndex)>();
 
             foreach (var item in saleItems)
             {
                 if (transMode != "return")
                 {
-                    if (paymentMethod == "Credit")
+                    var saleProd = productsInSale.FirstOrDefault(p => p.prod_name == item.prod_name_service);
+                    var sale = new Models.Sale
                     {
-                        context.credits_details.Add(new CreditDetail
-                        {
-                            credit_id = newCredit!.id,
-                            date = DateTime.Now.ToString("yyyy-MM-dd"),
-                            no_of_items = saleItems.Count,
-                            qty = item.qty,
-                            total_qty = saleItems.Sum(i => Math.Abs(i.qty)),
-                            price = item.price,
-                            discount = item.discount,
-                            total_price = item.total_price,
-                            payment_method = "Credit",
-                            status = "Pending",
-                            expiry_date = item.expiry_date ?? DateTime.Now.ToString("yyyy-MM-dd"),
-                            paid_amount = 0,
-                            remaining_amount = item.total_price
-                        });
-                    }
-                    else
-                    {
-                        // Will be handled after the loop — we create a SaleHeader first
-                    }
+                        sale_id = saleHeader!.id,
+                        item_id = saleProd?.id ?? 0,
+                        qty = item.qty,
+                        unit_price = item.price,
+                        total_price = item.total_price,
+                        status = saleHeader.status ?? "Paid"
+                    };
+                    context.sales.Add(sale);
+                    saleRecords.Add((sale, saleItems.IndexOf(item)));
                 }
                 else
                 {
@@ -1423,36 +1591,31 @@
                 }
             }
 
-            // Create SaleHeader + Sale details for regular (non-credit, non-return) sales
-            if (transMode != "return" && paymentMethod != "Credit")
-            {
-                var saleHeader = new SaleHeader
-                {
-                    inv_no = orderInvNo,
-                    customer_id = selectedCustomer?.id,
-                    date = DateTime.Now.ToString("yyyy-MM-dd"),
-                    gross_total = saleItems.Sum(i => Math.Abs(i.price * i.qty)),
-                    discount = saleItems.Sum(i => Math.Abs(i.discount * i.qty)),
-                    net_payable = Math.Abs(currentTotal),
-                    paid = (tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal),
-                    due = Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
-                    status = "Paid",
-                    payment_method = paymentMethod
-                };
-                context.SalesHeader.Add(saleHeader);
-                await context.SaveChangesAsync();
+            // Save to get Sale IDs, then create CreditDetail records
+            await context.SaveChangesAsync();
 
-                foreach (var item in saleItems)
+            if (newCredit != null)
+            {
+                var totalAmount = saleRecords.Sum(s => Math.Abs(s.sale.total_price));
+                var distributed = 0m;
+                for (int i = 0; i < saleRecords.Count; i++)
                 {
-                    var prod = productsInSale.FirstOrDefault(p => p.prod_name == item.prod_name_service);
-                    context.sales.Add(new Models.Sale
+                    var lineAmount = Math.Abs(saleRecords[i].sale.total_price);
+                    var linePaid = i < saleRecords.Count - 1
+                        ? Math.Round(lineAmount / totalAmount * creditEntry.paid_amount, 2)
+                        : creditEntry.paid_amount - distributed;
+                    distributed += linePaid;
+
+                    context.credits_details.Add(new CreditDetail
                     {
-                        sale_id = saleHeader.id,
-                        item_id = prod?.id ?? 0,
-                        qty = item.qty,
-                        unit_price = item.price,
-                        total_price = item.total_price,
-                        status = "Paid"
+                        credit_id = newCredit.id,
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        sale_id = saleHeader!.id,
+                        amount = lineAmount,
+                        paid = linePaid,
+                        due = lineAmount - linePaid,
+                        payment_method = "Credit",
+                        status = "Pending"
                     });
                 }
             }
@@ -1488,7 +1651,7 @@
                                 .ToListAsync();
 
                             foreach (var summary in summaries)
-                                summary.remaining_amount = 0;
+                                summary.remaining = 0;
                         }
                     }
                 }
@@ -1585,6 +1748,7 @@
         returnFromCredit = false;
         orderInvNo = "";
         _receiptSnapshot = null;
+        loadedCredit = null;
 
         ApplyFilters();
         StateHasChanged();
@@ -1621,7 +1785,6 @@
     public class CreditEntry
     {
         public decimal paid_amount { get; set; }
-        public decimal discount { get; set; }
     }
 
     private sealed class ReceiptSnapshot

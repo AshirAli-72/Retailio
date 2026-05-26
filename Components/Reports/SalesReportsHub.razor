@@ -80,8 +80,10 @@
             <div class="filter-group">
                 <label><i class="ph-funnel"></i> Type</label>
                 <select @bind="selectedType">
+                    <option value="All">All</option>
                     <option value="Sale">Sales Only</option>
                     <option value="Return">Returns Only</option>
+                    <option value="Credit">Credits Only</option>
                 </select>
             </div>
             <div class="filter-actions-row">
@@ -249,7 +251,10 @@
                                 {
                                     <tr>
                                         <td class="td-date">@sale.Date</td>
-                                        <td><span class="badge-bill">SALE_@sale.Id</span></td>
+                                        <td>
+                                            <span class="badge-bill type-@sale.Type.ToLowerInvariant()">@sale.Type</span>
+                                            @sale.InvNo
+                                        </td>
                                         <td class="td-center">@sale.ItemCount</td>
                                         <td>@currencySymbol@sale.GrossTotal.ToString("N2")</td>
                                         <td class="text-orange">@currencySymbol@sale.Discount.ToString("N2")</td>
@@ -295,7 +300,7 @@
     private string selectedCategory = "All";
     private string selectedEmployee = "All";
     private string selectedPayment = "All";
-    private string selectedType = "Sale";
+    private string selectedType = "All";
 
     private decimal totalRevenue = 0;
     private int totalTransactions = 0;
@@ -319,7 +324,9 @@
     private class SaleReportRow
     {
         public int Id { get; set; }
+        public string InvNo { get; set; } = "";
         public string Date { get; set; } = "";
+        public string Type { get; set; } = "";
         public int ItemCount { get; set; }
         public decimal GrossTotal { get; set; }
         public decimal Discount { get; set; }
@@ -353,7 +360,7 @@
         selectedCategory = "All";
         selectedEmployee = "All";
         selectedPayment = "All";
-        selectedType = "Sale";
+        selectedType = "All";
         reportData.Clear();
         isGenerated = false;
         StateHasChanged();
@@ -368,26 +375,92 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+            var rows = new List<SaleReportRow>();
 
-            var filtered = allSalesHeaders.Where(s => {
-                if (!DateTime.TryParse(s.date, out var d)) return false;
-                bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
-                bool matchPayment = selectedPayment == "All" || s.payment_method == selectedPayment;
-                return inRange && matchPayment;
-            }).ToList();
+            bool loadSales = selectedType == "All" || selectedType == "Sale";
+            bool loadReturns = selectedType == "All" || selectedType == "Return";
+            bool loadCredits = selectedType == "All" || selectedType == "Credit";
 
-            reportData = filtered.OrderByDescending(s => s.date).Select(s => new SaleReportRow
+            // ---- Load Sales / Returns ----
+            if (loadSales || loadReturns)
             {
-                Id = s.id,
-                Date = s.date,
-                ItemCount = context.sales.Count(d => d.sale_id == s.id),
-                GrossTotal = s.gross_total,
-                Discount = s.discount,
-                NetPayable = s.net_payable,
-                PaymentMethod = s.payment_method ?? "Cash",
-                Status = s.status ?? "Paid"
-            }).ToList();
+                var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+                var filteredSales = allSalesHeaders.Where(s =>
+                {
+                    if (!DateTime.TryParse(s.date, out var d)) return false;
+                    bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
+                    bool matchPayment = selectedPayment == "All" || s.payment_method == selectedPayment;
+                    return inRange && matchPayment;
+                }).ToList();
+
+                if (loadSales)
+                {
+                    rows.AddRange(filteredSales.Select(s => new SaleReportRow
+                    {
+                        Id = s.id,
+                        InvNo = s.inv_no ?? "",
+                        Date = s.date,
+                        Type = "Sale",
+                        ItemCount = context.sales.Count(d => d.sale_id == s.id),
+                        GrossTotal = s.gross_total,
+                        Discount = s.discount,
+                        NetPayable = s.net_payable,
+                        PaymentMethod = s.payment_method ?? "Cash",
+                        Status = s.status ?? "Paid"
+                    }));
+                }
+
+                if (loadReturns)
+                {
+                    var allReturns = await context.returns.AsNoTracking().ToListAsync();
+                    var filteredReturns = allReturns.Where(r =>
+                    {
+                        if (!DateTime.TryParse(r.date, out var d)) return false;
+                        bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
+                        bool matchPayment = selectedPayment == "All" || r.payment_method == selectedPayment;
+                        return inRange && matchPayment;
+                    }).GroupBy(r => r.inv_no ?? "RETURN_" + r.Id).Select(g => new SaleReportRow
+                    {
+                        Id = g.First().Id,
+                        InvNo = g.Key,
+                        Date = g.First().date,
+                        Type = "Return",
+                        ItemCount = g.Sum(r => r.qty),
+                        GrossTotal = g.Sum(r => r.total_price),
+                        Discount = 0,
+                        NetPayable = g.Sum(r => r.total_price),
+                        PaymentMethod = g.First().payment_method ?? "Cash",
+                        Status = g.First().status ?? "Returned"
+                    }).ToList();
+                    rows.AddRange(filteredReturns);
+                }
+            }
+
+            // ---- Load Credits ----
+            if (loadCredits)
+            {
+                var allCredits = await context.credits.AsNoTracking().ToListAsync();
+                var filteredCredits = allCredits.Where(c =>
+                {
+                    if (!DateTime.TryParse(c.date, out var d)) return false;
+                    return d.Date >= fromDate.Date && d.Date <= toDate.Date;
+                }).Select(c => new SaleReportRow
+                {
+                    Id = c.id,
+                    InvNo = "CREDIT_" + c.id,
+                    Date = c.date,
+                    Type = "Credit",
+                    ItemCount = context.credits_details.Count(d => d.credit_id == c.id),
+                    GrossTotal = c.total_credit,
+                    Discount = 0,
+                    NetPayable = c.total_credit,
+                    PaymentMethod = c.payment_method ?? "Credit",
+                    Status = c.status ?? (c.remaining > 0 ? "Partial" : "Paid")
+                }).ToList();
+                rows.AddRange(filteredCredits);
+            }
+
+            reportData = rows.OrderByDescending(r => r.Date).ThenByDescending(r => r.Id).ToList();
 
             totalRevenue = reportData.Sum(s => s.NetPayable);
             totalTransactions = reportData.Count;
@@ -411,7 +484,7 @@
             topProducts = reportData
                 .OrderByDescending(p => p.NetPayable)
                 .Take(5)
-                .Select(s => new TopProduct { Name = "SALE_" + s.Id, Count = s.ItemCount, Revenue = s.NetPayable })
+                .Select(s => new TopProduct { Name = s.Type + "_" + s.Id, Count = s.ItemCount, Revenue = s.NetPayable })
                 .ToList();
 
             // Payment Mix

@@ -110,6 +110,10 @@
 .badge-status.sale { background: #ecfdf5; color: #059669; }
 .badge-status.return { background: #fef2f2; color: #dc2626; }
 
+.type-sale { background: #ecfdf5; color: #059669; }
+.type-return { background: #fef2f2; color: #dc2626; }
+.type-credit { background: #fffbeb; color: #d97706; }
+
 .text-primary { color: #BC1823; }
 .text-orange { color: #f59e0b; font-weight: 600; }
 .td-center { text-align: center; font-weight: 700; }

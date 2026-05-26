@@ -266,15 +266,12 @@
             <table class="styled-table" style="min-width: 1100px; margin-bottom: 0;">
             <thead>
                 <tr>
-                    <th style="padding-left: 1.5rem;">Invoice No</th>
+                    <th style="padding-left: 1.5rem;">Sale ID</th>
                     <th>Customer</th>
                     <th>Date</th>
-                    <th>No. of Items</th>
-                    <th>Total Qty</th>
-                    <th>Price</th>
-                    <th>Total</th>
+                    <th>Amount</th>
                     <th>Paid</th>
-                    <th>Remaining</th>
+                    <th>Due</th>
                     <th class="text-center">Status</th>
                     <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
                 </tr>
@@ -286,7 +283,7 @@
                     {
                         <tr>
                             <td style="padding-left: 1.5rem;">
-                                <div class="font-bold font-sm font-monospace">@credit.InvNo</div>
+                                <div class="font-bold font-sm font-monospace">@credit.SaleId</div>
                             </td>
                             <td>
                                 <div class="font-bold font-sm">@credit.CustomerName</div>
@@ -294,17 +291,10 @@
                             <td>
                                 <div class="font-bold font-sm">@credit.Date</div>
                             </td>
+                            <td class="text-muted">@CurrencyService.GetSymbol()@credit.amount.ToString("N2")</td>
+                            <td class="text-muted">@CurrencyService.GetSymbol()@credit.paid.ToString("N2")</td>
                             <td>
-                                <div class="font-bold">@credit.no_of_items</div>
-                            </td>
-                            <td>@credit.total_qty.ToString("N0")</td>
-                            <td class="text-muted">@CurrencyService.GetSymbol()@credit.Price.ToString("N2")</td>
-                            <td>
-                                <div class="font-bold" style="color: #d97706;">@CurrencyService.GetSymbol()@credit.TotalPrice.ToString("N2")</div>
-                            </td>
-                            <td class="text-muted">@CurrencyService.GetSymbol()@credit.PaidAmount.ToString("N2")</td>
-                            <td>
-                                <div class="font-bold text-danger">@CurrencyService.GetSymbol()@credit.RemainingAmount.ToString("N2")</div>
+                                <div class="font-bold text-danger">@CurrencyService.GetSymbol()@credit.due.ToString("N2")</div>
                             </td>
                             <td class="text-center">
                                 <span class="status-badge status-pending">@(credit.Status ?? "Pending")</span>
