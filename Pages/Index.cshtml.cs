@@ -34,6 +34,8 @@ namespace E_Invoice_system.Pages
             public int ReturnCount { get; set; }
             public int LowStockCount { get; set; }
             public int TotalEmployees { get; set; }
+            public decimal CreditRemaining { get; set; }
+            public decimal TotalRefund { get; set; }
         }
 
         public int TotalCustomers { get; set; }
@@ -45,6 +47,8 @@ namespace E_Invoice_system.Pages
         public int ReturnCount { get; set; }
         public int LowStockCount { get; set; }
         public int TotalEmployees { get; set; }
+        public decimal CreditRemaining { get; set; }
+        public decimal TotalRefund { get; set; }
         public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
@@ -153,6 +157,23 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalEmployees"); }
 
+            // 11. Credit Stats
+            try
+            {
+                stats.CreditRemaining = await context.credits.AsNoTracking()
+                    .Where(c => c.status != "Paid")
+                    .SumAsync(c => (decimal?)c.remaining) ?? 0;
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
+
+            // 12. Total Refunds
+            try
+            {
+                stats.TotalRefund = await context.returns.AsNoTracking()
+                    .SumAsync(r => (decimal?)Math.Abs(r.total_price)) ?? 0;
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Refund stats"); }
+
             // Cache only if we have some data to avoid caching transient failures
             if (stats.TotalCustomers > 0 || stats.TotalProducts > 0)
             {
@@ -176,6 +197,8 @@ namespace E_Invoice_system.Pages
             ReturnCount = stats.ReturnCount;
             LowStockCount = stats.LowStockCount;
             TotalEmployees = stats.TotalEmployees;
+            CreditRemaining = stats.CreditRemaining;
+            TotalRefund = stats.TotalRefund;
         }
     }
 }

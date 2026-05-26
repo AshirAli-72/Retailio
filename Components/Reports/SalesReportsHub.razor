@@ -252,7 +252,6 @@
                                     <tr>
                                         <td class="td-date">@sale.Date</td>
                                         <td>
-                                            <span class="badge-bill type-@sale.Type.ToLowerInvariant()">@sale.Type</span>
                                             @sale.InvNo
                                         </td>
                                         <td class="td-center">@sale.ItemCount</td>
@@ -381,45 +380,52 @@
             bool loadReturns = selectedType == "All" || selectedType == "Return";
             bool loadCredits = selectedType == "All" || selectedType == "Credit";
 
-            // ---- Load Sales / Returns ----
-            if (loadSales || loadReturns)
+            Func<string?, bool> matchPayment = pm =>
+                selectedPayment == "All" || pm == selectedPayment;
+
+            // ---- Load Sales ----
+            if (loadSales)
             {
-                var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
-                var filteredSales = allSalesHeaders.Where(s =>
+                var salesHeaders = await context.SalesHeader.AsNoTracking()
+                    .Where(s => matchPayment(s.payment_method))
+                    .ToListAsync();
+
+                var filteredSales = salesHeaders.Where(s =>
                 {
                     if (!DateTime.TryParse(s.date, out var d)) return false;
-                    bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
-                    bool matchPayment = selectedPayment == "All" || s.payment_method == selectedPayment;
-                    return inRange && matchPayment;
+                    return d.Date >= fromDate.Date && d.Date <= toDate.Date;
                 }).ToList();
 
-                if (loadSales)
+                var salesToShow = loadCredits
+                    ? filteredSales.Where(s => s.payment_method != "Credit").ToList()
+                    : filteredSales;
+                rows.AddRange(salesToShow.Select(s => new SaleReportRow
                 {
-                    rows.AddRange(filteredSales.Select(s => new SaleReportRow
-                    {
-                        Id = s.id,
-                        InvNo = s.inv_no ?? "",
-                        Date = s.date,
-                        Type = "Sale",
-                        ItemCount = context.sales.Count(d => d.sale_id == s.id),
-                        GrossTotal = s.gross_total,
-                        Discount = s.discount,
-                        NetPayable = s.net_payable,
-                        PaymentMethod = s.payment_method ?? "Cash",
-                        Status = s.status ?? "Paid"
-                    }));
-                }
+                    Id = s.id,
+                    InvNo = s.inv_no ?? "",
+                    Date = s.date,
+                    Type = "Sale",
+                    ItemCount = context.sales.Count(d => d.sale_id == s.id),
+                    GrossTotal = s.gross_total,
+                    Discount = s.discount,
+                    NetPayable = s.net_payable,
+                    PaymentMethod = s.payment_method ?? "Cash",
+                    Status = s.status ?? "Paid"
+                }));
+            }
 
-                if (loadReturns)
-                {
-                    var allReturns = await context.returns.AsNoTracking().ToListAsync();
-                    var filteredReturns = allReturns.Where(r =>
+            // ---- Load Returns ----
+            if (loadReturns)
+            {
+                var filteredReturns = (await context.returns.AsNoTracking().ToListAsync())
+                    .Where(r =>
                     {
                         if (!DateTime.TryParse(r.date, out var d)) return false;
-                        bool inRange = d.Date >= fromDate.Date && d.Date <= toDate.Date;
-                        bool matchPayment = selectedPayment == "All" || r.payment_method == selectedPayment;
-                        return inRange && matchPayment;
-                    }).GroupBy(r => r.inv_no ?? "RETURN_" + r.Id).Select(g => new SaleReportRow
+                        return d.Date >= fromDate.Date && d.Date <= toDate.Date
+                            && matchPayment(r.payment_method);
+                    })
+                    .GroupBy(r => r.inv_no ?? "RETURN_" + r.Id)
+                    .Select(g => new SaleReportRow
                     {
                         Id = g.First().Id,
                         InvNo = g.Key,
@@ -432,32 +438,40 @@
                         PaymentMethod = g.First().payment_method ?? "Cash",
                         Status = g.First().status ?? "Returned"
                     }).ToList();
-                    rows.AddRange(filteredReturns);
-                }
+                rows.AddRange(filteredReturns);
             }
 
             // ---- Load Credits ----
             if (loadCredits)
             {
-                var allCredits = await context.credits.AsNoTracking().ToListAsync();
-                var filteredCredits = allCredits.Where(c =>
+                var creditDetails = (await context.credits_details.AsNoTracking()
+                    .Where(d => d.status == null || d.status != "Returned")
+                    .ToListAsync())
+                    .Where(d =>
+                    {
+                        if (!DateTime.TryParse(d.date, out var dt)) return false;
+                        return dt.Date >= fromDate.Date && dt.Date <= toDate.Date
+                            && matchPayment(d.payment_method);
+                    }).ToList();
+
+                var saleIds = creditDetails.Select(d => d.sale_id).Distinct().ToList();
+                var saleHeaders = await context.SalesHeader.AsNoTracking()
+                    .Where(s => saleIds.Contains(s.id))
+                    .ToDictionaryAsync(s => s.id, s => s.inv_no ?? "SALE_" + s.id.ToString("D3"));
+
+                rows.AddRange(creditDetails.Select(d => new SaleReportRow
                 {
-                    if (!DateTime.TryParse(c.date, out var d)) return false;
-                    return d.Date >= fromDate.Date && d.Date <= toDate.Date;
-                }).Select(c => new SaleReportRow
-                {
-                    Id = c.id,
-                    InvNo = "CREDIT_" + c.id,
-                    Date = c.date,
+                    Id = d.id,
+                    InvNo = saleHeaders.ContainsKey(d.sale_id) ? saleHeaders[d.sale_id] : "SALE_" + d.sale_id.ToString("D3"),
+                    Date = d.date,
                     Type = "Credit",
-                    ItemCount = context.credits_details.Count(d => d.credit_id == c.id),
-                    GrossTotal = c.total_credit,
+                    ItemCount = 1,
+                    GrossTotal = d.amount,
                     Discount = 0,
-                    NetPayable = c.total_credit,
-                    PaymentMethod = c.payment_method ?? "Credit",
-                    Status = c.status ?? (c.remaining > 0 ? "Partial" : "Paid")
-                }).ToList();
-                rows.AddRange(filteredCredits);
+                    NetPayable = d.amount,
+                    PaymentMethod = d.payment_method ?? "Credit",
+                    Status = d.status ?? "Pending"
+                }));
             }
 
             reportData = rows.OrderByDescending(r => r.Date).ThenByDescending(r => r.Id).ToList();

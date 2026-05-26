@@ -899,38 +899,6 @@
             }
         }
 
-        Credit? credit = null;
-        if (invNo != null && invNo.ToUpper().StartsWith("CREDIT_") &&
-            int.TryParse(invNo["CREDIT_".Length..], out var creditId))
-        {
-            credit = await context.credits.FindAsync(creditId);
-        }
-
-        if (credit != null)
-        {
-            var creditLines = await context.credits_details
-                .Where(c => c.credit_id == credit.id && (c.status == null || c.status != "Returned"))
-                .ToListAsync();
-
-            if (creditLines.Any())
-            {
-                returnFromCredit = true;
-                transMode = "return";
-                saleItems = creditLines.Select(c => new SaleItem
-                {
-                    prod_name_service = "Item #" + c.id,
-                    qty = -1,
-                    price = c.amount,
-                    discount = 0,
-                    maxStock = 1,
-                    total_price = Math.Abs(c.amount),
-                    OriginalSaleId = c.id
-                }).ToList();
-                StateHasChanged();
-                return;
-            }
-        }
-
         var header = await context.SalesHeader
             .FirstOrDefaultAsync(s => s.inv_no == invNo);
 
