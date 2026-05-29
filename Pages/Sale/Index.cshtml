@@ -53,8 +53,7 @@
                     <th style="padding-left: 1.5rem;">Invoice No</th>
                     <th>Customer</th>
                     <th>Date</th>
-                    <th>No. of Items</th>
-                    <th>Total Qty</th>
+                    <th>Qty</th>
                     <th>Price</th>
                     <th>Total</th>
                     <th class="text-center">Method</th>
@@ -77,10 +76,7 @@
                             <td>
                                 <div class="font-bold font-sm">@sale.Date</div>
                             </td>
-                            <td>
-                                <div class="font-bold">@sale.no_of_items</div>
-                            </td>
-                            <td>@sale.total_qty.ToString("N0")</td>
+                            <td>@sale.qty.ToString("N0")</td>
                             <td class="text-muted">@CurrencyService.GetSymbol()@sale.Price.ToString("N2")</td>
                             <td>
                                 <div class="font-bold text-primary">@CurrencyService.GetSymbol()@sale.TotalPrice.ToString("N2")</div>
@@ -314,7 +310,7 @@
                 }
                 else
                 {
-                    <tr><td colspan="11" class="empty-state"><p>No credit records found.</p></td></tr>
+                    <tr><td colspan="8" class="empty-state"><p>No credit records found.</p></td></tr>
                 }
             </tbody>
         </table>

@@ -1,0 +1,374 @@
+@using E_Invoice_system.Models
+@using E_Invoice_system.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IJSRuntime JSRuntime
+@inject E_Invoice_system.Services.CurrencyService CurrencyService
+
+@* Credit reports css *@
+<link href="/css/reports/creditreport.css" rel="stylesheet" />
+
+<div class="customer-hub-container">
+    <!-- Breadcrumbs -->
+    <div class="hub-breadcrumbs no-print">
+        <div class="breadcrumb-item">
+            <i class="ph-house-line"></i>
+            <span>Dashboard</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item clickable" @onclick="OnBack">
+            <span>Reports Center</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item active">
+            <span>Credit Reports</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="hub-header no-print">
+        <div class="header-content">
+            <h1 class="hub-title">Credit Reports</h1>
+            <p class="hub-subtitle">Analyze customer credit limits, paid amounts, and outstanding balances</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-outline" @onclick='() => ExportToCSV("creditTable")'>
+                <i class="ph-file-csv"></i> Export CSV
+            </button>
+            <button class="btn-primary-gradient" @onclick="PrintReport">
+                <i class="ph-printer"></i> Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Glass -->
+    <div class="filters-glass no-print">
+        <div class="filters-inner">
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> From Date</label>
+                <input type="date" @bind="fromDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> To Date</label>
+                <input type="date" @bind="toDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-users"></i> Select Customer</label>
+                <select @bind="selectedCustomerId">
+                    <option value="All">All Customers</option>
+                    @foreach (var c in allCustomersForDropdown)
+                    {
+                        <option value="@c.id">@c.name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-actions-row">
+                <button class="btn-reset-text" @onclick="ResetFilters">Reset Filters</button>
+                <button class="btn-filter-solid" @onclick="ApplyFilters">
+                    <i class="ph-magnifying-glass"></i> Generate Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullReportContainer">
+        <!-- Summary Stats Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card glass-blue">
+                <div class="kpi-icon"><i class="ph-money"></i></div>
+                <div class="kpi-data">
+                    <p class="kpi-label">Total Credit Amount</p>
+                    <h3 class="kpi-value">@currencySymbol@(isGenerated ? totalCreditAmount.ToString("N2") : "0.00")</h3>
+                </div>
+            </div>
+            <div class="kpi-card glass-green">
+                <div class="kpi-icon"><i class="ph-check-circle"></i></div>
+                <div class="kpi-data">
+                    <p class="kpi-label">Total Paid</p>
+                    <h3 class="kpi-value">@currencySymbol@(isGenerated ? totalPaidAmount.ToString("N2") : "0.00")</h3>
+                </div>
+            </div>
+            <div class="kpi-card glass-orange">
+                <div class="kpi-icon"><i class="ph-warning-circle"></i></div>
+                <div class="kpi-data">
+                    <p class="kpi-label">Total Remaining</p>
+                    <h3 class="kpi-value">@currencySymbol@(isGenerated ? totalRemainingAmount.ToString("N2") : "0.00")</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="table-card print-section">
+            <div class="table-header no-print">
+                <h3 class="table-title">Credit Details</h3>
+            </div>
+            
+            <div class="table-responsive">
+                @if (isLoading)
+                {
+                    <div class="premium-loader" style="text-align: center; padding: 2rem;">
+                        <i class="ph-spinner ph-spin" style="font-size: 2rem;"></i>
+                        <p>Processing Intelligence...</p>
+                    </div>
+                }
+                else if (isGenerated && filteredDetails.Any())
+                {
+                    <table id="creditTable" class="modern-table premium-table">
+                        <thead>
+                            <tr>
+                                <th>Credit ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Paid</th>
+                                <th class="text-right">Due</th>
+                                <th class="text-center">Payment Method</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in filteredDetails)
+                            {
+                                <tr>
+                                    <td>@row.credit_id</td>
+                                    <td>
+                                        <div class="c-avatar-info">
+                                            <div class="c-avatar">@(GetCustomerNameByCreditId(row.credit_id).Substring(0, 1).ToUpper())</div>
+                                            <div class="c-name-stack">
+                                                <span class="c-name">@GetCustomerNameByCreditId(row.credit_id)</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@row.date</td>
+                                    <td>@row.items</td>
+                                    <td class="text-right fw-600">@currencySymbol@row.amount.ToString("N2")</td>
+                                    <td class="text-right fw-600 text-success">@currencySymbol@row.paid.ToString("N2")</td>
+                                    <td class="text-right fw-600 text-danger">@currencySymbol@row.due.ToString("N2")</td>
+                                    <td class="text-center">@(row.payment_method ?? "—")</td>
+                                    <td class="text-center">
+                                        @if (row.status == "Paid")
+                                        {
+                                            <span class="badge badge-success">Paid</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">@(row.status ?? "Pending")</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (!isGenerated)
+                {
+                    <div class="empty-hero" style="text-align: center; padding: 4rem 2rem; background: rgba(255,255,255,0.02); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05); margin-top: 2rem;">
+                        <i class="ph-lightning" style="font-size: 3rem; color: var(--primary-color);"></i>
+                        <h3>Ready for Analysis</h3>
+                        <p>Set your criteria above and click <strong>Generate Report</strong> to visualize credit details.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state" style="text-align: center; padding: 2rem;">
+                        <i class="ph-folder-open" style="font-size: 2rem;"></i>
+                        <p>No credit detail records found for the selected criteria.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private bool isLoading = true;
+    private bool isGenerated = false;
+    private string currencySymbol = "$";
+
+    private DateTime fromDate;
+    private DateTime toDate;
+    private string selectedCustomerId = "All";
+
+    private List<customers> allCustomersForDropdown = new();
+    private Dictionary<int, string> customerNamesDict = new();
+    private Dictionary<int, int> creditToCustomerDict = new();
+    
+    private decimal totalCreditAmount = 0;
+    private decimal totalPaidAmount = 0;
+    private decimal totalRemainingAmount = 0;
+    private StoreConfiguration storeInfo = new();
+
+    private class CreditDetailRow
+    {
+        public int id { get; set; }
+        public int credit_id { get; set; }
+        public int sale_id { get; set; }
+        public string date { get; set; } = "";
+        public decimal amount { get; set; }
+        public decimal paid { get; set; }
+        public decimal due { get; set; }
+        public string? payment_method { get; set; }
+        public string? status { get; set; }
+        public int items { get; set; }
+    }
+
+    private List<CreditDetailRow> filteredDetails = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        fromDate = firstDay;
+        toDate = DateTime.Now;
+        
+        currencySymbol = CurrencyService.GetSymbol();
+
+        await LoadInitialData();
+        isLoading = false;
+    }
+
+    private async Task LoadInitialData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        allCustomersForDropdown = await context.customers.AsNoTracking().OrderBy(c => c.name).ToListAsync();
+        customerNamesDict = allCustomersForDropdown.ToDictionary(c => c.id, c => c.name ?? "Unknown");
+
+        // Build credit_id → customer_id mapping
+        creditToCustomerDict = await context.credits.AsNoTracking()
+            .ToDictionaryAsync(c => c.id, c => c.customer_id);
+            
+        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        if (config != null) storeInfo = config;
+    }
+
+    private string GetCustomerNameByCreditId(int creditId)
+    {
+        if (creditToCustomerDict.TryGetValue(creditId, out var customerId))
+        {
+            return customerNamesDict.TryGetValue(customerId, out var name) ? name : "Unknown";
+        }
+        return "Unknown";
+    }
+
+    private async Task ApplyFilters()
+    {
+        isLoading = true;
+        isGenerated = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var detailsQuery = context.credits_details.AsNoTracking().AsQueryable();
+
+            var fromDateStr = fromDate.ToString("yyyy-MM-dd");
+            var toDateStr = toDate.ToString("yyyy-MM-dd");
+            detailsQuery = detailsQuery.Where(d => string.Compare(d.date, fromDateStr) >= 0);
+            detailsQuery = detailsQuery.Where(d => string.Compare(d.date, toDateStr) <= 0);
+            
+            if (selectedCustomerId != "All" && int.TryParse(selectedCustomerId, out int custId))
+            {
+                // Get credit IDs belonging to this customer
+                var creditIds = await context.credits.AsNoTracking()
+                    .Where(c => c.customer_id == custId)
+                    .Select(c => c.id)
+                    .ToListAsync();
+                detailsQuery = detailsQuery.Where(d => creditIds.Contains(d.credit_id));
+            }
+
+            var creditRows = await detailsQuery
+                .OrderByDescending(d => d.date)
+                .ThenByDescending(d => d.id)
+                .Select(d => new CreditDetailRow
+                {
+                    id = d.id,
+                    credit_id = d.credit_id,
+                    sale_id = d.sale_id,
+                    date = d.date,
+                    amount = d.amount,
+                    paid = d.paid,
+                    due = d.due,
+                    payment_method = d.payment_method,
+                    status = d.status,
+                    items = 0
+                })
+                .ToListAsync();
+
+            var saleIds = creditRows.Select(r => r.sale_id).Where(sid => sid != 0).Distinct().ToList();
+
+            if (saleIds.Any())
+            {
+                var saleDetails = await context.sales
+                    .AsNoTracking()
+                    .Where(sd => saleIds.Contains(sd.sale_id))
+                    .Select(sd => new { sd.id, sd.sale_id, sd.total_price, sd.qty })
+                    .ToListAsync();
+
+                var saleDetailsMap = saleDetails.GroupBy(sd => sd.sale_id)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                foreach (var r in creditRows)
+                {
+                    if (r.sale_id != 0 && saleDetailsMap.TryGetValue(r.sale_id, out var detailsList))
+                    {
+                        var match = detailsList.FirstOrDefault(sd => sd.total_price == r.amount);
+                        if (match != null)
+                        {
+                            r.items = match.qty;
+                            detailsList.Remove(match); // Consume to correctly handle identical items
+                        }
+                    }
+                }
+            }
+
+            filteredDetails = creditRows;
+
+            totalCreditAmount = filteredDetails.Sum(x => x.amount);
+            totalPaidAmount = filteredDetails.Sum(x => x.paid);
+            totalRemainingAmount = filteredDetails.Sum(x => x.due);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading credit reports: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        fromDate = firstDay;
+        toDate = DateTime.Now;
+        selectedCustomerId = "All";
+        isGenerated = false;
+        filteredDetails.Clear();
+    }
+
+    private async Task ExportToCSV(string tableId)
+    {
+        await JSRuntime.InvokeVoidAsync("exportTableToCSV", tableId, $"Credit_Details_Report_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    private async Task PrintReport()
+    {
+        string logoUrl = "";
+        if (!string.IsNullOrEmpty(storeInfo.LogoPath)) logoUrl = $"/store-logo/{Path.GetFileName(storeInfo.LogoPath)}";
+
+        var printData = new {
+            shopName = storeInfo.ShopName,
+            address = storeInfo.Address,
+            phone = storeInfo.Phone1,
+            email = "", 
+            logoUrl = logoUrl
+        };
+
+        await JSRuntime.InvokeVoidAsync("printElement", "fullReportContainer", "Credit Reports", printData);
+    }
+}
+

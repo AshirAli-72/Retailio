@@ -111,7 +111,7 @@ namespace E_Invoice_system.Pages.Sale
                         InvNo = s.inv_no ?? ("inv" + s.id.ToString("D3")),
                         Date = s.date,
                         no_of_items = _context.sales.Count(d => d.sale_id == s.id),
-                        qty = 0,
+                        qty = _context.sales.Where(d => d.sale_id == s.id).Sum(d => d.qty),
                         total_qty = _context.sales.Where(d => d.sale_id == s.id).Sum(d => d.qty),
                         Price = s.gross_total,
                         TotalPrice = s.net_payable,

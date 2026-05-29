@@ -1,10 +1,13 @@
 @namespace E_Invoice_system.Components.Sale
 @using Microsoft.EntityFrameworkCore
 @using System.Text.RegularExpressions
+@using System.IO
+@using Microsoft.AspNetCore.Components.Forms
 @implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
 
 <div class="pos-container-v2" @onclick="CloseDropdowns">
     <!-- PRODUCT CANVAS (LEFT) -->
@@ -251,6 +254,14 @@
                             <input type="number" step="0.01" value="@additionalPayment"
                                    @oninput="OnAdditionalPaymentInput"
                                    placeholder="Enter payment amount" />
+                        </div>
+                        <div class="c-form-group" style="margin-top:8px;margin-bottom:0;">
+                            <label style="font-size:0.8rem;">Attachment (Optional)</label>
+                            <InputFile OnChange="HandleAdditionalPaymentFile" accept="image/*,.pdf" style="font-size: 0.8rem; padding: 4px; width: 100%; border: 1px solid #dbe3ec; border-radius: 8px; background: #fff;" />
+                            @if (!string.IsNullOrEmpty(additionalPaymentFileName))
+                            {
+                                <div style="margin-top:2px; font-size:0.75rem; color:#16a34a;"><i class="ph-check-circle"></i> @additionalPaymentFileName</div>
+                            }
                         </div>
                         <button type="button" style="width:100%;margin-top:8px;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
                                 @onclick="ConfirmAdditionalPayment">
@@ -548,6 +559,15 @@
                     <input type="number" step="0.01" value="@creditEntry.paid_amount" @oninput="OnCreditPaidAmountInput" placeholder="Enter amount paid now" />
                 </div>
 
+                <div class="c-form-group">
+                    <label>Attachment Document (Optional)</label>
+                    <InputFile OnChange="HandleCreditEntryFile" accept="image/*,.pdf" style="width: 100%; padding: 8px; border: 1px solid #dbe3ec; border-radius: 10px; font-size: 0.9rem;" />
+                    @if (!string.IsNullOrEmpty(creditEntry.file))
+                    {
+                        <div style="margin-top:4px; font-size:0.85rem; color:#16a34a;"><i class="ph-check-circle"></i> @creditEntry.file</div>
+                    }
+                </div>
+
                 <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="color:#c2410c; font-size:0.9rem; font-weight:700;">Remaining Amount</span>
@@ -652,6 +672,17 @@
                     <span>GRAND TOTAL</span>
                     <span>@FormatReceiptAmount(_receiptSnapshot.Total, _receiptSnapshot)</span>
                 </div>
+                @if (_receiptSnapshot.Payment == "Credit")
+                {
+                    <div class="inv-total-row" style="margin-top: 8px;">
+                        <span>Paid Amount</span>
+                        <span>@FormatReceiptAmount(_receiptSnapshot.CreditPaid, _receiptSnapshot)</span>
+                    </div>
+                    <div class="inv-total-row">
+                        <span>Remaining Balance</span>
+                        <span>@FormatReceiptAmount(_receiptSnapshot.CreditRemaining, _receiptSnapshot)</span>
+                    </div>
+                }
             </section>
 
             <footer class="inv-footer">
@@ -710,8 +741,46 @@
     private customers? creditSelectedCustomer;
     private Credit? loadedCredit;
     private decimal additionalPayment = 0;
+    private IBrowserFile? additionalPaymentBrowserFile;
+    private string? additionalPaymentFileName;
 
     [Parameter] public string? UserEmail { get; set; }
+
+    private void HandleAdditionalPaymentFile(InputFileChangeEventArgs e)
+    {
+        additionalPaymentBrowserFile = e.File;
+        additionalPaymentFileName = e.File.Name;
+    }
+
+    private void HandleCreditEntryFile(InputFileChangeEventArgs e)
+    {
+        creditEntry.file_browser = e.File;
+        creditEntry.file = e.File.Name;
+    }
+
+    private async Task<string?> SaveFileAsync(IBrowserFile? file)
+    {
+        if (file == null) return null;
+        try
+        {
+            var uploads = Path.Combine(WebHostEnvironment.WebRootPath, "credit-files");
+            if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+            
+            var ext = Path.GetExtension(file.Name);
+            var newFileName = $"credit_{DateTime.Now.Ticks}{ext}";
+            var path = Path.Combine(uploads, newFileName);
+            
+            using var fs = new FileStream(path, FileMode.Create);
+            await file.OpenReadStream(maxAllowedSize: 10485760).CopyToAsync(fs); // 10MB limit
+            
+            return $"/credit-files/{newFileName}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"File upload error: {ex.Message}");
+            return null;
+        }
+    }
     [Parameter] public string? UserName { get; set; }
 
     // ── Init ──────────────────────────────────────────────────────────────────
@@ -1284,6 +1353,8 @@
             .Where(d => d.credit_id == credit.id)
             .FirstOrDefaultAsync();
 
+        var filePath = await SaveFileAsync(additionalPaymentBrowserFile);
+
         context.credits_details.Add(new CreditDetail
         {
             credit_id = credit.id,
@@ -1293,13 +1364,21 @@
             paid = additionalPayment,
             due = 0,
             payment_method = "Credit",
-            status = "Paid"
+            status = "Paid",
+            file = filePath
         });
+
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            credit.file = filePath;
+        }
 
         await context.SaveChangesAsync();
 
         loadedCredit = credit;
         additionalPayment = 0;
+        additionalPaymentBrowserFile = null;
+        additionalPaymentFileName = null;
         ShowAlert("Payment recorded successfully.");
         StateHasChanged();
     }
@@ -1434,6 +1513,11 @@
 
             Credit? newCredit = null;
             SaleHeader? saleHeader = null;
+            string? creditFilePath = null;
+            if (paymentMethod == "Credit")
+            {
+                creditFilePath = await SaveFileAsync(creditEntry.file_browser);
+            }
 
             // Create SaleHeader for all non-return sales (cash + credit)
             if (transMode != "return")
@@ -1466,6 +1550,8 @@
                         newCredit.paid += creditEntry.paid_amount;
                         newCredit.remaining = newCredit.total_credit - newCredit.paid;
                         newCredit.status = newCredit.remaining > 0 ? "Pending" : "Paid";
+                        if (!string.IsNullOrEmpty(creditFilePath))
+                            newCredit.file = creditFilePath;
                     }
                     else
                     {
@@ -1477,7 +1563,8 @@
                             paid = creditEntry.paid_amount,
                             remaining = creditRemainingAmount,
                             payment_method = "Credit",
-                            status = creditRemainingAmount > 0 ? "Pending" : "Paid"
+                            status = creditRemainingAmount > 0 ? "Pending" : "Paid",
+                            file = creditFilePath
                         };
                         context.credits.Add(newCredit);
                     }
@@ -1583,7 +1670,8 @@
                         paid = linePaid,
                         due = lineAmount - linePaid,
                         payment_method = "Credit",
-                        status = "Pending"
+                        status = "Pending",
+                        file = creditFilePath
                     });
                 }
             }
@@ -1632,6 +1720,11 @@
             if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderInvNo))
             {
                 _receiptSnapshot = BuildReceiptSnapshot();
+                if (paymentMethod == "Credit")
+                {
+                    _receiptSnapshot.CreditPaid = creditEntry.paid_amount;
+                    _receiptSnapshot.CreditRemaining = creditRemainingAmount;
+                }
                 await InvokeAsync(StateHasChanged);
                 await Task.Delay(400);
                 await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderInvNo);
@@ -1753,6 +1846,8 @@
     public class CreditEntry
     {
         public decimal paid_amount { get; set; }
+        public IBrowserFile? file_browser { get; set; }
+        public string? file { get; set; }
     }
 
     private sealed class ReceiptSnapshot
@@ -1762,6 +1857,8 @@
         public string Date { get; set; } = "";
         public string Customer { get; set; } = "";
         public string Payment { get; set; } = "";
+        public decimal CreditPaid { get; set; }
+        public decimal CreditRemaining { get; set; }
         public string? StoreName { get; set; }
         public string? Address { get; set; }
         public string? Phone { get; set; }

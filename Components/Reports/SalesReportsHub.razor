@@ -83,7 +83,7 @@
                     <option value="All">All</option>
                     <option value="Sale">Sales Only</option>
                     <option value="Return">Returns Only</option>
-                    <option value="Credit">Credits Only</option>
+
                 </select>
             </div>
             <div class="filter-actions-row">
@@ -238,8 +238,9 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Invoice No</th>
-                                    <th>Items</th>
+                                    <th>Item</th>
                                     <th>Subtotal</th>
+
                                     <th>Discount</th>
                                     <th>Net Total</th>
                                     <th>Payment</th>
@@ -256,11 +257,12 @@
                                         </td>
                                         <td class="td-center">@sale.ItemCount</td>
                                         <td>@currencySymbol@sale.GrossTotal.ToString("N2")</td>
+
                                         <td class="text-orange">@currencySymbol@sale.Discount.ToString("N2")</td>
                                         <td><strong class="text-primary">@currencySymbol@sale.NetPayable.ToString("N2")</strong></td>
                                         <td><span class="badge-method">@sale.PaymentMethod</span></td>
                                         <td>
-                                            <span class="badge-status sale">@sale.Status</span>
+                                            <span class="badge-status @(sale.Status.ToLower() == "paid" ? "sale" : (sale.Status.ToLower() == "returned" ? "return" : "type-credit"))">@sale.Status</span>
                                         </td>
                                     </tr>
                                 }
@@ -365,6 +367,28 @@
         StateHasChanged();
     }
 
+    private static bool TryParseDateRobust(string? dateStr, out DateTime parsedDate)
+    {
+        parsedDate = DateTime.MinValue;
+        if (string.IsNullOrWhiteSpace(dateStr)) return false;
+        
+        string cleaned = dateStr.Trim();
+        if (DateTime.TryParse(cleaned, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out parsedDate))
+        {
+            return true;
+        }
+        if (DateTime.TryParse(cleaned, out parsedDate))
+        {
+            return true;
+        }
+        string[] formats = { "yyyy-MM-dd", "dd-MM-yyyy", "d-M-yyyy", "MM/dd/yyyy", "yyyy/MM/dd" };
+        if (DateTime.TryParseExact(cleaned, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out parsedDate))
+        {
+            return true;
+        }
+        return false;
+    }
+
     private async Task GenerateReport()
     {
         isLoading = true;
@@ -377,35 +401,96 @@
             var rows = new List<SaleReportRow>();
 
             bool loadSales = selectedType == "All" || selectedType == "Sale";
+
             bool loadReturns = selectedType == "All" || selectedType == "Return";
-            bool loadCredits = selectedType == "All" || selectedType == "Credit";
+            bool loadCredits = false;
 
             Func<string?, bool> matchPayment = pm =>
                 selectedPayment == "All" || pm == selectedPayment;
 
+            int? categoryId = selectedCategory == "All" ? null : int.Parse(selectedCategory);
+            int? employeeId = selectedEmployee == "All" ? null : int.Parse(selectedEmployee);
+
+            var employeeUserIds = new List<int>();
+            if (employeeId.HasValue)
+            {
+                employeeUserIds = await context.users.AsNoTracking()
+                    .Where(u => u.emp_id == employeeId.Value)
+                    .Select(u => u.id)
+                    .ToListAsync();
+            }
+
+            // pre-calculate matching sale IDs if filtering by Category or Employee
+            var matchingSaleIds = new List<int>();
+            if (categoryId.HasValue || employeeId.HasValue)
+            {
+                var query = context.sales.AsNoTracking();
+                if (categoryId.HasValue)
+                {
+                    query = query.Where(sd => context.products_services.Any(p => p.id == sd.item_id && p.category_id == categoryId.Value));
+                }
+                matchingSaleIds = await query.Select(sd => sd.sale_id).Distinct().ToListAsync();
+
+                if (employeeId.HasValue)
+                {
+                    var employeeSaleProductIds = await context.stock_history.AsNoTracking()
+                        .Where(sh => sh.user_id != null && employeeUserIds.Contains(sh.user_id.Value) && sh.remarks == "Sale")
+                        .Select(sh => new { sh.product_id, sh.date })
+                        .Distinct()
+                        .ToListAsync();
+
+                    var salesWithEmployee = await context.sales.AsNoTracking()
+                        .Where(sd => matchingSaleIds.Contains(sd.sale_id))
+                        .Select(sd => new { sd.sale_id, sd.item_id, Date = sd.SaleHeader != null ? sd.SaleHeader.date : "" })
+                        .ToListAsync();
+
+                    matchingSaleIds = salesWithEmployee
+                        .Where(s => employeeSaleProductIds.Any(es => es.product_id == s.item_id && es.date == s.Date))
+                        .Select(s => s.sale_id)
+                        .Distinct()
+                        .ToList();
+                }
+            }
+
+            // pre-fetch sale details counts to avoid threading issues
+            var saleItemCounts = await context.sales.AsNoTracking()
+                .GroupBy(d => d.sale_id)
+                .ToDictionaryAsync(g => g.Key, g => g.Count());
+
             // ---- Load Sales ----
             if (loadSales)
             {
-                var salesHeaders = await context.SalesHeader.AsNoTracking()
-                    .Where(s => matchPayment(s.payment_method))
-                    .ToListAsync();
+                // Fetch all headers first; EF Core cannot translate delegate closures to SQL
+                var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
 
-                var filteredSales = salesHeaders.Where(s =>
+                // Apply all filters in memory
+                var filteredSales = allSalesHeaders.Where(s =>
                 {
-                    if (!DateTime.TryParse(s.date, out var d)) return false;
-                    return d.Date >= fromDate.Date && d.Date <= toDate.Date;
+                    if (!TryParseDateRobust(s.date, out var d)) return false;
+                    if (d.Date < fromDate.Date || d.Date > toDate.Date) return false;
+                    if (!matchPayment(s.payment_method)) return false;
+                    return true;
                 }).ToList();
 
-                var salesToShow = loadCredits
-                    ? filteredSales.Where(s => s.payment_method != "Credit").ToList()
-                    : filteredSales;
-                rows.AddRange(salesToShow.Select(s => new SaleReportRow
+                if (categoryId.HasValue || employeeId.HasValue)
+                    filteredSales = filteredSales.Where(s => matchingSaleIds.Contains(s.id)).ToList();
+
+                // Apply type filter
+                if (selectedType == "Sale")
+                    filteredSales = filteredSales.Where(s => !string.Equals(s.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)).ToList();
+                else if (selectedType == "All")
+                    filteredSales = filteredSales.Where(s => !string.Equals(s.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)).ToList();
+                // "All" shows only Sale + Return (credits excluded)
+
+
+
+                rows.AddRange(filteredSales.Select(s => new SaleReportRow
                 {
                     Id = s.id,
                     InvNo = s.inv_no ?? "",
-                    Date = s.date,
-                    Type = "Sale",
-                    ItemCount = context.sales.Count(d => d.sale_id == s.id),
+                    Date = s.date?.Trim() ?? "",
+                    Type = s.payment_method == "Credit" ? "Credit" : "Sale",
+                    ItemCount = saleItemCounts.ContainsKey(s.id) ? saleItemCounts[s.id] : 0,
                     GrossTotal = s.gross_total,
                     Discount = s.discount,
                     NetPayable = s.net_payable,
@@ -417,13 +502,40 @@
             // ---- Load Returns ----
             if (loadReturns)
             {
+                // Also filter returns in memory to avoid EF Core delegate translation errors
                 var filteredReturns = (await context.returns.AsNoTracking().ToListAsync())
                     .Where(r =>
                     {
-                        if (!DateTime.TryParse(r.date, out var d)) return false;
-                        return d.Date >= fromDate.Date && d.Date <= toDate.Date
-                            && matchPayment(r.payment_method);
-                    })
+                        if (!TryParseDateRobust(r.date, out var d)) return false;
+                        if (d.Date < fromDate.Date || d.Date > toDate.Date) return false;
+                        if (!matchPayment(r.payment_method)) return false;
+                        if (string.Equals(r.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)) return false;
+                        return true;
+                    }).ToList();
+
+                if (categoryId.HasValue)
+                {
+                    var productIdsInCat = await context.products_services.AsNoTracking()
+                        .Where(p => p.category_id == categoryId.Value)
+                        .Select(p => p.id)
+                        .ToListAsync();
+                    filteredReturns = filteredReturns.Where(r => productIdsInCat.Contains(r.item_id)).ToList();
+                }
+
+                if (employeeId.HasValue)
+                {
+                    var employeeReturnProductIds = await context.stock_history.AsNoTracking()
+                        .Where(sh => sh.user_id != null && employeeUserIds.Contains(sh.user_id.Value) && sh.remarks == "Return")
+                        .Select(sh => new { sh.product_id, sh.date })
+                        .Distinct()
+                        .ToListAsync();
+
+                    filteredReturns = filteredReturns
+                        .Where(r => employeeReturnProductIds.Any(er => er.product_id == r.item_id && er.date == r.date))
+                        .ToList();
+                }
+
+                var returnsToShow = filteredReturns
                     .GroupBy(r => r.inv_no ?? "RETURN_" + r.Id)
                     .Select(g => new SaleReportRow
                     {
@@ -438,40 +550,7 @@
                         PaymentMethod = g.First().payment_method ?? "Cash",
                         Status = g.First().status ?? "Returned"
                     }).ToList();
-                rows.AddRange(filteredReturns);
-            }
-
-            // ---- Load Credits ----
-            if (loadCredits)
-            {
-                var creditDetails = (await context.credits_details.AsNoTracking()
-                    .Where(d => d.status == null || d.status != "Returned")
-                    .ToListAsync())
-                    .Where(d =>
-                    {
-                        if (!DateTime.TryParse(d.date, out var dt)) return false;
-                        return dt.Date >= fromDate.Date && dt.Date <= toDate.Date
-                            && matchPayment(d.payment_method);
-                    }).ToList();
-
-                var saleIds = creditDetails.Select(d => d.sale_id).Distinct().ToList();
-                var saleHeaders = await context.SalesHeader.AsNoTracking()
-                    .Where(s => saleIds.Contains(s.id))
-                    .ToDictionaryAsync(s => s.id, s => s.inv_no ?? "SALE_" + s.id.ToString("D3"));
-
-                rows.AddRange(creditDetails.Select(d => new SaleReportRow
-                {
-                    Id = d.id,
-                    InvNo = saleHeaders.ContainsKey(d.sale_id) ? saleHeaders[d.sale_id] : "SALE_" + d.sale_id.ToString("D3"),
-                    Date = d.date,
-                    Type = "Credit",
-                    ItemCount = 1,
-                    GrossTotal = d.amount,
-                    Discount = 0,
-                    NetPayable = d.amount,
-                    PaymentMethod = d.payment_method ?? "Credit",
-                    Status = d.status ?? "Pending"
-                }));
+                rows.AddRange(returnsToShow);
             }
 
             reportData = rows.OrderByDescending(r => r.Date).ThenByDescending(r => r.Id).ToList();
@@ -513,7 +592,11 @@
                 Color = colors[index % colors.Length]
             }).ToList();
         }
-        catch (Exception ex) { Console.WriteLine(ex.Message); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SalesReportsHub] Error: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+        }
         finally { isLoading = false; StateHasChanged(); }
     }
 
