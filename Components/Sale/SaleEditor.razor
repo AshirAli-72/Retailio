@@ -727,6 +727,7 @@
     private string orderInvNo = "";
     private ReceiptSnapshot? _receiptSnapshot;
     private DotNetObjectReference<SaleEditor>? _dotNetRef;
+    private bool _resetAfterPrint = false;
     private customers newCustomer = new customers { status = "Active" };
     private StoreConfiguration? currentStore;
     private bool isLoading = true;
@@ -805,7 +806,11 @@
     public void OnReceiptPrintFinished()
     {
         _receiptSnapshot = null;
-        ResetComponent();
+        if (_resetAfterPrint)
+        {
+            ResetComponent();
+            _resetAfterPrint = false;
+        }
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -927,7 +932,38 @@
 
             if (exact != null)
             {
-                AddToSale(exact);
+                if (transMode == "return")
+                {
+                    // Check if we've loaded a receipt first
+                    if (_loadedSaleHeaderId.HasValue)
+                    {
+                        // Find the item in already loaded items (from receipt)
+                        var loadedItem = saleItems.FirstOrDefault(i => i.prod_name_service == exact.Name);
+                        if (loadedItem != null)
+                        {
+                            // In return mode: decrease the negative quantity (make it less negative)
+                            loadedItem.qty += 1;
+                            if (loadedItem.qty == 0)
+                                saleItems.Remove(loadedItem);
+                            else
+                                loadedItem.total_price = (loadedItem.price * loadedItem.qty) - (loadedItem.discount * loadedItem.qty);
+                        }
+                        else
+                        {
+                            ShowAlert("This item is not in the loaded receipt.");
+                        }
+                    }
+                    else
+                    {
+                        // Add to return directly (no receipt)
+                        AddToSale(exact, true);
+                    }
+                }
+                else
+                {
+                    AddToSale(exact);
+                }
+
                 searchQuery = "";
                 ApplyFilters();
             }
@@ -959,7 +995,7 @@
                     loadedCredit = await context.credits
                         .Where(c => c.customer_id == headerById.customer_id && c.status != "Paid")
                         .FirstOrDefaultAsync();
-                    await LoadSaleHeaderForView(context, headerById);
+                    await LoadSaleHeaderForReturn(context, headerById); // Always load for return when scanning receipt!
                     return;
                 }
 
@@ -1010,6 +1046,9 @@
         await Task.CompletedTask;
     }
 
+    // Track loaded sale header ID for returns
+    private int? _loadedSaleHeaderId = null;
+
     private async Task LoadSaleHeaderForReturn(ApplicationDbContext context, SaleHeader header)
     {
         var details = await context.sales.Where(d => d.sale_id == header.id).ToListAsync();
@@ -1024,8 +1063,17 @@
             .Where(p => itemIds.Contains(p.id))
             .ToDictionaryAsync(p => p.id, p => p.prod_name ?? "Item #" + p.id);
 
-        returnFromCredit = false;
-        transMode = "return";
+        // Set selected customer from original sale
+        if (header.customer_id.HasValue)
+        {
+            selectedCustomer = await context.customers.FindAsync(header.customer_id.Value);
+            customerSearchQuery = selectedCustomer?.name ?? "";
+        }
+
+        // Check if original sale was a credit sale
+        returnFromCredit = header.payment_method == "Credit";
+        transMode = "return"; // Force to return mode
+        _loadedSaleHeaderId = header.id; // Store sale header ID
         saleItems = details.Select(d => new SaleItem
         {
             prod_name_service = products.ContainsKey(d.item_id) ? products[d.item_id] : "Item #" + d.item_id,
@@ -1034,7 +1082,8 @@
             discount = 0,
             maxStock = Math.Abs(d.qty),
             total_price = -Math.Abs(d.total_price),
-            OriginalSaleId = d.id
+            OriginalSaleId = d.id,
+            OriginalSaleHeaderId = header.id // Set sale header ID
         }).ToList();
 
         StateHasChanged();
@@ -1051,25 +1100,32 @@
         return user?.id;
     }
 
-    private void AddToSale(ProductDisplay p)
+    private void AddToSale(ProductDisplay p, bool isReturnWithoutReceipt = false)
     {
+        if (transMode == "return" && !isReturnWithoutReceipt && !_loadedSaleHeaderId.HasValue)
+        {
+            ShowAlert("First scan the receipt, then scan items to return!");
+            return;
+        }
+        
         int qty = transMode == "return" ? -1 : 1;
         var existing = saleItems.FirstOrDefault(i => i.prod_name_service == p.Name);
 
         if (existing != null)
         {
-            if (transMode == "sale" && (existing.qty + 1) > p.Stock)
+            if (transMode != "return" && (existing.qty + 1) > p.Stock)
             {
                 ShowAlert("Insufficient stock.");
                 return;
             }
             existing.qty += qty;
-            if (existing.qty == 0) saleItems.Remove(existing);
-            else existing.total_price = (existing.price * existing.qty) - (existing.discount * existing.qty);
+            existing.total_price = (existing.price * existing.qty) - (existing.discount * existing.qty);
+            if (existing.qty == 0)
+                saleItems.Remove(existing);
         }
         else
         {
-            if (transMode == "sale" && p.Stock < 1)
+            if (transMode != "return" && p.Stock < 1)
             {
                 ShowAlert("Out of stock.");
                 return;
@@ -1082,9 +1138,11 @@
                 price = p.Price,
                 discount = p.Discount,
                 expiry_date = p.Expiry,
-                maxStock = p.Stock,
+                maxStock = transMode == "return" ? 1 : p.Stock,
                 image = p.Image,
-                total_price = (p.Price * qty) - (p.Discount * qty)
+                total_price = (p.Price * qty) - (p.Discount * qty),
+                OriginalSaleId = 0,
+                OriginalSaleHeaderId = 0
             });
         }
     }
@@ -1604,8 +1662,7 @@
                     {
                         inv_no = orderInvNo,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
-                        sale_id = saleLine?.sale_id ?? 0,
-                        sale_detail_id = item.OriginalSaleId,
+                        sale_id = item.OriginalSaleHeaderId > 0 ? item.OriginalSaleHeaderId : (int?)null, // Use null if no sale header ID
                         item_id = returnProd?.id ?? 0,
                         qty = Math.Abs(item.qty),
                         unit_price = item.price,
@@ -1678,36 +1735,63 @@
 
             if (transMode == "return")
             {
-                var originalIds = saleItems
+                var originalSaleIds = saleItems
                     .Where(i => i.OriginalSaleId > 0)
                     .Select(i => i.OriginalSaleId)
                     .Distinct()
                     .ToList();
 
-                if (originalIds.Any())
+                if (originalSaleIds.Any() && returnFromCredit)
                 {
-                    if (returnFromCredit)
+                    // Get all sale details for the original sale to find their sale_id (SaleHeader ID)
+                    var originalSaleDetails = await context.sales
+                        .Where(sd => originalSaleIds.Contains(sd.id))
+                        .ToListAsync();
+                    var saleHeaderIds = originalSaleDetails
+                        .Select(sd => sd.sale_id)
+                        .Distinct()
+                        .ToList();
+
+                    // Find associated CreditDetail records using sale_id (SaleHeader ID)
+                    var creditLines = await context.credits_details
+                        .Where(c => saleHeaderIds.Contains(c.sale_id))
+                        .ToListAsync();
+
+                    // Calculate total return amount from items being returned
+                    decimal totalReturnAmount = saleItems.Sum(i => Math.Abs(i.total_price));
+
+                    foreach (var creditLine in creditLines)
                     {
-                        var creditLines = await context.credits_details
-                            .Where(c => originalIds.Contains(c.id))
+                        creditLine.status = "Returned";
+                        creditLine.amount -= Math.Min(creditLine.amount, totalReturnAmount);
+                        if (creditLine.amount < 0) creditLine.amount = 0;
+                        totalReturnAmount -= creditLine.amount;
+                        if (totalReturnAmount <= 0) break;
+                    }
+
+                    var creditIds = creditLines
+                        .Select(c => c.credit_id)
+                        .Distinct()
+                        .ToList();
+
+                    if (creditIds.Any())
+                    {
+                        var credits = await context.credits
+                            .Where(c => creditIds.Contains(c.id))
                             .ToListAsync();
 
-                        foreach (var line in creditLines)
-                            line.status = "Returned";
-
-                        var creditIds = creditLines
-                            .Select(c => c.credit_id)
-                            .Distinct()
-                            .ToList();
-
-                        if (creditIds.Any())
+                        foreach (var credit in credits)
                         {
-                            var summaries = await context.credits
-                                .Where(c => creditIds.Contains(c.id))
-                                .ToListAsync();
-
-                            foreach (var summary in summaries)
-                                summary.remaining = 0;
+                            // Recalculate total_credit and remaining based on updated CreditDetails
+                            var updatedLines = creditLines.Where(cl => cl.credit_id == credit.id).ToList();
+                            decimal newTotalCredit = updatedLines.Sum(cl => cl.amount);
+                            decimal newPaid = updatedLines.Sum(cl => cl.paid);
+                            decimal newRemaining = newTotalCredit - newPaid;
+                            
+                            credit.total_credit = newTotalCredit;
+                            credit.paid = newPaid;
+                            credit.remaining = newRemaining;
+                            credit.status = newRemaining > 0 ? "Pending" : "Paid";
                         }
                     }
                 }
@@ -1728,6 +1812,7 @@
                 await InvokeAsync(StateHasChanged);
                 await Task.Delay(400);
                 await JSRuntime.InvokeVoidAsync("printSaleReceipt", orderInvNo);
+                _resetAfterPrint = true;
             }
             else
             {
@@ -1738,8 +1823,15 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] SubmitSale: {ex.Message}");
-            await JSRuntime.InvokeVoidAsync("showToast", "Error", $"Save failed: {ex.Message}", "error");
+            Console.WriteLine($"[ERROR] SubmitSale: {ex.ToString()}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"[ERROR] Inner Exception: {ex.InnerException.ToString()}");
+
+            string errorMsg = $"Save failed: {ex.Message}";
+            if (ex.InnerException != null)
+                errorMsg += $" Details: {ex.InnerException.Message}";
+
+            await JSRuntime.InvokeVoidAsync("showToast", "Error", errorMsg, "error");
         }
         finally
         {
@@ -1810,6 +1902,8 @@
         orderInvNo = "";
         _receiptSnapshot = null;
         loadedCredit = null;
+        _loadedSaleHeaderId = null; // Clear loaded sale header ID
+        _resetAfterPrint = false;
 
         ApplyFilters();
         StateHasChanged();
@@ -1840,7 +1934,8 @@
         public int maxStock { get; set; }
         public string? image { get; set; }
         public decimal total_price { get; set; }
-        public int OriginalSaleId { get; set; }
+        public int OriginalSaleId { get; set; } // Sale detail ID
+        public int OriginalSaleHeaderId { get; set; } // Sale header ID
     }
 
     public class CreditEntry

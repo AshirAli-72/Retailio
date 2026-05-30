@@ -112,6 +112,16 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
+                
+                // Relationship between Credit and Customer
+                entity.HasOne<customers>()
+                      .WithMany()
+                      .HasForeignKey(e => e.customer_id);
+                
+                // Relationship between Credit and CreditDetail
+                entity.HasMany<CreditDetail>()
+                      .WithOne()
+                      .HasForeignKey(d => d.credit_id);
             });
 
             modelBuilder.Entity<CreditDetail>(entity =>

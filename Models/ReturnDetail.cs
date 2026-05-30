@@ -17,10 +17,7 @@ namespace E_Invoice_system.Models
         public string date { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
 
         [Column("sale_id")]
-        public int sale_id { get; set; }
-
-        [Column("sale_detail_id")]
-        public int sale_detail_id { get; set; }
+        public int? sale_id { get; set; }
 
         [Column("item_id")]
         public int item_id { get; set; }

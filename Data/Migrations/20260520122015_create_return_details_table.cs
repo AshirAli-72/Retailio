@@ -19,7 +19,6 @@ namespace E_Invoice_system.Migrations
                     inv_no = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     date = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     sale_id = table.Column<int>(type: "int", nullable: false),
-                    sale_detail_id = table.Column<int>(type: "int", nullable: false),
                     item_id = table.Column<int>(type: "int", nullable: false),
                     qty = table.Column<int>(type: "int", nullable: false),
                     unit_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -36,22 +35,12 @@ namespace E_Invoice_system.Migrations
                         principalTable: "sales",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FKreturn_details_sale_details_sale_detail_id",
-                        column: x => x.sale_detail_id,
-                        principalTable: "sale_details",
-                        principalColumn: "id");
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_return_details_sale_id",
                 table: "return_details",
                 column: "sale_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_return_details_sale_detail_id",
-                table: "return_details",
-                column: "sale_detail_id");
         }
 
         /// <inheritdoc />

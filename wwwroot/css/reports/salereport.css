@@ -144,3 +144,94 @@
     .insight-row { grid-template-columns: 1fr; }
     .side-insights { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
 }
+
+@media (max-width: 992px) {
+    .sales-hub-container {
+        padding: 1rem;
+    }
+
+    .hub-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filters-inner {
+        gap: 12px;
+    }
+
+    .filter-group {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .filter-actions-row {
+        justify-content: center;
+        margin-left: 0;
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .hub-title {
+        font-size: 1.6rem;
+    }
+
+    .stats-row {
+        gap: 1rem;
+    }
+
+    .stat-card-premium {
+        padding: 1.25rem;
+    }
+
+    .stat-info .value {
+        font-size: 1.5rem;
+    }
+
+    .glass-card {
+        padding: 1.25rem;
+        border-radius: 16px;
+    }
+
+    .chart-wrapper {
+        height: 250px;
+    }
+
+    .side-insights {
+        grid-template-columns: 1fr;
+    }
+
+    .premium-table th,
+    .premium-table td {
+        padding: 1rem 0.75rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-primary-gradient,
+    .btn-outline {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-generate-glow {
+        padding: 0 1.25rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+
+    .premium-table {
+        font-size: 0.75rem;
+    }
+}

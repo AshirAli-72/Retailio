@@ -60,7 +60,7 @@ namespace E_Invoice_system.Pages
 
             await _currencyService.GetSymbolAsync();
 
-            const string cacheKey = "Dashboard_Stats_v2";
+            const string cacheKey = "Dashboard_Stats_v3";
             if (_cache.TryGetValue(cacheKey, out DashboardStats? cachedStats) && cachedStats != null)
             {
                 PopulateFromStats(cachedStats);
@@ -166,11 +166,11 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
 
-            // 12. Total Refunds
+            // 12. Total Refunds (Credit Payments Made)
             try
             {
-                stats.TotalRefund = await context.returns.AsNoTracking()
-                    .SumAsync(r => (decimal?)Math.Abs(r.total_price)) ?? 0;
+                stats.TotalRefund = await context.credits_details.AsNoTracking()
+                    .SumAsync(d => (decimal?)d.paid) ?? 0;
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Refund stats"); }
 
