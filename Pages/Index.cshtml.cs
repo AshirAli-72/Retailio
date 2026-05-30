@@ -60,7 +60,7 @@ namespace E_Invoice_system.Pages
 
             await _currencyService.GetSymbolAsync();
 
-            const string cacheKey = "Dashboard_Stats_v3";
+            const string cacheKey = "Dashboard_Stats_v4";
             if (_cache.TryGetValue(cacheKey, out DashboardStats? cachedStats) && cachedStats != null)
             {
                 PopulateFromStats(cachedStats);
