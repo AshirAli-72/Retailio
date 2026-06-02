@@ -38,6 +38,16 @@ namespace E_Invoice_system.Pages
             public decimal TotalRefund { get; set; }
         }
 
+        public class RecentSaleItem
+        {
+            public string InvNo { get; set; } = "";
+            public string? CustomerName { get; set; }
+            public string Date { get; set; } = "";
+            public decimal Amount { get; set; }
+            public string? PaymentMethod { get; set; }
+            public string? Status { get; set; }
+        }
+
         public int TotalCustomers { get; set; }
         public int TotalProducts { get; set; }
         public decimal TotalSales { get; set; }
@@ -49,6 +59,7 @@ namespace E_Invoice_system.Pages
         public int TotalEmployees { get; set; }
         public decimal CreditRemaining { get; set; }
         public decimal TotalRefund { get; set; }
+        public List<RecentSaleItem> RecentSales { get; set; } = new();
         public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
@@ -166,13 +177,26 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
 
-            // 12. Total Refunds (Credit Payments Made)
+            // 12. Recovery (will be implemented later)
+            stats.TotalRefund = 0;
+
+            // 13. Recent Sales
             try
             {
-                stats.TotalRefund = await context.credits_details.AsNoTracking()
-                    .SumAsync(d => (decimal?)d.paid) ?? 0;
+                RecentSales = await context.SalesHeader.AsNoTracking()
+                    .OrderByDescending(s => s.id)
+                    .Take(10)
+                    .Select(s => new RecentSaleItem
+                    {
+                        InvNo = s.inv_no ?? "",
+                        CustomerName = context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault(),
+                        Date = s.date,
+                        Amount = s.net_payable,
+                        PaymentMethod = s.payment_method,
+                        Status = s.status
+                    }).ToListAsync();
             }
-            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Refund stats"); }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Recent Sales"); }
 
             // Cache only if we have some data to avoid caching transient failures
             if (stats.TotalCustomers > 0 || stats.TotalProducts > 0)

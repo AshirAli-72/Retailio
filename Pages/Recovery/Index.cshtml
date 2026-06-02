@@ -1,0 +1,16 @@
+@page
+@model E_Invoice_system.Pages.Recovery.IndexModel
+@{
+    ViewData["Title"] = "Recovery Management";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer/index.css" asp-append-version="true" />
+}
+
+<div class="dashboard-panel">
+    <component type="typeof(E_Invoice_system.Components.Recovery.RecoveryForm)" render-mode="Server" />
+</div>
+
+@section Scripts {
+}

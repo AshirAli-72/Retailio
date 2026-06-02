@@ -34,7 +34,7 @@ CREATE TABLE [customers] (
     [address] nvarchar(max) NULL,
     [email] nvarchar(max) NULL,
     [cnic] nvarchar(max) NULL,
-    [credit_limit] nvarchar(max) NULL,
+    [credit_limit] decimal(18,2) NULL,
     [status] nvarchar(max) NULL,
     CONSTRAINT [PK_customers] PRIMARY KEY ([id])
 );
@@ -125,6 +125,7 @@ CREATE TABLE [sales] (
 );
 GO
 
+
 CREATE TABLE [sale_details] (
     [id] int NOT NULL IDENTITY,
     [sale_id] int NOT NULL,
@@ -137,6 +138,7 @@ CREATE TABLE [sale_details] (
     CONSTRAINT [FK_sale_details_sales_sale_id] FOREIGN KEY ([sale_id]) REFERENCES [sales] ([id]) ON DELETE CASCADE
 );
 GO
+
 
 CREATE TABLE [return_details] (
     [id] int NOT NULL IDENTITY,
@@ -246,38 +248,54 @@ CREATE TABLE [users] (
     CONSTRAINT [FK_users_roles_role_id] FOREIGN KEY ([role_id]) REFERENCES [roles] ([id]) ON DELETE CASCADE
 );
 GO
+
+
 CREATE TABLE [credits] (
     [id] int NOT NULL IDENTITY,
-    [customer_id] nvarchar(max) NULL,
-    [grand_total] nvarchar(max) NULL,
-    [paid_amount] nvarchar(max) NULL,
-    [discount] nvarchar(max) NULL,
-    [remaining_amount] nvarchar(max) NULL,
-    [date] nvarchar(max) NULL,
-    [inv_no] nvarchar(max) NULL,
-    CONSTRAINT [PK_customers] PRIMARY KEY ([id])
-);
-GO
-CREATE TABLE [credits_details] (
-    [id] int NOT NULL IDENTITY,
-    [inv_no] nvarchar(max) NULL,
     [customer_id] int NOT NULL,
+    [total_credit] decimal(18,2) NOT NULL,
+    [paid] decimal(18,2) NOT NULL,
+    [remaining] decimal(18,2) NOT NULL,
     [date] nvarchar(max) NOT NULL,
-    [no_of_items] int NOT NULL,
-    [qty] int NOT NULL,
-    [total_qty] int NOT NULL,
-    [price] decimal(18,2) NOT NULL,
-    [discount] decimal(18,2) NOT NULL,
-    [expiry_date] nvarchar(max) NULL,
-    [total_price] decimal(18,2) NOT NULL,
     [payment_method] nvarchar(max) NULL,
     [status] nvarchar(max) NULL,
-    [paid_amount] decimal(18,2) NOT NULL,
-    [remaining_amount] decimal(18,2) NOT NULL,
-    [prod_name] nvarchar(max) NULL,
+    [file] nvarchar(max) NULL,
+    CONSTRAINT [PK_credits] PRIMARY KEY ([id])
+);
+GO
+
+
+CREATE TABLE [credits_details] (
+    [id] int NOT NULL IDENTITY,
+    [credit_id] int NOT NULL,
+    [date] nvarchar(max) NOT NULL,
+    [sale_id] int NOT NULL,
+    [amount] decimal(18,2) NOT NULL,
+    [paid] decimal(18,2) NOT NULL,
+    [due] decimal(18,2) NOT NULL,
+    [payment_method] nvarchar(max) NULL,
+    [status] nvarchar(max) NULL,
+    [file] nvarchar(max) NULL,
     CONSTRAINT [PK_credits_details] PRIMARY KEY ([id])
 );
 GO
+
+
+CREATE TABLE [recoveries] (
+    [id] int NOT NULL IDENTITY,
+    [customer_id] int NOT NULL,
+    [credit_id] int NULL,
+    [date] nvarchar(max) NOT NULL,
+    [total_credit] decimal(18,2) NOT NULL,
+    [due] decimal(18,2) NOT NULL,
+    [paid] decimal(18,2) NOT NULL,
+    [remaining] decimal(18,2) NOT NULL,
+    [status] nvarchar(max) NULL,
+    [file] nvarchar(max) NULL,
+    CONSTRAINT [PK_recoveries] PRIMARY KEY ([id])
+);
+GO
+
 
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'address', N'cnic', N'date', N'email', N'emp_code', N'full_name', N'image_path', N'mobile_no', N'salary', N'status') AND [object_id] = OBJECT_ID(N'[employee]'))
     SET IDENTITY_INSERT [employee] ON;
@@ -325,5 +343,3 @@ GO
 
 CREATE INDEX [IX_users_role_id] ON [users] ([role_id]);
 GO
-
-

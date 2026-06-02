@@ -164,7 +164,7 @@ body {
     }
 
 .card-img-wrap {
-    height: 140px;
+    height: 200px;
     background: #f8fafc;
     display: flex;
     align-items: center;
@@ -2432,7 +2432,7 @@ body {
     }
 
     .card-img-wrap {
-        height: 100px;
+        height: 140px;
     }
 
     .payment-left-v4,

@@ -336,6 +336,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Recent Sales Section -->
+    <div class="chart-card-modern" style="margin-top: 0.5rem;">
+        <div class="chart-header-modern">
+            <h3 class="chart-title-modern"><i class="ph-clock-counter-clockwise"></i> Recent Transactions</h3>
+        </div>
+        <div class="table-container" style="overflow-x: auto;">
+            @if (Model.RecentSales.Any())
+            {
+                <table class="styled-table" style="min-width: 700px; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 1.5rem;">Invoice</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th style="padding-right: 1.5rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.RecentSales)
+                        {
+                            <tr>
+                                <td style="padding-left: 1.5rem;"><span class="font-monospace font-bold font-sm">@s.InvNo</span></td>
+                                <td><span class="font-sm">@(s.CustomerName ?? "Walk in")</span></td>
+                                <td><span class="font-sm">@s.Date</span></td>
+                                <td><span class="font-bold font-sm">@CurrencyService.GetSymbol()@s.Amount.ToString("N2")</span></td>
+                                <td><span class="badge-method">@s.PaymentMethod</span></td>
+                                <td style="padding-right: 1.5rem;"><span class="status-badge @(s.Status == "Pending" ? "status-pending" : "status-paid")">@s.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-hero" style="padding: 2rem;">
+                    <i class="ph-shopping-cart-simple" style="font-size: 2rem;"></i>
+                    <h4 style="margin: 0.5rem 0 0;">No transactions yet</h4>
+                    <p style="font-size: 0.85rem;">Start making sales to see them here.</p>
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 <script>

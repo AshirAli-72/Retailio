@@ -75,12 +75,16 @@ namespace E_Invoice_system.Pages.Sale
         public class CreditDisplayItem
         {
             public int id { get; set; }
+            public int CreditId { get; set; }
+            public int CustomerId { get; set; }
             public int SaleId { get; set; }
             public string? CustomerName { get; set; }
             public string? Date { get; set; }
             public decimal amount { get; set; }
             public decimal paid { get; set; }
             public decimal due { get; set; }
+            public decimal CreditLimit { get; set; }
+            public decimal UsedCredit { get; set; }
             public string? Status { get; set; }
         }
 
@@ -187,12 +191,16 @@ namespace E_Invoice_system.Pages.Sale
                         (x, cust) => new CreditDisplayItem
                         {
                             id = x.c.id,
+                            CreditId = x.cr != null ? x.cr.id : 0,
+                            CustomerId = cust != null ? cust.id : 0,
                             SaleId = x.c.sale_id,
                             CustomerName = cust != null ? cust.name : "Walk in",
                             Date = x.c.date,
                             amount = x.c.amount,
                             paid = x.c.paid,
                             due = x.c.due,
+                            CreditLimit = cust != null ? (cust.credit_limit ?? 0) : 0,
+                            UsedCredit = x.cr != null ? x.cr.total_credit : 0,
                             Status = x.c.status ?? "Pending"
                         })
                     .ToListAsync();

@@ -159,6 +159,57 @@ namespace E_Invoice_system.Migrations
                     b.ToTable("credits_details");
                 });
 
+            modelBuilder.Entity("E_Invoice_system.Models.Recovery", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<int>("customer_id")
+                        .HasColumnType("int")
+                        .HasColumnName("customer_id");
+
+                    b.Property<int?>("credit_id")
+                        .HasColumnType("int")
+                        .HasColumnName("credit_id");
+
+                    b.Property<string>("date")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("date");
+
+                    b.Property<decimal>("total_credit")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total_credit");
+
+                    b.Property<decimal>("due")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("due");
+
+                    b.Property<decimal>("paid")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("paid");
+
+                    b.Property<decimal>("remaining")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("remaining");
+
+                    b.Property<string>("status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("file")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("file");
+
+                    b.HasKey("id");
+
+                    b.ToTable("recoveries");
+                });
+
             modelBuilder.Entity("E_Invoice_system.Models.Currency", b =>
                 {
                     b.Property<int>("id")

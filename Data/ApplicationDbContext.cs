@@ -27,6 +27,7 @@ namespace E_Invoice_system.Data
         public DbSet<Employee> employees { get; set; }
         public DbSet<Credit> credits { get; set; }
         public DbSet<CreditDetail> credits_details { get; set; }
+        public DbSet<Recovery> recoveries { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -129,6 +130,14 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.amount).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.due).HasColumnType("decimal(18,2)");
+            });
+
+            modelBuilder.Entity<Recovery>(entity =>
+            {
+                entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.due).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Employee>(entity =>
