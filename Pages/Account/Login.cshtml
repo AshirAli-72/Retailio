@@ -95,7 +95,7 @@
             if (loginForm && loginBtn) {
                 loginForm.addEventListener('submit', function () {
                     loginBtn.disabled = true;
-                    loginBtn.innerHTML = '<i class="ph-spinner ph-spin"></i> Logging in...';
+                    loginBtn.innerHTML = '<span class="btn-loader"></span> Logging in...';
                 });
             }
         });

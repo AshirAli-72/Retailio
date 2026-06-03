@@ -5,6 +5,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
+@rendermode RenderMode.InteractiveServer
 
 <div class="management-container @(showForm ? "modal-active" : "")">
     <div class="card card-no-padding">
@@ -13,8 +14,8 @@
                 <i class="ph-receipt page-header-icon"></i>
                 <h2 class="page-header-title">Recovery Management</h2>
             </div>
-            <button class="btn-primary" @onclick="ShowAddForm">
-                <i class="ph-plus-circle"></i> Add Recovery
+            <button type="button" class="btn-primary" @onclick="ShowAddForm">
+                <i class="ph-user-plus"></i> Recovery
             </button>
         </div>
 
@@ -135,7 +136,7 @@
 
 @if (showForm)
 {
-    <div class="modal-overlay">
+    <div class="modal-overlay show" style="display:flex;">
         <div class="modal-content">
             <div class="form-panel-header">
                 <div class="form-panel-title">
@@ -173,8 +174,12 @@
                         @if (customerCredit != null)
                         {
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span class="text-muted font-sm">Total Credit</span>
+                                <span class="text-muted font-sm">Used Limit</span>
                                 <span class="font-bold">@customerCredit.total_credit.ToString("N2")</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span class="text-muted font-sm">Paid Amount</span>
+                                <span class="font-bold text-success">@customerCredit.paid.ToString("N2")</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span class="text-muted font-sm">Remaining Credit</span>
@@ -191,13 +196,23 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Paid Amount</label>
-                    <input type="number" step="0.01" @bind="recoveryModel.paid" class="form-control" placeholder="Enter paid amount" @oninput="CalculateRemaining" />
+                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
                 </div>
+
+                @if (customerCredit != null)
+                {
+                    <div style="padding: 1rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #c2410c; font-size: 0.9rem; font-weight: 700;">Remaining After Payment</span>
+                            <span style="font-weight: 900; font-size: 1.1rem; color: #c2410c;">@((customerCredit.remaining - recoveryModel.paid).ToString("N2"))</span>
+                        </div>
+                    </div>
+                }
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Status</label>
                     <select @bind="recoveryModel.status" class="form-control">
-                        <option value="Partial">Partial</option>
+                        <option value="Pending">Pending</option>
                         <option value="Paid">Paid</option>
                     </select>
                 </div>
@@ -302,10 +317,10 @@
     private async Task LoadCustomers()
     {
         using var context = DbFactory.CreateDbContext();
-        customerList = await context.customers.ToListAsync();
+        customerList = await context.customers.Where(c => c.status == "Active").ToListAsync();
     }
 
-    private async void OnCustomerChanged(ChangeEventArgs e)
+    private async Task OnCustomerChanged(ChangeEventArgs e)
     {
         selectedCustomerId = e.Value?.ToString();
         if (int.TryParse(selectedCustomerId, out int customerId))
@@ -313,7 +328,12 @@
             recoveryModel.customer_id = customerId;
             selectedCustomer = customerList.FirstOrDefault(c => c.id == customerId);
             using var context = DbFactory.CreateDbContext();
-            customerCredit = await context.credits.FirstOrDefaultAsync(c => c.customer_id == customerId);
+            // First try to load a Pending credit, if not, load any
+            customerCredit = await context.credits
+                .Where(c => c.customer_id == customerId)
+                .OrderByDescending(c => c.status == "Pending" ? 1 : 0)
+                .ThenByDescending(c => c.id)
+                .FirstOrDefaultAsync();
 
             if (customerCredit != null)
             {
@@ -330,12 +350,23 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void CalculateRemaining()
+    private async Task CalculateRemaining()
     {
         if (customerCredit != null)
         {
             recoveryModel.remaining = customerCredit.remaining - recoveryModel.paid;
+            
+            // Auto select Paid if paid amount equals remaining credit
+            if (recoveryModel.paid == customerCredit.remaining)
+            {
+                recoveryModel.status = "Paid";
+            }
+            else
+            {
+                recoveryModel.status = "Pending";
+            }
         }
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
@@ -350,21 +381,31 @@
     private void ShowAddForm()
     {
         tempDate = DateTime.Now;
+
         recoveryModel = new Recovery
         {
             date = tempDate.Value.ToString("yyyy-MM-dd"),
-            status = "Partial"
+            status = "Pending",
+            paid = 0,
+            total_credit = 0,
+            due = 0,
+            remaining = 0
         };
+
         selectedCustomer = null;
         customerCredit = null;
         selectedCustomerId = null;
         errorMessage = null;
+
         showForm = true;
+
+        StateHasChanged();
     }
 
-    private void HideForm()
+    private async Task HideForm()
     {
         showForm = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveRecovery()
@@ -422,17 +463,43 @@
             recoveryModel.remaining = customerCredit.remaining - recoveryModel.paid; // Remaining after payment
             context.recoveries.Add(recoveryModel);
 
+            // If credit is now paid, update all related credit details, sale headers, and sale details
+            if (creditToUpdate != null && creditToUpdate.remaining <= 0)
+            {
+                // Update all credit details for this credit to Paid
+                var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == creditToUpdate.id).ToListAsync();
+                foreach (var cd in creditDetailsToUpdate)
+                {
+                    cd.status = "Paid";
+                }
+
+                // Find all related sale headers via credit details
+                var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
+                var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
+                foreach (var sh in saleHeadersToUpdate)
+                {
+                    sh.status = "Paid";
+                    sh.due = 0; // If fully paid, due should be 0
+                }
+
+                // Update all related sale details (sales table)
+                var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
+                foreach (var sale in salesToUpdate)
+                {
+                    sale.status = "Paid";
+                }
+            }
+
             await context.SaveChangesAsync();
 
             await LoadRecoveries();
-            HideForm();
+            await HideForm();
 
             await JSRuntime.InvokeVoidAsync(
                 "showToast",
                 "Success",
                 "Recovery saved successfully!",
-                "success"
-            );
+                "success");
 
             errorMessage = null;
         }

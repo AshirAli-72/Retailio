@@ -150,7 +150,6 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\rjimswa.dswa.cache.json
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\scopedcss\bundle\E-Invoice_system.styles.css
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\wvauteo3ck-{0}-icivr5d8qb-icivr5d8qb.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\p4cf7c3tdy-{0}-cb76fuhwru-cb76fuhwru.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\t3uvnv7ary-{0}-7uo9wrk03g-7uo9wrk03g.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ke3h83mlbt-{0}-34eowwfueb-34eowwfueb.gz
@@ -171,7 +170,6 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\z2xrnhna45-{0}-fqd1943x
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ha8kycc6a3-{0}-doo7ooahly-doo7ooahly.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\ejpw7b9vf9-{0}-pshs8e7lu5-pshs8e7lu5.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\5b0x952ws8-{0}-1wntvyrc5r-1wntvyrc5r.gz
-D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-cb8qj6vxv8-cb8qj6vxv8.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\b1np7zvhb8-{0}-e710dyq4bi-e710dyq4bi.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\3l620vsmkj-{0}-75qpgknnqy-75qpgknnqy.gz
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\1zrelvpahn-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -252,3 +250,5 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\E-Invoice_system.pdb
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\E-Invoice_system.genruntimeconfig.cache
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\ref\E-Invoice_system.dll
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\q0d5wq4o0r-{0}-uxgjesjr83-uxgjesjr83.gz
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\wvauteo3ck-{0}-jfxazi8glk-jfxazi8glk.gz

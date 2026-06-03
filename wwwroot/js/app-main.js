@@ -61,7 +61,8 @@ const EXCLUDED_PATHS = [
     '/product', 
     '/inventory', 
     '/employee', 
-    '/settings'
+    '/settings',
+    '/recovery'
 ];
 
 function isPathExcluded(url) {

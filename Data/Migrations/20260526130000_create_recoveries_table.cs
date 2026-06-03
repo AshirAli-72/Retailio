@@ -23,7 +23,7 @@ namespace E_Invoice_system.Migrations
                     due = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     paid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     remaining = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    status = table.Column<string>(type: "nvar   char(max)", nullable: true),
                     file = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>

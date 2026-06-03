@@ -71,12 +71,7 @@ namespace E_Invoice_system.Pages
 
             await _currencyService.GetSymbolAsync();
 
-            const string cacheKey = "Dashboard_Stats_v4";
-            if (_cache.TryGetValue(cacheKey, out DashboardStats? cachedStats) && cachedStats != null)
-            {
-                PopulateFromStats(cachedStats);
-                return Page();
-            }
+
 
             using var context = _dbFactory.CreateDbContext();
             
@@ -177,8 +172,15 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
 
-            // 12. Recovery (will be implemented later)
-            stats.TotalRefund = 0;
+            // 12. Recovery (Dues Paid)
+            try
+            {
+                stats.TotalRefund = await context.recoveries.AsNoTracking().SumAsync(r => (decimal?)r.paid) ?? 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Dashboard: Error fetching TotalRefund from recoveries");
+            }
 
             // 13. Recent Sales
             try
@@ -198,11 +200,7 @@ namespace E_Invoice_system.Pages
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Recent Sales"); }
 
-            // Cache only if we have some data to avoid caching transient failures
-            if (stats.TotalCustomers > 0 || stats.TotalProducts > 0)
-            {
-                _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(30));
-            }
+
             PopulateFromStats(stats);
 
             _logger.LogInformation("Dashboard load completed in {ms}ms", sw.ElapsedMilliseconds);

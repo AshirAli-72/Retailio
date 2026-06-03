@@ -66,13 +66,18 @@
                                 </td>
 
                                 <td>
-                                    <span class="status-badge @(item.status == "Active" ? "status-active" : "status-inactive")">
-                                        @(item.status ?? "Inactive")
+                                    <span class="status-badge status-active">
+                                        Active
                                     </span>
                                 </td>
 
                                 <td class="text-right" style="padding-right: 1.5rem;">
                                     <div class="actions-container actions-right">
+
+                                        <select class="form-control" style="width: auto; padding: 0.2rem 1.5rem 0.2rem 0.5rem; height: 32px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: inline-block; margin-right: 0.5rem;" @onchange="(e) => ChangeCustomerStatus(item, e.Value?.ToString())">
+                                            <option value="Active" selected="@(item.status == "Active")">Enable</option>
+                                            <option value="Inactive" selected="@(item.status != "Active")">Disable</option>
+                                        </select>
 
                                         <button class="btn-icon-sm btn-edit"
                                                 @onclick="() => EditCustomer(item)"
@@ -141,7 +146,7 @@
 
 @if (showForm)
 {
-    <div class="modal-overlay">
+    <div class="modal-overlay show" style="display:flex;">
         <div class="modal-content">
             <div class="form-panel-header">
                 <div class="form-panel-title">
@@ -192,12 +197,12 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">Status</label>
-                    <select @bind="customerModel.status" class="form-control">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
+                        <label class="form-label">Status</label>
+                        <InputSelect @bind-Value="customerModel.status" class="form-control">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </InputSelect>
+                    </div>
             </div>
 
             <div class="form-panel-footer">
@@ -371,6 +376,39 @@
         {
             isSubmitting = false;
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ChangeCustomerStatus(customers customer, string? newStatus)
+    {
+        if (string.IsNullOrEmpty(newStatus) || customer.status == newStatus) return;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var dbCustomer = await context.customers.FindAsync(customer.id);
+            if (dbCustomer != null)
+            {
+                dbCustomer.status = newStatus;
+                await context.SaveChangesAsync();
+                
+                customer.status = newStatus;
+
+                await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Customer {(newStatus == "Active" ? "enabled" : "disabled")} successfully!", "success");
+                await JSRuntime.InvokeVoidAsync("clearNavCache");
+                
+                await LoadCustomers();
+            }
+        }
+        catch (Microsoft.JSInterop.JSDisconnectedException)
+        {
+            // Ignore disconnected circuit
+        }
+        catch (Exception ex)
+        {
+            try {
+                await JSRuntime.InvokeVoidAsync("showToast", "Error", $"Failed to update status: {ex.Message}", "error");
+            } catch { }
         }
     }
 

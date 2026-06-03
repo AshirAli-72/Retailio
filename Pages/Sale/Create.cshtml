@@ -5,5 +5,5 @@
     ViewData["Title"] = "Create Sale";
 }
 
-<component type="typeof(E_Invoice_system.Components.Sale.SaleEditor)" render-mode="Server"
+<component type="typeof(E_Invoice_system.Components.Sale.SaleEditor)" render-mode="ServerPrerendered"
            param-UserName='@HttpContext.Session.GetString("UserName")' />

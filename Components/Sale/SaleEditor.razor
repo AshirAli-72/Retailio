@@ -8,6 +8,7 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Nav
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
+@rendermode RenderMode.InteractiveServer
 
 <div class="pos-container-v2" @onclick="CloseDropdowns">
     <!-- PRODUCT CANVAS (LEFT) -->
@@ -228,51 +229,7 @@
         </div>
 
 
-        
-        @if (loadedCredit != null)
-        {
-            <div style="margin: 0 24px 12px; padding: 14px 18px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <span style="font-weight:700; color:#c2410c; font-size:0.85rem;">CREDIT ACCOUNT</span>
-                    <span style="font-weight:700; font-size:0.8rem; color:#c2410c;">Status: @loadedCredit.status</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                    <span style="color:#64748b;">Total Credit</span>
-                    <span style="font-weight:600;">@FormatCurrency(loadedCredit.total_credit)</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                    <span style="color:#64748b;">Paid</span>
-                    <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.paid)</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-                    <span style="color:#64748b;">Remaining</span>
-                    <span style="font-weight:800; color:#dc2626;">@FormatCurrency(loadedCredit.remaining)</span>
-                </div>
-                @if (loadedCredit.remaining > 0)
-                {
-                    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #fed7aa;">
-                        <div class="c-form-group" style="margin:0;">
-                            <label style="font-size:0.8rem;">Additional Payment</label>
-                            <input type="number" step="0.01" value="@additionalPayment"
-                                   @oninput="OnAdditionalPaymentInput"
-                                   placeholder="Enter payment amount" />
-                        </div>
-                        <div class="c-form-group" style="margin-top:8px;margin-bottom:0;">
-                            <label style="font-size:0.8rem;">Attachment (Optional)</label>
-                            <InputFile OnChange="HandleAdditionalPaymentFile" accept="image/*,.pdf" style="font-size: 0.8rem; padding: 4px; width: 100%; border: 1px solid #dbe3ec; border-radius: 8px; background: #fff;" />
-                            @if (!string.IsNullOrEmpty(additionalPaymentFileName))
-                            {
-                                <div style="margin-top:2px; font-size:0.75rem; color:#16a34a;"><i class="ph-check-circle"></i> @additionalPaymentFileName</div>
-                            }
-                        </div>
-                        <button type="button" style="width:100%;margin-top:8px;padding:10px;background:#16a34a;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
-                                @onclick="ConfirmAdditionalPayment">
-                            <i class="ph-check-bold"></i> Confirm Payment
-                        </button>
-                    </div>
-                }
-            </div>
-        }
+
 
         <!-- Checkout Footer -->
         <div class="checkout-footer-v2">
@@ -566,14 +523,21 @@
                             <span style="color:#64748b;">Credit Limit</span>
                             <span style="font-weight:600;">@FormatCurrency(creditSelectedCustomer.credit_limit ?? 0)</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                            <span style="color:#64748b;">Used Limit</span>
-                            <span style="font-weight:600;">@FormatCurrency(loadedCredit?.total_credit ?? 0)</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-                            <span style="color:#64748b;">Available Limit</span>
-                            <span style="font-weight:800; color:#16a34a;">@FormatCurrency((creditSelectedCustomer.credit_limit ?? 0) - (loadedCredit?.total_credit ?? 0))</span>
-                        </div>
+                        @if (loadedCredit != null)
+                        {
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                                <span style="color:#64748b;">Used Limit</span>
+                                <span style="font-weight:600;">@FormatCurrency(loadedCredit.total_credit)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                                <span style="color:#64748b;">Paid Amount</span>
+                                <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.paid)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                                <span style="color:#64748b;">Remaining Amount</span>
+                                <span style="font-weight:800; color:#dc2626;">@FormatCurrency(loadedCredit.remaining)</span>
+                            </div>
+                        }
                         <button type="button" style="width:100%;margin-top:10px;padding:10px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
                                 @onclick="GoToRecoveryFromCreditModal">
                             <i class="ph-arrow-counter-clockwise"></i> Record Recovery
@@ -616,7 +580,7 @@
 <!-- RECOVERY MODAL -->
 @if (showRecoveryModal)
 {
-    <div class="modal-overlay">
+    <div class="modal-overlay show" style="display:flex;">
         <div class="modal-content">
             <div class="form-panel-header">
                 <div class="form-panel-title">
@@ -633,17 +597,39 @@
                     </div>
                 }
 
-                @if (recoverySelectedCustomer != null && recoveryCustomerCredit != null)
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Customer</label>
+                    <select value="@recoverySelectedCustomerId" class="form-control" @onchange="OnRecoveryCustomerChanged">
+                        <option value="">Select Customer</option>
+                        @foreach (var customer in recoveryCustomerList)
+                        {
+                            <option value="@customer.id">@customer.name</option>
+                        }
+                    </select>
+                </div>
+
+                @if (recoverySelectedCustomer != null)
                 {
                     <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span class="text-muted font-sm">Total Credit</span>
-                            <span class="font-bold">@recoveryCustomerCredit.total_credit.ToString("N2")</span>
+                            <span class="text-muted font-sm">Credit Limit</span>
+                            <span class="font-bold">@(recoverySelectedCustomer.credit_limit?.ToString("N2") ?? "0.00")</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span class="text-muted font-sm">Remaining Credit</span>
-                            <span class="font-bold text-danger">@recoveryCustomerCredit.remaining.ToString("N2")</span>
-                        </div>
+                        @if (recoveryCustomerCredit != null)
+                        {
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span class="text-muted font-sm">Used Limit</span>
+                                <span class="font-bold">@recoveryCustomerCredit.total_credit.ToString("N2")</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span class="text-muted font-sm">Paid Amount</span>
+                                <span class="font-bold text-success">@recoveryCustomerCredit.paid.ToString("N2")</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span class="text-muted font-sm">Remaining Credit</span>
+                                <span class="font-bold text-danger">@recoveryCustomerCredit.remaining.ToString("N2")</span>
+                            </div>
+                        }
                     </div>
                 }
 
@@ -654,13 +640,23 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Paid Amount</label>
-                    <input type="number" step="0.01" @bind="recoveryModel.paid" class="form-control" placeholder="Enter paid amount" />
+                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
                 </div>
+
+                @if (recoveryCustomerCredit != null)
+                {
+                    <div style="padding: 1rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #c2410c; font-size: 0.9rem; font-weight: 700;">Remaining After Payment</span>
+                            <span style="font-weight: 900; font-size: 1.1rem; color: #c2410c;">@((recoveryCustomerCredit.remaining - recoveryModel.paid).ToString("N2"))</span>
+                        </div>
+                    </div>
+                }
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Status</label>
                     <select @bind="recoveryModel.status" class="form-control">
-                        <option value="Partial">Partial</option>
+                        <option value="Pending">Pending</option>
                         <option value="Paid">Paid</option>
                     </select>
                 </div>
@@ -834,40 +830,99 @@
     private DateTime? recoveryTempDate = null;
     private string? recoveryErrorMessage;
     private bool isRecoverySubmitting = false;
+    private string? recoverySelectedCustomerId;
+    private List<customers> recoveryCustomerList = new();
 
-    private void GoToRecovery()
+    private async Task GoToRecovery()
     {
-        ShowRecoveryForm();
+        await ShowRecoveryForm();
     }
 
-    private void GoToRecoveryFromCreditModal()
+    private async Task GoToRecoveryFromCreditModal()
     {
-        showCreditModal = false;
-        ShowRecoveryForm();
-    }
-
-    private void ShowRecoveryForm()
-    {
-        recoverySelectedCustomer = selectedCustomer ?? creditSelectedCustomer;
-        if (recoverySelectedCustomer != null)
+        // Check if loadedCredit has remaining > 0
+        if (loadedCredit != null && loadedCredit.remaining <= 0)
         {
-            using var context = DbFactory.CreateDbContext();
-            recoveryCustomerCredit = context.credits.FirstOrDefault(c => c.customer_id == recoverySelectedCustomer.id);
+            await JSRuntime.InvokeVoidAsync("showToast", "Warning", "Customer has no remaining credit to recover.", "warning");
+            return;
+        }
+        // Close the credit modal first, then open recovery modal
+        showCreditModal = false;
+        await InvokeAsync(StateHasChanged);
+        await ShowRecoveryForm();
+    }
+
+    private async Task ShowRecoveryForm()
+    {
+        // Load only active customers for dropdown
+        using var context = DbFactory.CreateDbContext();
+        recoveryCustomerList = await context.customers.Where(c => c.status == "Active").ToListAsync();
+        
+        // Set default customer if already selected and active
+        var defaultCustomer = selectedCustomer ?? creditSelectedCustomer;
+        if (defaultCustomer != null && defaultCustomer.status == "Active")
+        {
+            recoverySelectedCustomer = defaultCustomer;
+            recoverySelectedCustomerId = defaultCustomer.id.ToString();
+            // First try to load a Pending credit, if not, load any
+            recoveryCustomerCredit = await context.credits
+                .Where(c => c.customer_id == defaultCustomer.id)
+                .OrderByDescending(c => c.status == "Pending" ? 1 : 0)
+                .ThenByDescending(c => c.id)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            recoverySelectedCustomer = null;
+            recoverySelectedCustomerId = null;
+            recoveryCustomerCredit = null;
+        }
+
+        // Check if customer credit has remaining > 0
+        if (recoveryCustomerCredit != null && recoveryCustomerCredit.remaining <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "Warning", "Customer has no remaining credit to recover.", "warning");
+            return;
         }
 
         recoveryModel = new Recovery
         {
             date = DateTime.Now.ToString("yyyy-MM-dd"),
-            status = "Partial"
+            status = "Pending"
         };
         recoveryTempDate = DateTime.Now;
         recoveryErrorMessage = null;
         showRecoveryModal = true;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private void HideRecoveryForm()
+    private async Task HideRecoveryForm()
     {
         showRecoveryModal = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnRecoveryCustomerChanged(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() is string customerIdStr && int.TryParse(customerIdStr, out int customerId))
+        {
+            recoverySelectedCustomerId = customerIdStr;
+            recoverySelectedCustomer = recoveryCustomerList.FirstOrDefault(c => c.id == customerId);
+            
+            using var context = DbFactory.CreateDbContext();
+            // First try to load a Pending credit, if not, load any
+            recoveryCustomerCredit = await context.credits
+                .Where(c => c.customer_id == customerId)
+                .OrderByDescending(c => c.status == "Pending" ? 1 : 0)
+                .ThenByDescending(c => c.id)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            recoverySelectedCustomer = null;
+            recoveryCustomerCredit = null;
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnRecoveryFileSelected(InputFileChangeEventArgs e)
@@ -877,6 +932,23 @@
         {
             recoveryModel.file = file.Name;
         }
+    }
+
+    private async Task CalculateRemaining()
+    {
+        if (recoveryCustomerCredit != null)
+        {
+            // Auto select Paid if paid amount equals remaining credit
+            if (recoveryModel.paid == recoveryCustomerCredit.remaining)
+            {
+                recoveryModel.status = "Paid";
+            }
+            else
+            {
+                recoveryModel.status = "Pending";
+            }
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveRecoveryInSale()
@@ -930,20 +1002,63 @@
             recoveryModel.remaining = recoveryCustomerCredit.remaining - recoveryModel.paid;
             context.recoveries.Add(recoveryModel);
 
+            // If credit is now paid, update all related credit details, sale headers, and sale details
+            if (creditToUpdate != null && creditToUpdate.remaining <= 0)
+            {
+                // Update all credit details for this credit to Paid
+                var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == creditToUpdate.id).ToListAsync();
+                foreach (var cd in creditDetailsToUpdate)
+                {
+                    cd.status = "Paid";
+                }
+
+                // Find all related sale headers via credit details
+                var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
+                var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
+                foreach (var sh in saleHeadersToUpdate)
+                {
+                    sh.status = "Paid";
+                    sh.due = 0; // If fully paid, due should be 0
+                }
+
+                // Update all related sale details (sales DbSet, which maps to sale_details table)
+                var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
+                foreach (var sale in salesToUpdate)
+                {
+                    sale.status = "Paid";
+                }
+            }
+
             await context.SaveChangesAsync();
 
             await JSRuntime.InvokeVoidAsync("showToast", "Success", "Recovery saved successfully!", "success");
-            HideRecoveryForm();
+            await HideRecoveryForm();
 
-            // Reload the credit to reflect changes
+            // Reload the credit and recoveries to reflect changes
             using var refreshCtx = DbFactory.CreateDbContext();
             if (selectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id);
+                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id && c.status != "Paid");
+                if (loadedCredit != null)
+                {
+                    creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+                }
+                else
+                {
+                    creditRecoveries = new();
+                }
             }
             if (creditSelectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id);
+                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id && c.status != "Paid");
+                if (loadedCredit != null)
+                {
+                    creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+                }
+                else
+                {
+                    creditRecoveries = new();
+                }
             }
 
             recoveryErrorMessage = null;
@@ -983,6 +1098,7 @@
     private List<customers> filteredCreditCustomers = new();
     private customers? creditSelectedCustomer;
     private Credit? loadedCredit;
+    private List<Recovery> creditRecoveries = new();
     private decimal additionalPayment = 0;
     private IBrowserFile? additionalPaymentBrowserFile;
     private string? additionalPaymentFileName;
@@ -1450,6 +1566,14 @@
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
         loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id && cr.status != "Paid");
+        if (loadedCredit != null)
+        {
+            creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+        }
+        else
+        {
+            creditRecoveries = new();
+        }
     }
 
     private void UpdateItemQty(SaleItem item, string? val)
@@ -1540,11 +1664,17 @@
 
         if (m == "Credit")
         {
+            if (selectedCustomer != null && selectedCustomer.status != "Active")
+            {
+                ShowAlert("Selected customer is inactive and cannot be used for credit payments.");
+                return;
+            }
+            
             orderInvNo = "";  // ← clear so modal shows no stale SALE_ number
 
             creditSelectedCustomer = selectedCustomer;
             creditCustomerSearch = selectedCustomer?.name ?? "";
-            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
 
             creditEntry = new CreditEntry
             {
@@ -1576,15 +1706,16 @@
 
         if (string.IsNullOrWhiteSpace(creditCustomerSearch))
         {
-            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
         }
         else
         {
             var q = creditCustomerSearch.ToLower();
             using var context = DbFactory.CreateDbContext();
             filteredCreditCustomers = await context.customers.AsNoTracking()
-                .Where(c => c.name.ToLower().Contains(q) ||
-                           (c.contact != null && c.contact.ToLower().Contains(q)))
+                .Where(c => c.status == "Active" && 
+                           (c.name.ToLower().Contains(q) ||
+                           (c.contact != null && c.contact.ToLower().Contains(q))))
                 .Take(20).ToListAsync();
         }
         StateHasChanged();
@@ -1594,14 +1725,14 @@
     {
         showCreditCustomerDropdown = true;
         if (!filteredCreditCustomers.Any())
-            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
     }
 
     private void ToggleCreditCustomerDropdown()
     {
         showCreditCustomerDropdown = !showCreditCustomerDropdown;
         if (showCreditCustomerDropdown && !filteredCreditCustomers.Any())
-            filteredCreditCustomers = allCustomersList.Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
     }
 
     private async Task SelectCreditCustomer(customers c)
@@ -1613,6 +1744,14 @@
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
         loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id && cr.status != "Paid");
+        if (loadedCredit != null)
+        {
+            creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+        }
+        else
+        {
+            creditRecoveries = new();
+        }
     }
 
     private void CloseCreditDropdownOnly() => showCreditCustomerDropdown = false;
@@ -1692,6 +1831,33 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             credit.file = filePath;
+        }
+
+        // If credit is now paid, update all related credit details, sale headers, and sale details
+        if (credit.remaining <= 0)
+        {
+            // Update all credit details for this credit to Paid
+            var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == credit.id).ToListAsync();
+            foreach (var cd in creditDetailsToUpdate)
+            {
+                cd.status = "Paid";
+            }
+
+            // Find all related sale headers via credit details
+            var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
+            var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
+            foreach (var sh in saleHeadersToUpdate)
+            {
+                sh.status = "Paid";
+                sh.due = 0; // If fully paid, due should be 0
+            }
+
+            // Update all related sale details (sales table)
+            var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
+            foreach (var sale in salesToUpdate)
+            {
+                sale.status = "Paid";
+            }
         }
 
         await context.SaveChangesAsync();
