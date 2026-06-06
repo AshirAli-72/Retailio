@@ -71,15 +71,52 @@
 
 .modal-content {
     background: white; border-radius: 20px; width: 100%; max-width: 450px;
-    padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
     animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex; flex-direction: column; overflow: hidden;
 }
 
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.modal-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+.form-panel-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-.modal-body { margin-bottom: 2rem; }
-.modal-footer { display: flex; gap: 1rem; justify-content: flex-end; }
+.form-panel-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-main);
+}
+
+.form-panel-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.form-panel-close:hover { color: var(--danger); }
+
+.form-panel-body {
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.form-panel-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: #f8fafc;
+}
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -110,6 +147,45 @@
 .pagination-container {
     padding: 1.5rem; display: flex; justify-content: space-between;
     align-items: center; background: #fcfcfc; border-top: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+    .rp-topbar {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    .rp-role-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .rp-role-select-wrapper {
+        max-width: 100%;
+    }
+    .rp-role-controls {
+        justify-content: flex-end;
+    }
+    .rp-check-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    .rp-section {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .styled-table {
+        min-width: 600px;
+    }
+    .pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
 }
 
 .pagination-info { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }

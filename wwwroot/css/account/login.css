@@ -46,7 +46,7 @@ body {
 
 .document-icon {
     position: relative;
-    font-size: 4.5rem; /* Increased from 3.5rem */
+    font-size: 5.5rem;
     color: var(--primary-red);
     display: flex;
     align-items: center;
@@ -54,17 +54,17 @@ body {
 
 .check-badge {
     position: absolute;
-    bottom: -8px;
-    right: -10px;
+    bottom: -6px;
+    right: -12px;
     background: var(--primary-red);
     color: white;
-    width: 30px; /* Increased from 24px */
-    height: 30px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     border: 3.5px solid #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -76,7 +76,7 @@ body {
 }
 
 .brand-main-text {
-    font-size: 2.8rem; /* Increased from 2.2rem */
+    font-size: 3.2rem;
     font-weight: 900;
     color: #1a1a1a;
     letter-spacing: -1px;
@@ -94,7 +94,7 @@ body {
 }
 
 .brand-sub-text span {
-    font-size: 1.5rem; /* Increased from 1.2rem */
+    font-size: 1.7rem;
     font-weight: 500;
     color: #1a1a1a;
     letter-spacing: 5px;
@@ -276,8 +276,8 @@ body {
 
 /* ── RIGHT SIDE (VISUAL) ── */
 .right-side {
-    flex: 1.2;
-    background: var(--dark-bg);
+    flex: 2.0;
+    background: radial-gradient(circle at 70% 50%, #161a22 0%, #07080a 100%);
     position: relative;
     overflow: hidden;
     display: flex;
@@ -294,13 +294,13 @@ body {
     align-items: center;
     gap: 2rem;
     animation: fadeIn 1s ease-out;
-    margin-left: 10%; /* Move right */
+    margin-left: 22%; /* Centered visually in the dark section */
 }
 
 .floating-s {
-    width: 500px; /* Increased from 420px */
+    width:500px;
     height: auto;
-    filter: drop-shadow(0 0 40px rgba(188, 24, 35, 0.35));
+    filter: drop-shadow(0 0 50px rgba(188, 24, 35, 0.7));
     animation: float 6s ease-in-out infinite;
 }
 
@@ -323,8 +323,8 @@ body {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-20px) scale(1.05); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
 }
 
 @keyframes fadeIn {

@@ -204,6 +204,66 @@
     to { transform: translateX(0); opacity: 1; }
 }
 
+.modal-content {
+    margin: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+    .settings-tabs {
+        justify-content: center;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    .page-header-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .page-header-actions .btn-primary,
+    .page-header-actions .btn-secondary,
+    .page-header-actions a {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-header-left {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+    .modal-content {
+        margin: 0.5rem;
+        border-radius: 12px;
+    }
+    .form-panel-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .form-panel-footer button {
+        width: 100%;
+        justify-content: center;
+    }
+    .pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+    .pagination-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
+    }
+}
+
 @media (max-width: 1024px) {
     .tab-btn { width: 200px; height: 200px; }
     .store-form-grid { grid-template-columns: 1fr; }

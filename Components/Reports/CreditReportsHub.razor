@@ -381,7 +381,7 @@
             var fromDateStr = fromDate.ToString("yyyy-MM-dd");
             var toDateStr = toDate.ToString("yyyy-MM-dd");
 
-            // Step 1: Build the main query joining credits_details with credits to get customer_id
+            // Step 1: Build the main query joining credits_details with credits to get customer_id and real-time paid/remaining
             var query = from cd in context.credits_details.AsNoTracking()
                         join c in context.credits.AsNoTracking() 
                             on cd.credit_id equals c.id
@@ -401,7 +401,12 @@
                             cd.due,
                             cd.payment_method,
                             cd.status,
-                            CustomerName = cust.name ?? "Unknown"
+                            CustomerName = cust.name ?? "Unknown",
+                            // Real-time values from the parent credit account
+                            CreditTotalCredit = c.total_credit,
+                            CreditPaid = c.paid,
+                            CreditRemaining = c.remaining,
+                            CreditStatus = c.status
                         };
 
             // Apply customer filter if selected
@@ -435,26 +440,34 @@
                 saleQtyMap = saleGrouped;
             }
 
-            // Step 3: Build final filteredDetails
-            filteredDetails = tempResults.Select(r => new CreditDetailRow
+            // Step 3: Build final filteredDetails — use real-time paid/due per row based on credit status
+            filteredDetails = tempResults.Select(r =>
             {
-                id = r.id,
-                credit_id = r.credit_id,
-                sale_id = r.sale_id,
-                date = r.date,
-                amount = r.amount,
-                paid = r.paid,
-                due = r.due,
-                payment_method = r.payment_method,
-                status = r.status,
-                items = GetItemCountFromSaleQtyMap(saleQtyMap, r.sale_id, r.amount),
-                CustomerName = r.CustomerName
+                // If the parent credit is fully paid, reflect that in this row's display values
+                bool isPaid = string.Equals(r.CreditStatus, "paid", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(r.status, "paid", StringComparison.OrdinalIgnoreCase);
+
+                return new CreditDetailRow
+                {
+                    id = r.id,
+                    credit_id = r.credit_id,
+                    sale_id = r.sale_id,
+                    date = r.date,
+                    amount = r.amount,
+                    // Show real-time paid/due: if fully paid show amount as paid, 0 as due
+                    paid = isPaid ? r.amount : r.paid,
+                    due = isPaid ? 0 : r.due,
+                    payment_method = r.payment_method,
+                    status = isPaid ? "Paid" : (r.status ?? "Pending"),
+                    items = GetItemCountFromSaleQtyMap(saleQtyMap, r.sale_id, r.amount),
+                    CustomerName = r.CustomerName
+                };
             }).ToList();
 
-            // Step 4: Calculate totals and chart data
+            // Step 4: Calculate REAL-TIME totals from the filtered rows (which now reflect current paid/due state)
             totalCreditAmount = filteredDetails.Sum(x => x.amount);
-            totalPaidAmount = filteredDetails.Sum(x => x.paid);
-            totalRemainingAmount = filteredDetails.Sum(x => x.due);
+            totalPaidAmount = filteredDetails.Sum(x => x.paid);       // Real-time: fully paid rows show full amount
+            totalRemainingAmount = filteredDetails.Sum(x => x.due);    // Real-time: fully paid rows show 0
             totalTransactions = filteredDetails.Count;
 
             // Chart Data Calculation

@@ -167,34 +167,26 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Category</label>
-                    <div style="display: flex; gap: 8px;">
-                        <select @bind="productModel.category_id" class="form-control" style="flex: 1;">
-                            <option value="">-- Select Category --</option>
-                            @foreach (var cat in categoryList)
-                            {
-                                <option value="@cat.id">@cat.category_title</option>
-                            }
-                        </select>
-                        <button type="button" class="btn-primary" @onclick="OpenCategoryModal" style="padding: 0.6rem 0.8rem; flex-shrink: 0;">
-                            <i class="ph-plus" style="font-size: 1.2rem;"></i>
-                        </button>
-                    </div>
+                    <input type="text" list="category-list" @bind="categorySearchText" @bind:event="oninput"
+                           class="form-control" placeholder="Search or type new category..." />
+                    <datalist id="category-list">
+                        @foreach (var cat in categoryList)
+                        {
+                            <option value="@cat.category_title">@cat.category_title</option>
+                        }
+                    </datalist>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Brand</label>
-                    <div style="display: flex; gap: 8px;">
-                        <select @bind="productModel.brand_id" class="form-control" style="flex: 1;">
-                            <option value="">-- Select Brand --</option>
-                            @foreach (var br in brandList)
-                            {
-                                <option value="@br.id">@br.brand_title</option>
-                            }
-                        </select>
-                        <button type="button" class="btn-primary" @onclick="OpenBrandModal" style="padding: 0.6rem 0.8rem; flex-shrink: 0;">
-                            <i class="ph-plus" style="font-size: 1.2rem;"></i>
-                        </button>
-                    </div>
+                    <input type="text" list="brand-list" @bind="brandSearchText" @bind:event="oninput"
+                           class="form-control" placeholder="Search or type new brand..." />
+                    <datalist id="brand-list">
+                        @foreach (var br in brandList)
+                        {
+                            <option value="@br.brand_title">@br.brand_title</option>
+                        }
+                    </datalist>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
@@ -304,77 +296,7 @@
 }
 
 
-<!-- Category Modal -->
-@if (showCategoryModal)
-{
-    <div class="modal-overlay show" style="display: flex;">
-        <div class="modal-content-v3">
-            <div class="m-header">
-                <div class="m-title">
-                    <i class="ph-tag-bold" style="color: #BC1823; font-size: 1.5rem;"></i>
-                    <span>Add New Category</span>
-                </div>
-                <button type="button" class="m-close" @onclick="CloseCategoryModal"><i class="ph-x"></i></button>
-            </div>
 
-            <div class="m-body">
-                <div class="m-form-group">
-                    <label>Category Title</label>
-                    <input type="text" @bind="newCategoryTitle" placeholder="Enter category title" />
-                </div>
-                @if (!string.IsNullOrEmpty(categoryErrorMessage))
-                {
-                    <div style="padding: 10px; border-radius: 8px; background: #fee2e2; color: #ef4444; font-size: 0.85rem; border: 1px solid #fecaca;">
-                        <i class="ph-warning"></i> @categoryErrorMessage
-                    </div>
-                }
-            </div>
-
-            <div class="m-footer">
-                <button type="button" class="btn-c-cancel" @onclick="CloseCategoryModal">Cancel</button>
-                <button type="button" class="btn-c-save" @onclick="SaveCategory">
-                    <i class="ph-check-bold"></i> Save Category
-                </button>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Brand Modal -->
-@if (showBrandModal)
-{
-    <div class="modal-overlay show" style="display: flex;">
-        <div class="modal-content-v3">
-            <div class="m-header">
-                <div class="m-title">
-                    <i class="ph-award-bold" style="color: #BC1823; font-size: 1.5rem;"></i>
-                    <span>Add New Brand</span>
-                </div>
-                <button type="button" class="m-close" @onclick="CloseBrandModal"><i class="ph-x"></i></button>
-            </div>
-
-            <div class="m-body">
-                <div class="m-form-group">
-                    <label>Brand Title</label>
-                    <input type="text" @bind="newBrandTitle" placeholder="Enter brand title" />
-                </div>
-                @if (!string.IsNullOrEmpty(brandErrorMessage))
-                {
-                    <div style="padding: 10px; border-radius: 8px; background: #fee2e2; color: #ef4444; font-size: 0.85rem; border: 1px solid #fecaca;">
-                        <i class="ph-warning"></i> @brandErrorMessage
-                    </div>
-                }
-            </div>
-
-            <div class="m-footer">
-                <button type="button" class="btn-c-cancel" @onclick="CloseBrandModal">Cancel</button>
-                <button type="button" class="btn-c-save" @onclick="SaveBrand">
-                    <i class="ph-check-bold"></i> Save Brand
-                </button>
-            </div>
-        </div>
-    </div>
-}
 
 
 
@@ -400,15 +322,9 @@
     private int totalCount = 0;
     private int TotalPages => (int)Math.Ceiling((double)totalCount / pageSize);
 
-    // Category modal fields
-    private bool showCategoryModal = false;
-    private string newCategoryTitle = "";
-    private string? categoryErrorMessage;
-
-    // Brand modal fields
-    private bool showBrandModal = false;
-    private string newBrandTitle = "";
-    private string? brandErrorMessage;
+    // Combo-box text fields
+    private string categorySearchText = "";
+    private string brandSearchText = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -494,6 +410,8 @@
         errorMessage = null;
         selectedFile = null;
         imgUrl = null;
+        categorySearchText = "";
+        brandSearchText = "";
         showForm = true;
     }
 
@@ -543,6 +461,8 @@
         errorMessage = null;
         selectedFile = null;
         imgUrl = null;
+        categorySearchText = GetCategoryName(productModel.category_id);
+        brandSearchText = GetBrandName(productModel.brand_id);
         showForm = true;
     }
 
@@ -611,6 +531,46 @@
             }
 
             if (string.IsNullOrWhiteSpace(productModel.barcode)) productModel.barcode = await GenerateUniqueBarcode();
+
+            // Resolve category from text — create if new
+            if (!string.IsNullOrWhiteSpace(categorySearchText))
+            {
+                var existingCat = categoryList.FirstOrDefault(c =>
+                    c.category_title.Equals(categorySearchText.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (existingCat != null)
+                {
+                    productModel.category_id = existingCat.id;
+                }
+                else
+                {
+                    using var catCtx = DbFactory.CreateDbContext();
+                    var newCat = new Category { category_title = categorySearchText.Trim() };
+                    catCtx.categories.Add(newCat);
+                    await catCtx.SaveChangesAsync();
+                    productModel.category_id = newCat.id;
+                    categoryList.Add(newCat);
+                }
+            }
+
+            // Resolve brand from text — create if new
+            if (!string.IsNullOrWhiteSpace(brandSearchText))
+            {
+                var existingBrand = brandList.FirstOrDefault(b =>
+                    b.brand_title.Equals(brandSearchText.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (existingBrand != null)
+                {
+                    productModel.brand_id = existingBrand.id;
+                }
+                else
+                {
+                    using var brCtx = DbFactory.CreateDbContext();
+                    var newBrand = new Brand { brand_title = brandSearchText.Trim() };
+                    brCtx.brands.Add(newBrand);
+                    await brCtx.SaveChangesAsync();
+                    productModel.brand_id = newBrand.id;
+                    brandList.Add(newBrand);
+                }
+            }
 
             // Final sync before save
             stockModel.quantity = productModel.size ?? 0;
@@ -741,68 +701,6 @@
             await JSRuntime.InvokeVoidAsync("showToast", "Success", "Product deleted successfully!", "success");
             await LoadProducts();
         }
-    }
-
-    // Category Modal Methods
-    private void OpenCategoryModal()
-    {
-        newCategoryTitle = "";
-        categoryErrorMessage = null;
-        showCategoryModal = true;
-    }
-
-    private void CloseCategoryModal()
-    {
-        showCategoryModal = false;
-    }
-
-    private async Task SaveCategory()
-    {
-        if (string.IsNullOrWhiteSpace(newCategoryTitle))
-        {
-            categoryErrorMessage = "Category title is required.";
-            return;
-        }
-
-        using var context = DbFactory.CreateDbContext();
-        var category = new Category { category_title = newCategoryTitle };
-        context.categories.Add(category);
-        await context.SaveChangesAsync();
-        categoryList = await context.categories.ToListAsync();
-        productModel.category_id = category.id;
-        CloseCategoryModal();
-        StateHasChanged();
-    }
-
-    // Brand Modal Methods
-    private void OpenBrandModal()
-    {
-        newBrandTitle = "";
-        brandErrorMessage = null;
-        showBrandModal = true;
-    }
-
-    private void CloseBrandModal()
-    {
-        showBrandModal = false;
-    }
-
-    private async Task SaveBrand()
-    {
-        if (string.IsNullOrWhiteSpace(newBrandTitle))
-        {
-            brandErrorMessage = "Brand title is required.";
-            return;
-        }
-
-        using var context = DbFactory.CreateDbContext();
-        var brand = new Brand { brand_title = newBrandTitle };
-        context.brands.Add(brand);
-        await context.SaveChangesAsync();
-        brandList = await context.brands.ToListAsync();
-        productModel.brand_id = brand.id;
-        CloseBrandModal();
-        StateHasChanged();
     }
 
     private void SyncStatus()

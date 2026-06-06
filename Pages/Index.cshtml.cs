@@ -69,6 +69,10 @@ namespace E_Invoice_system.Pages
                 return RedirectToPage("/Account/Login");
             }
 
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+
             await _currencyService.GetSymbolAsync();
 
 

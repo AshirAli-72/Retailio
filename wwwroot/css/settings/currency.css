@@ -45,3 +45,32 @@
     background: #f1f5f9;
     color: #64748b;
 }
+
+@media (max-width: 900px) {
+    .quick-action-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .quick-action-row > div:first-child {
+        max-width: 100% !important;
+        flex-wrap: wrap;
+    }
+    .quick-action-row input {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 600px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .styled-table {
+        min-width: 650px;
+    }
+    .pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+}

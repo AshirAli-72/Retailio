@@ -140,19 +140,17 @@
 {
     <div class="modal-overlay" @onclick="CloseAddRoleModal">
         <div class="modal-content" @onclick:stopPropagation>
-            <div class="modal-header">
-                <h3 class="modal-title">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
                     <i class="ph-shield-plus" style="color: var(--primary);"></i> Manage Roles
-                </h3>
-                <button type="button" class="btn-close-modal" @onclick="CloseAddRoleModal" style="background:none; border:none; cursor:pointer;">
-                    <i class="ph-x" style="font-size: 1.5rem; color: var(--text-muted);"></i>
-                </button>
+                </div>
+                <button type="button" class="form-panel-close" @onclick="CloseAddRoleModal"><i class="ph-x"></i></button>
             </div>
             
-            <div class="modal-body">
+            <div class="form-panel-body">
                 @if (isDeleteConfirmMode)
                 {
-                    <div style="background: #fee2e2; padding: 1.25rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 1.5rem;">
+                    <div style="background: #fee2e2; padding: 1.25rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 0;">
                         <div style="display: flex; gap: 1rem; align-items: flex-start;">
                             <i class="ph-warning-fill" style="color: #dc2626; font-size: 1.5rem;"></i>
                             <div>
@@ -182,20 +180,23 @@
                 }
             </div>
 
-            <div class="modal-footer">
+            <div class="form-panel-footer">
                 @if (isDeleteConfirmMode)
                 {
-                    <button class="rp-btn-primary" style="background: #64748b;" @onclick="CancelDelete">Cancel</button>
-                    <button class="rp-btn-primary" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSubmitting">
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i> }
+                    <button type="button" class="btn-cancel" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn-save" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSubmitting">
+                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Deleting...</span> }
                         else { <span>Confirm Delete</span> }
                     </button>
                 }
                 else
                 {
-                    <button class="rp-btn-primary" style="background: #dc2626; padding: 0.75rem 1rem;" @onclick="DeleteRole" title="Delete Role"><i class="ph-trash"></i></button>
-                    <button class="rp-btn-primary" style="background: #64748b;" @onclick="UpdateRole" disabled="@isSubmitting">Update</button>
-                    <button class="rp-btn-primary" @onclick="SaveNewRole" disabled="@isSubmitting">Save New</button>
+                    <button type="button" class="btn-cancel" @onclick="DeleteRole" title="Delete Role"><i class="ph-trash"></i> Delete</button>
+                    <button type="button" class="btn-cancel" @onclick="UpdateRole" disabled="@isSubmitting">Update</button>
+                    <button type="button" class="btn-save" @onclick="SaveNewRole" disabled="@isSubmitting">
+                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
+                        else { <span>Save New</span> }
+                    </button>
                 }
             </div>
         </div>

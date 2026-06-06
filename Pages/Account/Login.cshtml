@@ -46,7 +46,7 @@
                     <div class="form-group">
                         <div class="input-box">
                             <i class="ph-user"></i>
-                            <input asp-for="Email" type="email" placeholder="Email Address" required />
+                            <input asp-for="Email" type="email" id="emailField" placeholder="Email Address" required />
                         </div>
                     </div>
 
@@ -72,14 +72,28 @@
         <div class="right-side">
             <!-- Sweeping Wave SVG -->
             <div class="wave-container">
-                <svg viewBox="0 0 500 1000" preserveAspectRatio="none" class="wave-svg">
-                    <path d="M0,0 C200,300 200,700 0,1000 L0,1000 L0,0 Z" fill="#fff"></path>
-                    <path d="M5,0 C210,310 210,690 5,1000" fill="none" stroke="#BC1823" stroke-width="12" opacity="0.9"></path>
-                    <path d="M15,0 C230,320 230,680 15,1000" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"></path>
+                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="wave-svg">
+                    <!-- White filled area on the left of the curve -->
+                    <path d="M -20 -20 L 80 -20 C 320 100, 220 700, 500 1020 L -20 1020 Z" fill="#fff"></path>
+                    <!-- Red sweeping band -->
+                    <path d="M 80 -20 C 320 100, 220 700, 500 1020" fill="none" stroke="#BC1823" stroke-width="24"></path>
+                    <!-- Thin white/silver line -->
+                    <path d="M 110 -20 C 350 100, 250 700, 530 1020" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.8"></path>
+                    
+                    <!-- Concentric dotted red curves at the bottom center -->
+                    <path d="M 350 1020 C 400 920, 500 900, 600 920" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 380 1020 C 430 900, 550 870, 670 900" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 410 1020 C 460 880, 600 840, 740 880" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 440 1020 C 500 860, 660 810, 820 860" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    
+                    <!-- Sweeping dotted red curves at the bottom right -->
+                    <path d="M 700 1020 C 800 900, 900 750, 1000 700" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 750 1020 C 850 880, 930 730, 1000 650" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 800 1020 C 900 860, 960 710, 1000 600" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 850 1020 C 930 840, 980 690, 1000 550" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
+                    <path d="M 900 1020 C 960 820, 990 670, 1000 500" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                 </svg>
             </div>
-
-            <div class="dots-pattern"></div>
             
             <div class="brand-showcase">
                 <img src="/user_logo.png" class="floating-s" alt="S Logo" />
@@ -91,11 +105,15 @@
         document.addEventListener('DOMContentLoaded', function () {
             const loginForm = document.getElementById('loginForm');
             const loginBtn = document.getElementById('loginBtn');
+            const emailField = document.getElementById('emailField');
+            const passwordField = document.getElementById('passwordField');
 
             if (loginForm && loginBtn) {
                 loginForm.addEventListener('submit', function () {
                     loginBtn.disabled = true;
                     loginBtn.innerHTML = '<span class="btn-loader"></span> Logging in...';
+                    if (emailField) emailField.readOnly = true;
+                    if (passwordField) passwordField.readOnly = true;
                 });
             }
         });

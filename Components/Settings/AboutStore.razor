@@ -163,11 +163,11 @@
             </div>
 
             <!-- Save Configuration Button at the End -->
-            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
-                <a href="/settings" class="btn-secondary">
+            <div style="margin-top: 2rem; padding: 1.5rem 0 0.5rem 0; border-top: 2px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem; flex-wrap: wrap;">
+                <a href="/settings" class="btn-secondary" style="flex: 0 1 auto;">
                     <i class="ph-x"></i> Cancel
                 </a>
-                <button type="button" class="btn-primary" @onclick="SaveConfiguration" disabled="@isSaving">
+                <button type="button" class="btn-primary" @onclick="SaveConfiguration" disabled="@isSaving" style="flex: 0 1 auto;">
                     @if (isSaving)
                     {
                         <i class="ph-spinner ph-spin"></i> <span>Saving...</span>

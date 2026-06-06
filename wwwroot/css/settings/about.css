@@ -45,3 +45,23 @@
     grid-template-columns: 1fr 1fr; 
     gap: 1.25rem;
 }
+
+@media (max-width: 900px) {
+    .about-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    .about-section-card {
+        padding: 1rem;
+    }
+    .about-logo-upload-box {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .about-section-card > div > div[style*="grid-template-columns: 1fr 1fr"],
+    .about-info-row {
+        grid-template-columns: 1fr !important;
+    }
+}

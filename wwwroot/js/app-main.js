@@ -560,17 +560,21 @@ function printElement(elementId, reportTitle, storeInfo) {
     printRoot.innerHTML = `
         <article class="rp-document">
             <header class="rp-header">
-                <div class="rp-brand">
-                    ${logoHtml}
-                    <div>
-                        <h1 class="rp-store">${escapeHtml(storeInfo?.shopName || 'E-Invoice System')}</h1>
-                        ${storeInfo?.address ? `<p class="rp-meta-line">${escapeHtml(storeInfo.address)}</p>` : ''}
-                        ${storeInfo?.phone ? `<p class="rp-meta-line">Tel: ${escapeHtml(storeInfo.phone)}</p>` : ''}
-                    </div>
+                <!-- LEFT: Shop Info -->
+                <div class="rp-shop-info">
+                    <h1 class="rp-store">${escapeHtml(storeInfo?.shopName || 'E-Invoice System')}</h1>
+                    ${storeInfo?.address ? `<p class="rp-meta-line"><span class="rp-meta-icon">📍</span> ${escapeHtml(storeInfo.address)}</p>` : ''}
+                    ${storeInfo?.phone ? `<p class="rp-meta-line"><span class="rp-meta-icon">📞</span> ${escapeHtml(storeInfo.phone)}</p>` : ''}
                 </div>
-                <div class="rp-report-title-block">
-                    <h2 class="rp-title">${escapeHtml(reportTitle)}</h2>
-                    <p class="rp-date">Generated: ${escapeHtml(today)}</p>
+                <!-- CENTER: Logo -->
+                <div class="rp-logo-center">
+                    ${logoHtml}
+                    <div class="rp-report-name">${escapeHtml(reportTitle)}</div>
+                </div>
+                <!-- RIGHT: Print Date -->
+                <div class="rp-date-block">
+                    <div class="rp-date-label">Printed On</div>
+                    <div class="rp-date">${escapeHtml(today)}</div>
                 </div>
             </header>
             ${summaryHtml}

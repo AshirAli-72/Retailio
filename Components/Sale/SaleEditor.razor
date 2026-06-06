@@ -420,6 +420,10 @@
                     <input type="email" @bind="newCustomer.email" placeholder="Enter email address" />
                 </div>
                 <div class="c-form-group">
+                    <label>Credit Limit</label>
+                    <input type="number" step="0.01" @bind="newCustomer.credit_limit" placeholder="Enter credit limit" />
+                </div>
+                <div class="c-form-group">
                     <label>Address</label>
                     <textarea rows="3" @bind="newCustomer.address" placeholder="Enter physical address"></textarea>
                 </div>
@@ -531,17 +535,20 @@
                             </div>
                             <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
                                 <span style="color:#64748b;">Paid Amount</span>
-                                <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.paid)</span>
+                                <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.remaining > 0 ? loadedCredit.paid : 0)</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
                                 <span style="color:#64748b;">Remaining Amount</span>
                                 <span style="font-weight:800; color:#dc2626;">@FormatCurrency(loadedCredit.remaining)</span>
                             </div>
+                            @if (loadedCredit.remaining > 0)
+                            {
+                                <button type="button" style="width:100%;margin-top:10px;padding:10px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
+                                        @onclick="GoToRecoveryFromCreditModal">
+                                    <i class="ph-arrow-counter-clockwise"></i> Record Recovery
+                                </button>
+                            }
                         }
-                        <button type="button" style="width:100%;margin-top:10px;padding:10px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
-                                @onclick="GoToRecoveryFromCreditModal">
-                            <i class="ph-arrow-counter-clockwise"></i> Record Recovery
-                        </button>
                     </div>
                 }
 
@@ -623,7 +630,7 @@
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                                 <span class="text-muted font-sm">Paid Amount</span>
-                                <span class="font-bold text-success">@recoveryCustomerCredit.paid.ToString("N2")</span>
+                                <span class="font-bold text-success">@(recoveryCustomerCredit.remaining > 0 ? recoveryCustomerCredit.paid.ToString("N2") : "0.00")</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span class="text-muted font-sm">Remaining Credit</span>
@@ -640,10 +647,10 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Paid Amount</label>
-                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
+                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:event="oninput" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
                 </div>
 
-                @if (recoveryCustomerCredit != null)
+                @if (recoveryCustomerCredit != null && recoveryCustomerCredit.remaining > 0)
                 {
                     <div style="padding: 1rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; margin-top: 1rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -987,8 +994,8 @@
             var creditToUpdate = await context.credits.FindAsync(recoveryCustomerCredit.id);
             if (creditToUpdate != null)
             {
-                creditToUpdate.total_credit -= recoveryModel.paid;
-                creditToUpdate.remaining -= recoveryModel.paid;
+                creditToUpdate.paid += recoveryModel.paid;
+                creditToUpdate.remaining = creditToUpdate.total_credit - creditToUpdate.paid;
                 if (creditToUpdate.remaining <= 0)
                 {
                     creditToUpdate.status = "Paid";
@@ -1038,7 +1045,7 @@
             using var refreshCtx = DbFactory.CreateDbContext();
             if (selectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id && c.status != "Paid");
+                loadedCredit = await refreshCtx.credits.OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id);
                 if (loadedCredit != null)
                 {
                     creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
@@ -1050,7 +1057,7 @@
             }
             if (creditSelectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id && c.status != "Paid");
+                loadedCredit = await refreshCtx.credits.OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id);
                 if (loadedCredit != null)
                 {
                     creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
@@ -1565,7 +1572,7 @@
         
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
-        loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id && cr.status != "Paid");
+        loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id);
         if (loadedCredit != null)
         {
             creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
@@ -1743,7 +1750,7 @@
         
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
-        loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id && cr.status != "Paid");
+        loadedCredit = await context.credits.OrderByDescending(cr => cr.id).FirstOrDefaultAsync(cr => cr.customer_id == c.id);
         if (loadedCredit != null)
         {
             creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
@@ -2033,24 +2040,24 @@
 
                     if (newCredit != null)
                     {
-                        newCredit.total_credit += Math.Abs(currentTotal);
-                        newCredit.paid += creditEntry.paid_amount;
-                        newCredit.remaining = newCredit.total_credit - newCredit.paid;
+                        newCredit.total_credit += Math.Abs(currentTotal) - creditEntry.paid_amount;
+                        newCredit.remaining = newCredit.total_credit;
                         newCredit.status = newCredit.remaining > 0 ? "Pending" : "Paid";
                         if (!string.IsNullOrEmpty(creditFilePath))
                             newCredit.file = creditFilePath;
                     }
                     else
                     {
+                        var creditTotal = Math.Abs(currentTotal) - creditEntry.paid_amount;
                         newCredit = new Credit
                         {
                             customer_id = creditCust!.id,
                             date = DateTime.Now.ToString("yyyy-MM-dd"),
-                            total_credit = Math.Abs(currentTotal),
-                            paid = creditEntry.paid_amount,
-                            remaining = creditRemainingAmount,
+                            total_credit = creditTotal,
+                            paid = 0,
+                            remaining = creditTotal,
                             payment_method = "Credit",
-                            status = creditRemainingAmount > 0 ? "Pending" : "Paid",
+                            status = creditTotal > 0 ? "Pending" : "Paid",
                             file = creditFilePath
                         };
                         context.credits.Add(newCredit);
@@ -2137,15 +2144,9 @@
 
             if (newCredit != null)
             {
-                var totalAmount = saleRecords.Sum(s => Math.Abs(s.sale.total_price));
-                var distributed = 0m;
-                for (int i = 0; i < saleRecords.Count; i++)
+                foreach (var item in saleRecords)
                 {
-                    var lineAmount = Math.Abs(saleRecords[i].sale.total_price);
-                    var linePaid = i < saleRecords.Count - 1
-                        ? Math.Round(lineAmount / totalAmount * creditEntry.paid_amount, 2)
-                        : creditEntry.paid_amount - distributed;
-                    distributed += linePaid;
+                    var lineAmount = Math.Abs(item.sale.total_price);
 
                     context.credits_details.Add(new CreditDetail
                     {
@@ -2153,8 +2154,8 @@
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
                         sale_id = saleHeader!.id,
                         amount = lineAmount,
-                        paid = linePaid,
-                        due = lineAmount - linePaid,
+                        paid = 0,
+                        due = lineAmount,
                         payment_method = "Credit",
                         status = "Pending",
                         file = creditFilePath

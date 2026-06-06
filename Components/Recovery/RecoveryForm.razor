@@ -179,7 +179,7 @@
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                                 <span class="text-muted font-sm">Paid Amount</span>
-                                <span class="font-bold text-success">@customerCredit.paid.ToString("N2")</span>
+                                <span class="font-bold text-success">@(customerCredit.remaining > 0 ? customerCredit.paid.ToString("N2") : "0.00")</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span class="text-muted font-sm">Remaining Credit</span>
