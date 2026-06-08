@@ -196,7 +196,7 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Paid Amount</label>
-                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
+                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:event="oninput" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
                 </div>
 
                 @if (customerCredit != null)
