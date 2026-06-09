@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Models
 {
@@ -35,10 +36,10 @@ namespace E_Invoice_system.Models
         public decimal due { get; set; }
 
         [Column("status")]
-        public string? status { get; set; }
+        public int? status { get; set; } = (int)PaymentStatus.Pending;
 
         [Column("payment_method")]
-        public string? payment_method { get; set; }
+        public int? payment_method { get; set; }
 
         public ICollection<Sale> SaleDetails { get; set; } = new List<Sale>();
     }

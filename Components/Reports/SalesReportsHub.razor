@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 
@@ -405,8 +406,8 @@
             bool loadReturns = selectedType == "All" || selectedType == "Return";
             bool loadCredits = false;
 
-            Func<string?, bool> matchPayment = pm =>
-                selectedPayment == "All" || pm == selectedPayment;
+            Func<int?, bool> matchPayment = pm =>
+                selectedPayment == "All" || PaymentHelper.GetPaymentMethodName(pm) == selectedPayment;
 
             int? categoryId = selectedCategory == "All" ? null : int.Parse(selectedCategory);
             int? employeeId = selectedEmployee == "All" ? null : int.Parse(selectedEmployee);
@@ -477,9 +478,9 @@
 
                 // Apply type filter
                 if (selectedType == "Sale")
-                    filteredSales = filteredSales.Where(s => !string.Equals(s.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)).ToList();
+                    filteredSales = filteredSales.Where(s => s.payment_method != (int?)PaymentMethod.Credit).ToList();
                 else if (selectedType == "All")
-                    filteredSales = filteredSales.Where(s => !string.Equals(s.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)).ToList();
+                    filteredSales = filteredSales.Where(s => s.payment_method != (int?)PaymentMethod.Credit).ToList();
                 // "All" shows only Sale + Return (credits excluded)
 
 
@@ -489,13 +490,13 @@
                     Id = s.id,
                     InvNo = s.inv_no ?? "",
                     Date = s.date?.Trim() ?? "",
-                    Type = s.payment_method == "Credit" ? "Credit" : "Sale",
+                    Type = s.payment_method == (int?)PaymentMethod.Credit ? "Credit" : "Sale",
                     ItemCount = saleItemCounts.ContainsKey(s.id) ? saleItemCounts[s.id] : 0,
                     GrossTotal = s.gross_total,
                     Discount = s.discount,
                     NetPayable = s.net_payable,
-                    PaymentMethod = s.payment_method ?? "Cash",
-                    Status = s.status ?? "Paid"
+                    PaymentMethod = s.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(s.payment_method.Value) : "Cash",
+                    Status = s.status.HasValue ? PaymentHelper.GetStatusName(s.status.Value) : "Paid"
                 }));
             }
 
@@ -509,7 +510,7 @@
                         if (!TryParseDateRobust(r.date, out var d)) return false;
                         if (d.Date < fromDate.Date || d.Date > toDate.Date) return false;
                         if (!matchPayment(r.payment_method)) return false;
-                        if (string.Equals(r.payment_method, "Credit", StringComparison.OrdinalIgnoreCase)) return false;
+                        if (r.payment_method == (int?)PaymentMethod.Credit) return false;
                         return true;
                     }).ToList();
 
@@ -547,8 +548,8 @@
                         GrossTotal = g.Sum(r => r.total_price),
                         Discount = 0,
                         NetPayable = g.Sum(r => r.total_price),
-                        PaymentMethod = g.First().payment_method ?? "Cash",
-                        Status = g.First().status ?? "Returned"
+                        PaymentMethod = g.First().payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(g.First().payment_method.Value) : "Cash",
+                        Status = g.First().status.HasValue ? PaymentHelper.GetStatusName(g.First().status.Value) : "Returned"
                     }).ToList();
                 rows.AddRange(returnsToShow);
             }

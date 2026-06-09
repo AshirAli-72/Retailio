@@ -87,16 +87,16 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("paid");
 
-                    b.Property<string>("payment_method")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("payment_method")
+                        .HasColumnType("int")
                         .HasColumnName("payment_method");
 
                     b.Property<decimal>("remaining")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("remaining");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<decimal>("total_credit")
@@ -142,16 +142,16 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("paid");
 
-                    b.Property<string>("payment_method")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("payment_method")
+                        .HasColumnType("int")
                         .HasColumnName("payment_method");
 
                     b.Property<int?>("sale_id")
                         .HasColumnType("int")
                         .HasColumnName("sale_id");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.HasKey("id");
@@ -193,12 +193,16 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("paid");
 
+                    b.Property<int?>("payment_method")
+                        .HasColumnType("int")
+                        .HasColumnName("payment_method");
+
                     b.Property<decimal>("remaining")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("remaining");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<string>("file")
@@ -411,8 +415,8 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("int")
                         .HasColumnName("item_id");
 
-                    b.Property<string>("payment_method")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("payment_method")
+                        .HasColumnType("int")
                         .HasColumnName("payment_method");
 
                     b.Property<int>("qty")
@@ -423,8 +427,8 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("int")
                         .HasColumnName("sale_id");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<decimal>("total_price")
@@ -557,8 +561,8 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("int")
                         .HasColumnName("sale_id");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<decimal>("total_price")
@@ -620,12 +624,12 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("paid");
 
-                    b.Property<string>("payment_method")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("payment_method")
+                        .HasColumnType("int")
                         .HasColumnName("payment_method");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)")
+                    b.Property<int?>("status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.HasKey("id");

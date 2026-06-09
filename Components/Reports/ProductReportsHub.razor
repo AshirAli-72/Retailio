@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 
@@ -93,7 +94,7 @@
                 <div class="stat-card-premium border-purple">
                     <div class="stat-info">
                         <span class="label">Active Products</span>
-                        <h2 class="value">@(isGenerated ? allProductsList.Count(p => p.status == "Active").ToString() : "---")</h2>
+                        <h2 class="value">@(isGenerated ? allProductsList.Count(p => p.status == (int?)EntityStatus.Active).ToString() : "---")</h2>
                     </div>
                     <div class="stat-icon purple-glow"><i class="ph-package"></i></div>
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #8b5cf6;"></div></div>
@@ -102,7 +103,7 @@
                 <div class="stat-card-premium border-red">
                     <div class="stat-info">
                         <span class="label">Inactive Items</span>
-                        <h2 class="value">@(isGenerated ? allProductsList.Count(p => p.status == "Inactive").ToString() : "---")</h2>
+                        <h2 class="value">@(isGenerated ? allProductsList.Count(p => p.status == (int?)EntityStatus.Inactive).ToString() : "---")</h2>
                     </div>
                     <div class="stat-icon red-glow"><i class="ph-prohibit"></i></div>
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #BC1823;"></div></div>
@@ -244,7 +245,7 @@
                                         <td>@p.unit</td>
                                         <td>@p.item_type</td>
                                         <td>
-                                            <span class="badge-status @(p.status?.ToLower() == "active" ? "sale" : "return")">@p.status</span>
+                                            <span class="badge-status @(p.status == (int?)EntityStatus.Active ? "sale" : "return")">@PaymentHelper.GetEntityStatusName(p.status)</span>
                                         </td>
                                     </tr>
                                 }
@@ -339,7 +340,8 @@
             using var context = DbFactory.CreateDbContext();
             var query = context.products_services.AsNoTracking();
 
-            if (selectedStatus != "All") query = query.Where(x => x.status == selectedStatus);
+            if (selectedStatus == "Active") query = query.Where(x => x.status == (int?)EntityStatus.Active);
+            else if (selectedStatus == "Inactive") query = query.Where(x => x.status == (int?)EntityStatus.Inactive);
             if (selectedProductId != "All") 
             {
                 int pId = int.Parse(selectedProductId);

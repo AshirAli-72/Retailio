@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Data;
 using E_Invoice_system.Models;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Pages.Inventory
 {
@@ -70,7 +71,7 @@ namespace E_Invoice_system.Pages.Inventory
                 item_type = p.item_type,
                 size = p.size,
                 pic = p.pic,
-                status = p.status,
+                status = PaymentHelper.GetEntityStatusName(p.status),
                 category_id = p.category_id,
                 brand_id = p.brand_id,
                 CategoryName = p.category_id != null ? categories.FirstOrDefault(c => c.id == p.category_id)?.category_title ?? "-" : "-",

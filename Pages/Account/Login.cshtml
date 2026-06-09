@@ -17,9 +17,28 @@
 </head>
 <body>
     
-    <div class="login-wrapper">
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo" id="splashLogo">
+            <div class="document-icon">
+                <i class="ph-file-text"></i>
+                <div class="check-badge">
+                    <i class="ph-check"></i>
+                </div>
+            </div>
+            <div class="brand-text-content">
+                <div class="brand-main-text">E-<span>INVOICE</span></div>
+                <div class="brand-sub-text">
+                    <span>SYSTEM</span>
+                    <div class="brand-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-wrapper" id="loginWrapper" style="opacity:0;">
         <div class="left-side">
-            <div class="brand-header">
+            <div class="brand-header" id="brandHeader">
                 <div class="brand-logo-container">
                     <div class="document-icon">
                         <i class="ph-file-text"></i>
@@ -37,7 +56,7 @@
                 </div>
             </div>
 
-            <div class="login-content">
+            <div class="login-content" id="loginContent">
                 <h1 class="welcome-title">Welcome <span>Back</span></h1>
                 <p class="subtitle">Sign in to continue to your account</p>
                 <div class="subtitle-line"></div>
@@ -73,20 +92,15 @@
             <!-- Sweeping Wave SVG -->
             <div class="wave-container">
                 <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="wave-svg">
-                    <!-- White filled area on the left of the curve -->
                     <path d="M -20 -20 L 80 -20 C 320 100, 220 700, 500 1020 L -20 1020 Z" fill="#fff"></path>
-                    <!-- Red sweeping band -->
                     <path d="M 80 -20 C 320 100, 220 700, 500 1020" fill="none" stroke="#BC1823" stroke-width="24"></path>
-                    <!-- Thin white/silver line -->
                     <path d="M 110 -20 C 350 100, 250 700, 530 1020" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.8"></path>
                     
-                    <!-- Concentric dotted red curves at the bottom center -->
                     <path d="M 350 1020 C 400 920, 500 900, 600 920" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     <path d="M 380 1020 C 430 900, 550 870, 670 900" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     <path d="M 410 1020 C 460 880, 600 840, 740 880" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     <path d="M 440 1020 C 500 860, 660 810, 820 860" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     
-                    <!-- Sweeping dotted red curves at the bottom right -->
                     <path d="M 700 1020 C 800 900, 900 750, 1000 700" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     <path d="M 750 1020 C 850 880, 930 730, 1000 650" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
                     <path d="M 800 1020 C 900 860, 960 710, 1000 600" fill="none" stroke="rgba(188, 24, 35, 0.35)" stroke-width="2" stroke-dasharray="4, 8"></path>
@@ -103,10 +117,43 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const loginForm = document.getElementById('loginForm');
-            const loginBtn = document.getElementById('loginBtn');
-            const emailField = document.getElementById('emailField');
-            const passwordField = document.getElementById('passwordField');
+            var splashScreen = document.getElementById('splashScreen');
+            var splashLogo = document.getElementById('splashLogo');
+            var brandHeader = document.getElementById('brandHeader');
+            var loginWrapper = document.getElementById('loginWrapper');
+
+            setTimeout(function () {
+                // Get the final position for the brand header
+                var brandRect = brandHeader.getBoundingClientRect();
+                var logoRect = splashLogo.getBoundingClientRect();
+
+                var deltaX = brandRect.left - logoRect.left;
+                var deltaY = brandRect.top - logoRect.top;
+                var scaleX = brandRect.width / logoRect.width;
+                var scaleY = brandRect.height / logoRect.height;
+
+                // Animate splash logo to brand-header position
+                splashLogo.style.transition = 'transform 0.9s cubic-bezier(0.65, 0, 0.35, 1)';
+                splashLogo.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px) scale(' + scaleX + ')';
+
+                // Fade splash background
+                splashScreen.style.transition = 'background 0.6s ease, opacity 0.6s ease';
+                splashScreen.style.background = 'transparent';
+
+                // Reveal login page
+                loginWrapper.style.transition = 'opacity 0.7s ease';
+                loginWrapper.style.opacity = '1';
+
+                // After animation completes, clean up
+                setTimeout(function () {
+                    splashScreen.style.display = 'none';
+                }, 1000);
+            }, 2000);
+
+            var loginForm = document.getElementById('loginForm');
+            var loginBtn = document.getElementById('loginBtn');
+            var emailField = document.getElementById('emailField');
+            var passwordField = document.getElementById('passwordField');
 
             if (loginForm && loginBtn) {
                 loginForm.addEventListener('submit', function () {

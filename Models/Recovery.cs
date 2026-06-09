@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Models
 {
@@ -32,7 +33,7 @@ namespace E_Invoice_system.Models
         public decimal remaining { get; set; }
 
         [Column("status")]
-        public string? status { get; set; }
+        public int? status { get; set; } = (int)PaymentStatus.Pending;
 
         [Column("file")]
         public string? file { get; set; }

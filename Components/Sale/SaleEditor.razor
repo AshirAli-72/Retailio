@@ -3,6 +3,7 @@
 @using System.Text.RegularExpressions
 @using System.IO
 @using Microsoft.AspNetCore.Components.Forms
+@using E_Invoice_system.Services
 @implements IDisposable
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
@@ -270,19 +271,19 @@
 
                 <!-- METHODS -->
                 <div class="payment-methods-v4">
-                    <div class="payment-method-card @(paymentMethod == "Cash" ? "active" : "")" @onclick='() => SetPaymentMethod("Cash")'>
+                    <div class="payment-method-card @(paymentMethod == PaymentMethod.Cash ? "active" : "")" @onclick='() => SetPaymentMethod("Cash")'>
                         <i class="ph-money-bold"></i>
                         <div><span>Cash</span></div>
                     </div>
-                    <div class="payment-method-card @(paymentMethod == "Card" ? "active" : "")" @onclick='() => SetPaymentMethod("Card")'>
+                    <div class="payment-method-card @(paymentMethod == PaymentMethod.Card ? "active" : "")" @onclick='() => SetPaymentMethod("Card")'>
                         <i class="ph-credit-card-bold"></i>
                         <div><span>Card</span></div>
                     </div>
-                    <div class="payment-method-card @(paymentMethod == "Transfer" ? "active" : "")" @onclick='() => SetPaymentMethod("Transfer")'>
+                    <div class="payment-method-card @(paymentMethod == PaymentMethod.Online ? "active" : "")" @onclick='() => SetPaymentMethod("Transfer")'>
                         <i class="ph-bank-bold"></i>
                         <div><span>Bank</span></div>
                     </div>
-                    <div class="payment-method-card @(paymentMethod == "Credit" ? "active" : "")" @onclick='() => SetPaymentMethod("Credit")'>
+                    <div class="payment-method-card @(paymentMethod == PaymentMethod.Credit ? "active" : "")" @onclick='() => SetPaymentMethod("Credit")'>
                         <i class="ph-user-focus-bold"></i>
                         <div><span>Credit</span></div>
                     </div>
@@ -431,8 +432,8 @@
                     <label>Status</label>
                     <div class="c-select-wrapper">
                         <select @bind="newCustomer.status">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="@((int)EntityStatus.Active)">Active</option>
+                            <option value="@((int)EntityStatus.Inactive)">Inactive</option>
                         </select>
                         <i class="ph-caret-down"></i>
                     </div>
@@ -552,10 +553,7 @@
                     </div>
                 }
 
-                <div class="c-form-group">
-                    <label>Paid Amount</label>
-                    <input type="number" step="0.01" value="@creditEntry.paid_amount" @oninput="OnCreditPaidAmountInput" placeholder="Enter amount paid now" />
-                </div>
+
 
                 <div class="c-form-group">
                     <label>Attachment Document (Optional)</label>
@@ -663,8 +661,8 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Status</label>
                     <select @bind="recoveryModel.status" class="form-control">
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
+                        <option value="@((int)PaymentStatus.Pending)">Pending</option>
+                        <option value="@((int)PaymentStatus.Paid)">Paid</option>
                     </select>
                 </div>
 
@@ -863,18 +861,18 @@
     {
         // Load only active customers for dropdown
         using var context = DbFactory.CreateDbContext();
-        recoveryCustomerList = await context.customers.Where(c => c.status == "Active").ToListAsync();
+        recoveryCustomerList = await context.customers.Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
         
         // Set default customer if already selected and active
         var defaultCustomer = selectedCustomer ?? creditSelectedCustomer;
-        if (defaultCustomer != null && defaultCustomer.status == "Active")
+        if (defaultCustomer != null && defaultCustomer.status == (int?)EntityStatus.Active)
         {
             recoverySelectedCustomer = defaultCustomer;
             recoverySelectedCustomerId = defaultCustomer.id.ToString();
             // First try to load a Pending credit, if not, load any
             recoveryCustomerCredit = await context.credits
                 .Where(c => c.customer_id == defaultCustomer.id)
-                .OrderByDescending(c => c.status == "Pending" ? 1 : 0)
+                .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending ? 1 : 0)
                 .ThenByDescending(c => c.id)
                 .FirstOrDefaultAsync();
         }
@@ -895,7 +893,7 @@
         recoveryModel = new Recovery
         {
             date = DateTime.Now.ToString("yyyy-MM-dd"),
-            status = "Pending"
+            status = (int?)PaymentStatus.Pending
         };
         recoveryTempDate = DateTime.Now;
         recoveryErrorMessage = null;
@@ -920,7 +918,7 @@
             // First try to load a Pending credit, if not, load any
             recoveryCustomerCredit = await context.credits
                 .Where(c => c.customer_id == customerId)
-                .OrderByDescending(c => c.status == "Pending" ? 1 : 0)
+                .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending ? 1 : 0)
                 .ThenByDescending(c => c.id)
                 .FirstOrDefaultAsync();
         }
@@ -948,11 +946,11 @@
             // Auto select Paid if paid amount equals remaining credit
             if (recoveryModel.paid == recoveryCustomerCredit.remaining)
             {
-                recoveryModel.status = "Paid";
+                recoveryModel.status = (int?)PaymentStatus.Paid;
             }
             else
             {
-                recoveryModel.status = "Pending";
+                recoveryModel.status = (int?)PaymentStatus.Pending;
             }
         }
         await InvokeAsync(StateHasChanged);
@@ -997,9 +995,9 @@
                 creditToUpdate.paid += recoveryModel.paid;
                 creditToUpdate.remaining = creditToUpdate.total_credit - creditToUpdate.paid;
                 if (creditToUpdate.remaining <= 0)
-                {
-                    creditToUpdate.status = "Paid";
-                }
+            {
+                creditToUpdate.status = (int?)PaymentStatus.Paid;
+            }
             }
 
             recoveryModel.customer_id = recoverySelectedCustomer.id;
@@ -1015,25 +1013,25 @@
                 // Update all credit details for this credit to Paid
                 var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == creditToUpdate.id).ToListAsync();
                 foreach (var cd in creditDetailsToUpdate)
-                {
-                    cd.status = "Paid";
-                }
+            {
+                cd.status = (int?)PaymentStatus.Paid;
+            }
 
                 // Find all related sale headers via credit details
                 var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
                 var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
                 foreach (var sh in saleHeadersToUpdate)
-                {
-                    sh.status = "Paid";
-                    sh.due = 0; // If fully paid, due should be 0
-                }
+            {
+                sh.status = (int?)PaymentStatus.Paid;
+                sh.due = 0; // If fully paid, due should be 0
+            }
 
-                // Update all related sale details (sales DbSet, which maps to sale_details table)
-                var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
-                foreach (var sale in salesToUpdate)
-                {
-                    sale.status = "Paid";
-                }
+            // Update all related sale details (sales DbSet, which maps to sale_details table)
+            var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
+            foreach (var sale in salesToUpdate)
+            {
+                sale.status = (int?)PaymentStatus.Paid;
+            }
             }
 
             await context.SaveChangesAsync();
@@ -1083,7 +1081,7 @@
 
     private bool showPaymentModal = false;
     private bool showAddCustomerModal = false;
-    private string paymentMethod = "Cash";
+    private PaymentMethod paymentMethod = PaymentMethod.Cash;
     private decimal? tenderedAmount = null;
     private string notes = "";
     private bool shouldPrintReceipt = true;
@@ -1092,7 +1090,7 @@
     private ReceiptSnapshot? _receiptSnapshot;
     private DotNetObjectReference<SaleEditor>? _dotNetRef;
     private bool _resetAfterPrint = false;
-    private customers newCustomer = new customers { status = "Active" };
+    private customers newCustomer = new customers { status = (int?)EntityStatus.Active };
     private StoreConfiguration? currentStore;
     private bool isLoading = true;
 
@@ -1190,7 +1188,7 @@
 
             var prodsData = await context.products_services
                 .AsNoTracking()
-                .Where(p => p.status == "Enable")
+                .Where(p => p.status == (int?)EntityStatus.Active)
                 .GroupJoin(
                     context.stock_details.AsNoTracking(),
                     p => p.barcode,
@@ -1355,10 +1353,10 @@
             var headerById = await context.SalesHeader.FindAsync(saleHeaderId);
             if (headerById != null)
             {
-                if (headerById.payment_method == "Credit")
+                if (headerById.payment_method == (int)PaymentMethod.Credit)
                 {
                     loadedCredit = await context.credits
-                        .Where(c => c.customer_id == headerById.customer_id && c.status != "Paid")
+                        .Where(c => c.customer_id == headerById.customer_id && c.status != (int)PaymentStatus.Paid)
                         .FirstOrDefaultAsync();
                     await LoadSaleHeaderForReturn(context, headerById); // Always load for return when scanning receipt!
                     return;
@@ -1436,7 +1434,7 @@
         }
 
         // Check if original sale was a credit sale
-        returnFromCredit = header.payment_method == "Credit";
+        returnFromCredit = header.payment_method == (int)PaymentMethod.Credit;
         transMode = "return"; // Force to return mode
         _loadedSaleHeaderId = header.id; // Store sale header ID
         saleItems = details.Select(d => new SaleItem
@@ -1590,9 +1588,9 @@
             q = Math.Abs(q);
             if (transMode == "return") q = -q;
             if (q == 0) { saleItems.Remove(item); return; }
-            if (transMode == "sale" && q > item.maxStock)
+            if (Math.Abs(q) > item.maxStock)
             {
-                ShowAlert("Stock limit reached.");
+                ShowAlert(transMode == "return" ? "Cannot return more than purchased quantity." : "Stock limit reached.");
                 return;
             }
             item.qty = q;
@@ -1667,11 +1665,15 @@
 
     private void SetPaymentMethod(string m)
     {
-        paymentMethod = m;
-
-        if (m == "Credit")
+        var parsed = PaymentHelper.ParsePaymentMethod(m);
+        if (parsed.HasValue)
         {
-            if (selectedCustomer != null && selectedCustomer.status != "Active")
+            paymentMethod = parsed.Value;
+        }
+
+        if (parsed == PaymentMethod.Credit)
+        {
+            if (selectedCustomer != null && selectedCustomer.status != (int?)EntityStatus.Active)
             {
                 ShowAlert("Selected customer is inactive and cannot be used for credit payments.");
                 return;
@@ -1681,7 +1683,7 @@
 
             creditSelectedCustomer = selectedCustomer;
             creditCustomerSearch = selectedCustomer?.name ?? "";
-            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == (int?)EntityStatus.Active).Take(20).ToList();
 
             creditEntry = new CreditEntry
             {
@@ -1713,14 +1715,14 @@
 
         if (string.IsNullOrWhiteSpace(creditCustomerSearch))
         {
-            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == (int?)EntityStatus.Active).Take(20).ToList();
         }
         else
         {
             var q = creditCustomerSearch.ToLower();
             using var context = DbFactory.CreateDbContext();
             filteredCreditCustomers = await context.customers.AsNoTracking()
-                .Where(c => c.status == "Active" && 
+                .Where(c => c.status == (int?)EntityStatus.Active && 
                            (c.name.ToLower().Contains(q) ||
                            (c.contact != null && c.contact.ToLower().Contains(q))))
                 .Take(20).ToListAsync();
@@ -1732,14 +1734,14 @@
     {
         showCreditCustomerDropdown = true;
         if (!filteredCreditCustomers.Any())
-            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == (int?)EntityStatus.Active).Take(20).ToList();
     }
 
     private void ToggleCreditCustomerDropdown()
     {
         showCreditCustomerDropdown = !showCreditCustomerDropdown;
         if (showCreditCustomerDropdown && !filteredCreditCustomers.Any())
-            filteredCreditCustomers = allCustomersList.Where(c => c.status == "Active").Take(20).ToList();
+            filteredCreditCustomers = allCustomersList.Where(c => c.status == (int?)EntityStatus.Active).Take(20).ToList();
     }
 
     private async Task SelectCreditCustomer(customers c)
@@ -1766,7 +1768,7 @@
     private void CancelCreditModal()
     {
         showCreditModal = false;
-        paymentMethod = "Cash";
+        paymentMethod = PaymentMethod.Cash;
         creditEntry = new CreditEntry();
         creditRemainingAmount = 0;
         creditSelectedCustomer = null;
@@ -1800,7 +1802,7 @@
 
         credit.paid += additionalPayment;
         credit.remaining = credit.total_credit - credit.paid;
-        credit.status = credit.remaining > 0 ? "Pending" : "Paid";
+        credit.status = credit.remaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
 
         // Create a SaleHeader so this payment counts in Total Sales
         var orderInvNo = await GenerateNextInvNoAsync(context);
@@ -1814,8 +1816,8 @@
             net_payable = additionalPayment,
             paid = additionalPayment,
             due = 0,
-            status = "Paid",
-            payment_method = "Credit"
+            status = (int?)PaymentStatus.Paid,
+            payment_method = (int?)PaymentMethod.Credit
         };
         context.SalesHeader.Add(paymentHeader);
         await context.SaveChangesAsync();
@@ -1830,8 +1832,8 @@
             amount = additionalPayment,
             paid = additionalPayment,
             due = 0,
-            payment_method = "Credit",
-            status = "Paid",
+            payment_method = (int?)PaymentMethod.Credit,
+            status = (int?)PaymentStatus.Paid,
             file = filePath
         });
 
@@ -1847,7 +1849,7 @@
             var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == credit.id).ToListAsync();
             foreach (var cd in creditDetailsToUpdate)
             {
-                cd.status = "Paid";
+                cd.status = (int?)PaymentStatus.Paid;
             }
 
             // Find all related sale headers via credit details
@@ -1855,7 +1857,7 @@
             var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
             foreach (var sh in saleHeadersToUpdate)
             {
-                sh.status = "Paid";
+                sh.status = (int?)PaymentStatus.Paid;
                 sh.due = 0; // If fully paid, due should be 0
             }
 
@@ -1863,7 +1865,7 @@
             var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
             foreach (var sale in salesToUpdate)
             {
-                sale.status = "Paid";
+                sale.status = (int?)PaymentStatus.Paid;
             }
         }
 
@@ -1927,7 +1929,7 @@
 
         allCustomersList.Add(newCustomer);
         SelectCustomer(newCustomer);
-        newCustomer = new customers { status = "Active" };
+        newCustomer = new customers { status = (int?)EntityStatus.Active };
         showAddCustomerModal = false;
     }
 
@@ -1942,7 +1944,7 @@
         {
             using var context = DbFactory.CreateDbContext();
 
-            if (paymentMethod == "Cash")
+            if (paymentMethod == PaymentMethod.Cash)
             {
                 if ((tenderedAmount ?? 0) <= 0)
                 {
@@ -1957,20 +1959,20 @@
                 }
             }
 
-            var creditCust = paymentMethod == "Credit"
+            var creditCust = paymentMethod == PaymentMethod.Credit
                 ? creditSelectedCustomer ?? selectedCustomer
                 : null;
 
-            if (paymentMethod == "Credit" && creditCust == null)
+            if (paymentMethod == PaymentMethod.Credit && creditCust == null)
             {
                 ShowAlert("Please select a customer for credit sale.");
                 return;
             }
 
-            if (paymentMethod == "Credit" && creditCust!.credit_limit.HasValue)
+            if (paymentMethod == PaymentMethod.Credit && creditCust!.credit_limit.HasValue)
             {
                 var existing = await context.credits
-                    .Where(c => c.customer_id == creditCust.id && c.status != "Paid")
+                    .Where(c => c.customer_id == creditCust.id && c.status != (int)PaymentStatus.Paid)
                     .FirstOrDefaultAsync();
                 var outstanding = existing?.remaining ?? 0;
                 var newCreditTotal = Math.Abs(currentTotal) - creditEntry.paid_amount;
@@ -2008,7 +2010,7 @@
             Credit? newCredit = null;
             SaleHeader? saleHeader = null;
             string? creditFilePath = null;
-            if (paymentMethod == "Credit")
+            if (paymentMethod == PaymentMethod.Credit)
             {
                 creditFilePath = await SaveFileAsync(creditEntry.file_browser);
             }
@@ -2016,7 +2018,7 @@
             // Create SaleHeader for all non-return sales (cash + credit)
             if (transMode != "return")
             {
-                bool isCredit = paymentMethod == "Credit" && creditCust != null;
+                bool isCredit = paymentMethod == PaymentMethod.Credit && creditCust != null;
                 saleHeader = new SaleHeader
                 {
                     inv_no = orderInvNo,
@@ -2027,22 +2029,22 @@
                     net_payable = Math.Abs(currentTotal),
                     paid = isCredit ? creditEntry.paid_amount : (tenderedAmount ?? Math.Abs(currentTotal)),
                     due = isCredit ? creditRemainingAmount : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
-                    status = isCredit ? (creditRemainingAmount > 0 ? "Pending" : "Paid") : "Paid",
-                    payment_method = paymentMethod
+                    status = isCredit ? (creditRemainingAmount > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid) : (int?)PaymentStatus.Paid,
+                    payment_method = (int?)paymentMethod
                 };
                 context.SalesHeader.Add(saleHeader);
 
                 if (isCredit)
                 {
                     newCredit = await context.credits
-                        .Where(c => c.customer_id == creditCust!.id && c.status != "Paid")
+                        .Where(c => c.customer_id == creditCust!.id && c.status != (int)PaymentStatus.Paid)
                         .FirstOrDefaultAsync();
 
                     if (newCredit != null)
                     {
                         newCredit.total_credit += Math.Abs(currentTotal) - creditEntry.paid_amount;
                         newCredit.remaining = newCredit.total_credit;
-                        newCredit.status = newCredit.remaining > 0 ? "Pending" : "Paid";
+                        newCredit.status = newCredit.remaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
                         if (!string.IsNullOrEmpty(creditFilePath))
                             newCredit.file = creditFilePath;
                     }
@@ -2056,8 +2058,8 @@
                             total_credit = creditTotal,
                             paid = 0,
                             remaining = creditTotal,
-                            payment_method = "Credit",
-                            status = creditTotal > 0 ? "Pending" : "Paid",
+                            payment_method = (int?)PaymentMethod.Credit,
+                            status = creditTotal > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid,
                             file = creditFilePath
                         };
                         context.credits.Add(newCredit);
@@ -2081,7 +2083,7 @@
                         qty = item.qty,
                         unit_price = item.price,
                         total_price = item.total_price,
-                        status = saleHeader.status ?? "Paid"
+                        status = saleHeader.status ?? (int?)PaymentStatus.Paid
                     };
                     context.sales.Add(sale);
                     saleRecords.Add((sale, saleItems.IndexOf(item)));
@@ -2103,8 +2105,8 @@
                         qty = Math.Abs(item.qty),
                         unit_price = item.price,
                         total_price = Math.Abs(item.total_price),
-                        payment_method = paymentMethod,
-                        status = "Returned"
+                        payment_method = (int?)paymentMethod,
+                        status = (int?)PaymentStatus.Returned
                     });
                 }
 
@@ -2156,8 +2158,8 @@
                         amount = lineAmount,
                         paid = 0,
                         due = lineAmount,
-                        payment_method = "Credit",
-                        status = "Pending",
+                        payment_method = (int?)PaymentMethod.Credit,
+                        status = (int?)PaymentStatus.Pending,
                         file = creditFilePath
                     });
                 }
@@ -2192,7 +2194,7 @@
 
                     foreach (var creditLine in creditLines)
                     {
-                        creditLine.status = "Returned";
+                        creditLine.status = (int?)PaymentStatus.Returned;
                         creditLine.amount -= Math.Min(creditLine.amount, totalReturnAmount);
                         if (creditLine.amount < 0) creditLine.amount = 0;
                         totalReturnAmount -= creditLine.amount;
@@ -2221,7 +2223,7 @@
                             credit.total_credit = newTotalCredit;
                             credit.paid = newPaid;
                             credit.remaining = newRemaining;
-                            credit.status = newRemaining > 0 ? "Pending" : "Paid";
+                            credit.status = newRemaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
                         }
                     }
                 }
@@ -2234,7 +2236,7 @@
             if (shouldPrintReceipt && !string.IsNullOrWhiteSpace(orderInvNo))
             {
                 _receiptSnapshot = BuildReceiptSnapshot();
-                if (paymentMethod == "Credit")
+                if (paymentMethod == PaymentMethod.Credit)
                 {
                     _receiptSnapshot.CreditPaid = creditEntry.paid_amount;
                     _receiptSnapshot.CreditRemaining = creditRemainingAmount;
@@ -2282,10 +2284,10 @@
         return new ReceiptSnapshot
         {
             InvNo = orderInvNo,
-            Title = transMode == "return" ? "RETURN INVOICE" : (paymentMethod == "Credit" ? "CREDIT INVOICE" : "SALES INVOICE"),
+            Title = transMode == "return" ? "RETURN INVOICE" : (paymentMethod == PaymentMethod.Credit ? "CREDIT INVOICE" : "SALES INVOICE"),
             Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
             Customer = selectedCustomer?.name ?? "Walking Customer",
-            Payment = paymentMethod,
+            Payment = PaymentHelper.GetPaymentMethodName(paymentMethod),
             StoreName = currentStore?.ShopName ?? "E-Invoice",
             Address = currentStore?.Address ?? "Gilgit, Pakistan",
             Phone = currentStore?.Phone1 ?? "+92 345 6781267",
@@ -2317,7 +2319,7 @@
         selectedCustomer = null;
         customerSearchQuery = null;
         searchQuery = "";
-        paymentMethod = "Cash";
+        paymentMethod = PaymentMethod.Cash;
         tenderedAmount = null;
         notes = "";
         shouldPrintReceipt = true;

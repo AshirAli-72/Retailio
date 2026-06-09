@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Data;
 using E_Invoice_system.Models;
+using E_Invoice_system.Services;
 using System.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -76,7 +77,6 @@ namespace E_Invoice_system.Pages
             await _currencyService.GetSymbolAsync();
 
 
-
             using var context = _dbFactory.CreateDbContext();
             
             // Heartbeat check
@@ -105,11 +105,14 @@ namespace E_Invoice_system.Pages
             try { stats.TotalProducts = await context.products_services.AsNoTracking().CountAsync(); }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalProducts"); }
 
-            // 4. Total Sales
+            // 4. Total Sales (net of returns)
             try 
             { 
-                stats.TotalSales = await context.SalesHeader.AsNoTracking()
-                    .SumAsync(s => (decimal?)s.net_payable) ?? 0; 
+                var saleTotal = await context.SalesHeader.AsNoTracking()
+                    .SumAsync(s => (decimal?)s.net_payable) ?? 0;
+                var returnTotal = await context.returns.AsNoTracking()
+                    .SumAsync(r => (decimal?)r.total_price) ?? 0;
+                stats.TotalSales = saleTotal - returnTotal;
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalSales"); }
 
@@ -171,7 +174,7 @@ namespace E_Invoice_system.Pages
             try
             {
                 stats.CreditRemaining = await context.credits.AsNoTracking()
-                    .Where(c => c.status != "Paid")
+                    .Where(c => c.status != (int?)PaymentStatus.Paid)
                     .SumAsync(c => (decimal?)c.remaining) ?? 0;
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
@@ -198,8 +201,8 @@ namespace E_Invoice_system.Pages
                         CustomerName = context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault(),
                         Date = s.date,
                         Amount = s.net_payable,
-                        PaymentMethod = s.payment_method,
-                        Status = s.status
+                        PaymentMethod = s.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(s.payment_method.Value) : null,
+                        Status = s.status.HasValue ? PaymentHelper.GetStatusName(s.status.Value) : null
                     }).ToListAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Recent Sales"); }

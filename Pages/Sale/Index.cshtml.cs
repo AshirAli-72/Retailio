@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Data;
 using E_Invoice_system.Models;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Pages.Sale
 {
@@ -97,8 +98,8 @@ namespace E_Invoice_system.Pages.Sale
             try
             {
                 var salesQuery = _context.SalesHeader.AsNoTracking()
-                    .Where(s => s.payment_method != "Credit"
-                        && (s.status == null || s.status != "Pending"));
+                    .Where(s => s.payment_method != (int?)PaymentMethod.Credit
+                        && (s.status == null || s.status != (int?)PaymentStatus.Pending));
 
                 TotalCount = await salesQuery.CountAsync();
                 TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
@@ -120,8 +121,8 @@ namespace E_Invoice_system.Pages.Sale
                         Price = s.gross_total,
                         TotalPrice = s.net_payable,
                         CustomerName = _context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault() ?? "Walk in",
-                        PaymentMethod = s.payment_method,
-                        Status = s.status,
+                        PaymentMethod = s.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(s.payment_method.Value) : null,
+                        Status = s.status.HasValue ? PaymentHelper.GetStatusName(s.status.Value) : null,
                         IsReturned = false
                     })
                     .ToListAsync();
@@ -154,13 +155,13 @@ namespace E_Invoice_system.Pages.Sale
                             Date = x.r.date,
                             qty = x.r.qty,
                             total_price = x.r.total_price,
-                            payment_method = x.r.payment_method,
-                            Status = x.r.status
+                            payment_method = x.r.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(x.r.payment_method.Value) : null,
+                            Status = x.r.status.HasValue ? PaymentHelper.GetStatusName(x.r.status.Value) : null
                         })
                     .ToListAsync();
 
                 var creditsQuery = _context.credits_details.AsNoTracking()
-                    .Where(c => c.status == null || c.status != "Returned");
+                    .Where(c => c.status == null || c.status != (int?)PaymentStatus.Returned);
                 CreditTotalCount = await creditsQuery.CountAsync();
                 CreditTotalPages = (int)Math.Ceiling(CreditTotalCount / (double)CreditPageSize);
                 if (CreditPageNumber < 1) CreditPageNumber = 1;
@@ -201,7 +202,7 @@ namespace E_Invoice_system.Pages.Sale
                             due = x.c.due,
                             CreditLimit = cust != null ? (cust.credit_limit ?? 0) : 0,
                             UsedCredit = x.cr != null ? x.cr.total_credit : 0,
-                            Status = x.c.status ?? "Pending"
+                            Status = x.c.status.HasValue ? PaymentHelper.GetStatusName(x.c.status.Value) : "Pending"
                         })
                     .ToListAsync();
             }

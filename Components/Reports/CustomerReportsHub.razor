@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 
@@ -110,10 +111,10 @@
                 <div class="stat-card-premium border-orange">
                     <div class="stat-info">
                         <span class="label">Inactive/Restricted</span>
-                        <h2 class="value">@(isGenerated ? allCustomers.Count(c => c.status != "Active").ToString() : "---")</h2>
+                        <h2 class="value">@(isGenerated ? allCustomers.Count(c => c.status != (int?)EntityStatus.Active).ToString() : "---")</h2>
                     </div>
                     <div class="stat-icon orange-glow"><i class="ph-warning"></i></div>
-                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated && allCustomers.Count > 0 ? (allCustomers.Count(c => c.status != "Active") * 100 / allCustomers.Count) : 0)%; background: #f59e0b;"></div></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated && allCustomers.Count > 0 ? (allCustomers.Count(c => c.status != (int?)EntityStatus.Active) * 100 / allCustomers.Count) : 0)%; background: #f59e0b;"></div></div>
                 </div>
             </div>
 
@@ -231,7 +232,7 @@
                                         <td><span class="badge-bill">@c.contact</span></td>
                                         <td>@(string.IsNullOrEmpty(c.email) ? "-" : c.email)</td>
                                         <td>@c.address</td>
-                                        <td><span class="badge-status @(c.status == "Active" ? "sale" : "return")">@c.status</span></td>
+                                        <td><span class="badge-status @(c.status == (int?)EntityStatus.Active ? "sale" : "return")">@PaymentHelper.GetEntityStatusName(c.status)</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -302,7 +303,7 @@
             
             filteredCustomers = allCustomers.Where(c => 
                 (selectedCustomerId == "All" || c.id.ToString() == selectedCustomerId) &&
-                (selectedStatus == "All" || c.status == selectedStatus)
+                (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(c.status) == selectedStatus)
             ).ToList();
 
             var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
@@ -312,10 +313,10 @@
             topCustomersInsights = allCustomers.Select(c => new CustomerInsight { 
                 Name = c.name ?? "N/A", 
                 Contact = c.contact ?? "-", 
-                Status = c.status ?? "Active" 
+                Status = PaymentHelper.GetEntityStatusName(c.status)
             }).ToList();
 
-            var statuses = allCustomers.GroupBy(c => c.status ?? "Active")
+            var statuses = allCustomers.GroupBy(c => PaymentHelper.GetEntityStatusName(c.status))
                 .Select(g => new { Label = g.Key, Count = g.Count() })
                 .ToList();
             
@@ -337,12 +338,12 @@
 
     private void HandleSearch()
     {
-        var term = searchTerm.ToLower();
+        var term = (searchTerm ?? "").ToLower();
         filteredCustomers = allCustomers.Where(c => 
             ((c.name?.ToLower().Contains(term) ?? false) || 
              (c.contact?.ToLower().Contains(term) ?? false) || 
              (c.email?.ToLower().Contains(term) ?? false)) &&
-            (selectedStatus == "All" || c.status == selectedStatus)
+            (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(c.status) == selectedStatus)
         ).ToList();
     }
 

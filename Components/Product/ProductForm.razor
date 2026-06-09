@@ -2,6 +2,7 @@
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
 @using System.IO
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
@@ -70,8 +71,8 @@
                             <td class="font-sm">@GetCategoryName(item.category_id)</td>
                             <td class="font-sm">@GetBrandName(item.brand_id)</td>
                             <td>
-                                <span class="status-badge @(item.status == "Enable" ? "status-enabled" : (item.status == "Disable" ? "status-discontinued" : "status-out-of-stock"))">
-                                    @(item.status ?? "N/A")
+                                <span class="status-badge @(item.status == (int?)EntityStatus.Active ? "status-enabled" : (item.status == (int?)EntityStatus.Inactive ? "status-discontinued" : "status-out-of-stock"))">
+                                    @PaymentHelper.GetEntityStatusName(item.status)
                                 </span>
                             </td>
                             <td class="text-right" style="padding-right: 1.5rem;">
@@ -215,8 +216,8 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Status</label>
                     <select @bind="productModel.status" @bind:after="SyncStatus" class="form-control">
-                        <option value="Enable">Enable</option>
-                        <option value="Disable">Disable</option>
+                        <option value="@((int)EntityStatus.Active)">Enable</option>
+                        <option value="@((int)EntityStatus.Inactive)">Disable</option>
                     </select>
                 </div>
 
@@ -399,7 +400,7 @@
     private void ShowAddForm()
     {
         productModel = new ProductService {
-            status = "Enable",
+            status = (int?)EntityStatus.Active,
             item_type = "Inventory",
             unit = "kg",
             prod_state = "pieces",
@@ -707,11 +708,11 @@
     {
         if (productModel.size == 0)
         {
-            productModel.status = "Disable";
+            productModel.status = (int?)EntityStatus.Inactive;
         }
         else if (productModel.size > 0)
         {
-            productModel.status = "Enable";
+            productModel.status = (int?)EntityStatus.Active;
         }
         
         // Sync Quantity with Size

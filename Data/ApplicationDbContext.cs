@@ -31,8 +31,6 @@ namespace E_Invoice_system.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.ConfigureWarnings(warnings =>
-                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -55,7 +53,6 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.email).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.credit_limit)
                       .HasColumnType("decimal(18,2)");
-                entity.Property(e => e.status).HasColumnType("nvarchar(max)");
 
                 entity.ToTable("customers");
             });
@@ -113,7 +110,6 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
-                
                 // Relationship between Credit and Customer
                 entity.HasOne<customers>()
                       .WithMany()
@@ -175,7 +171,7 @@ namespace E_Invoice_system.Data
                     mobile_no = "0000-0000000",
                     address = "Admin Address",
                     salary = 0,
-                    status = "Active"
+                    status = (int?)E_Invoice_system.Services.EntityStatus.Active
                 });
 
             modelBuilder.Entity<users>().HasData(
@@ -187,7 +183,7 @@ namespace E_Invoice_system.Data
                     email = "admin@pos.com",
                     role_id = 1,
                     emp_id = 1,
-                    status = "Active"
+                    status = (int?)E_Invoice_system.Services.EntityStatus.Active
                 });
         }
     }

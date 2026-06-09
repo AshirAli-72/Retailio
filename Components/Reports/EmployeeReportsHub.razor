@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 
@@ -92,10 +93,10 @@
                 <div class="stat-card-premium border-green">
                     <div class="stat-info">
                         <span class="label">Active Staff</span>
-                        <h2 class="value">@(isGenerated ? allEmployees.Count(e => e.status == "Active").ToString() : "---")</h2>
+                        <h2 class="value">@(isGenerated ? allEmployees.Count(e => e.status == (int?)EntityStatus.Active).ToString() : "---")</h2>
                     </div>
                     <div class="stat-icon green-glow"><i class="ph-user-check"></i></div>
-                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated && allEmployees.Count > 0 ? (allEmployees.Count(e => e.status == "Active") * 100 / allEmployees.Count) : 0)%; background: #10b981;"></div></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated && allEmployees.Count > 0 ? (allEmployees.Count(e => e.status == (int?)EntityStatus.Active) * 100 / allEmployees.Count) : 0)%; background: #10b981;"></div></div>
                 </div>
 
                 <div class="stat-card-premium border-orange">
@@ -235,7 +236,7 @@
                                         <td>@e.cnic</td>
                                         <td>@e.salary.ToString("N0")</td>
                                         <td class="td-date">@e.date</td>
-                                        <td><span class="badge-status @(e.status == "Active" ? "sale" : "return")">@e.status</span></td>
+                                        <td><span class="badge-status @(e.status == (int?)EntityStatus.Active ? "sale" : "return")">@PaymentHelper.GetEntityStatusName(e.status)</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -306,7 +307,7 @@
             
             filteredEmployees = allEmployees.Where(e => 
                 (selectedEmployeeId == "All" || e.id.ToString() == selectedEmployeeId) &&
-                (selectedStatus == "All" || e.status == selectedStatus)
+                (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
             ).ToList();
 
             var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
@@ -315,7 +316,7 @@
             // Insights
             earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.full_name, Code = e.emp_code, Salary = e.salary }).ToList();
 
-            var statuses = allEmployees.GroupBy(e => e.status ?? "Active")
+            var statuses = allEmployees.GroupBy(e => PaymentHelper.GetEntityStatusName(e.status))
                 .Select(g => new { Label = g.Key, Count = g.Count() })
                 .ToList();
             
@@ -351,7 +352,7 @@
              (e.mobile_no?.ToLower().Contains(term) ?? false) || 
              (e.cnic?.ToLower().Contains(term) ?? false) ||
              (e.emp_code?.ToLower().Contains(term) ?? false)) &&
-            (selectedStatus == "All" || e.status == selectedStatus)
+            (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
         ).ToList();
     }
 

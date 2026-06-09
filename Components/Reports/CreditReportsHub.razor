@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 
@@ -90,12 +91,30 @@
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #10b981;"></div></div>
                 </div>
 
+                <div class="stat-card-premium border-green">
+                    <div class="stat-info">
+                        <span class="label">Total Recovery Paid</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalRecoveryPaid.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon green-glow"><i class="ph-check-double"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #10b981;"></div></div>
+                </div>
+
                 <div class="stat-card-premium border-orange">
                     <div class="stat-info">
                         <span class="label">Total Remaining</span>
                         <h2 class="value">@currencySymbol @(isGenerated ? totalRemainingAmount.ToString("N0") : "---")</h2>
                     </div>
                     <div class="stat-icon orange-glow"><i class="ph-warning-circle"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-orange">
+                    <div class="stat-info">
+                        <span class="label">Total Recovery Remaining</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalRecoveryRemaining.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon orange-glow"><i class="ph-warning"></i></div>
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
                 </div>
 
@@ -211,10 +230,11 @@
                                     <th>Date</th>
                                     <th>Credit ID</th>
                                     <th>Customer</th>
-                                    <th>Items</th>
-                                    <th>Amount</th>
+                                    <th>Total Credit</th>
                                     <th>Paid</th>
-                                    <th>Due</th>
+                                    <th>Recovery Paid</th>
+                                    <th>Remaining</th>
+                                    <th>Recovery Remaining</th>
                                     <th>Payment Method</th>
                                     <th>Status</th>
                                 </tr>
@@ -226,10 +246,11 @@
                                         <td class="td-date">@row.date</td>
                                         <td>@row.credit_id</td>
                                         <td>@row.CustomerName</td>
-                                        <td class="td-center">@row.items</td>
-                                        <td>@currencySymbol@row.amount.ToString("N2")</td>
+                                        <td>@currencySymbol@row.total_credit.ToString("N2")</td>
                                         <td class="text-green">@currencySymbol@row.paid.ToString("N2")</td>
-                                        <td class="text-orange">@currencySymbol@row.due.ToString("N2")</td>
+                                        <td class="text-green">@currencySymbol@row.recovery_paid.ToString("N2")</td>
+                                        <td class="text-orange">@currencySymbol@row.remaining.ToString("N2")</td>
+                                        <td class="text-orange">@currencySymbol@row.recovery_remaining.ToString("N2")</td>
                                         <td><span class="badge-method">@(row.payment_method ?? "—")</span></td>
                                         <td>
                                             <span class="badge-status @(row.status?.ToLower() == "paid" ? "sale" : "return")">@(row.status ?? "Pending")</span>
@@ -272,14 +293,14 @@
 
     private decimal totalCreditAmount = 0;
     private decimal totalPaidAmount = 0;
+    private decimal totalRecoveryPaid = 0;
     private decimal totalRemainingAmount = 0;
+    private decimal totalRecoveryRemaining = 0;
     private int totalTransactions = 0;
     private string currencySymbol = "Rs";
 
     private List<customers> allCustomersForDropdown = new();
-    private Dictionary<int, string> customerNamesDict = new();
-    private Dictionary<int, int> creditToCustomerDict = new();
-    private List<CreditDetailRow> filteredDetails = new();
+    private List<CreditRow> filteredDetails = new();
     private bool isLoading = false;
     private bool isGenerated = false;
     private StoreConfiguration storeInfo = new();
@@ -290,18 +311,18 @@
     private class StatusStat { public string Status { get; set; } = ""; public decimal Percent { get; set; } public string Color { get; set; } = ""; }
     private List<StatusStat> statusStats = new();
 
-    private class CreditDetailRow
+    private class CreditRow
     {
         public int id { get; set; }
         public int credit_id { get; set; }
-        public int sale_id { get; set; }
         public string date { get; set; } = "";
-        public decimal amount { get; set; }
+        public decimal total_credit { get; set; }
         public decimal paid { get; set; }
-        public decimal due { get; set; }
+        public decimal remaining { get; set; }
+        public decimal recovery_paid { get; set; }
+        public decimal recovery_remaining { get; set; }
         public string? payment_method { get; set; }
         public string? status { get; set; }
-        public int items { get; set; }
         public string CustomerName { get; set; } = "Unknown";
     }
 
@@ -314,26 +335,12 @@
     {
         using var context = DbFactory.CreateDbContext();
         allCustomersForDropdown = await context.customers.AsNoTracking().OrderBy(c => c.name).ToListAsync();
-        customerNamesDict = allCustomersForDropdown.ToDictionary(c => c.id, c => c.name ?? "Unknown");
-
-        // Build credit_id → customer_id mapping
-        creditToCustomerDict = await context.credits.AsNoTracking()
-            .ToDictionaryAsync(c => c.id, c => c.customer_id);
 
         var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
         if (currency != null) currencySymbol = currency.symbol ?? "Rs";
 
         var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
-    }
-
-    private string GetCustomerNameByCreditId(int creditId)
-    {
-        if (creditToCustomerDict.TryGetValue(creditId, out var customerId))
-        {
-            return customerNamesDict.TryGetValue(customerId, out var name) ? name : "Unknown";
-        }
-        return "Unknown";
     }
 
     private async Task ResetFilters()
@@ -381,38 +388,35 @@
             var fromDateStr = fromDate.ToString("yyyy-MM-dd");
             var toDateStr = toDate.ToString("yyyy-MM-dd");
 
-            // Step 1: Build the main query joining credits_details with credits to get customer_id and real-time paid/remaining
-            var query = from cd in context.credits_details.AsNoTracking()
-                        join c in context.credits.AsNoTracking() 
-                            on cd.credit_id equals c.id
+            // Query credits table joined with customers and recoveries
+            var query = from c in context.credits.AsNoTracking()
                         join cust in context.customers.AsNoTracking() 
                             on c.customer_id equals cust.id into customerGroup
                         from cust in customerGroup.DefaultIfEmpty()
-                        where string.Compare(cd.date, fromDateStr) >= 0
-                           && string.Compare(cd.date, toDateStr) <= 0
+                        join rec in context.recoveries.AsNoTracking()
+                            on c.id equals rec.credit_id into recGroup
+                        from rec in recGroup.DefaultIfEmpty()
+                        where string.Compare(c.date, fromDateStr) >= 0
+                           && string.Compare(c.date, toDateStr) <= 0
+                        group new { c, cust, rec } by new { c.id, c.date, c.total_credit, c.paid, c.remaining, c.payment_method, c.status, CustomerName = cust.name ?? "Unknown" } into g
                         select new 
                         {
-                            cd.id,
-                            cd.credit_id,
-                            cd.sale_id,
-                            cd.date,
-                            cd.amount,
-                            cd.paid,
-                            cd.due,
-                            cd.payment_method,
-                            cd.status,
-                            CustomerName = cust.name ?? "Unknown",
-                            // Real-time values from the parent credit account
-                            CreditTotalCredit = c.total_credit,
-                            CreditPaid = c.paid,
-                            CreditRemaining = c.remaining,
-                            CreditStatus = c.status
+                            g.Key.id,
+                            g.Key.date,
+                            g.Key.total_credit,
+                            g.Key.paid,
+                            g.Key.remaining,
+                            g.Key.payment_method,
+                            g.Key.status,
+                            g.Key.CustomerName,
+                            RecoveryPaid = g.Sum(x => x.rec != null ? x.rec.paid : 0),
+                            RecoveryRemaining = g.Sum(x => x.rec != null ? x.rec.remaining : 0)
                         };
 
             // Apply customer filter if selected
             if (selectedCustomerId != "All" && int.TryParse(selectedCustomerId, out int custId))
             {
-                query = query.Where(q => context.credits.Any(c => c.id == q.credit_id && c.customer_id == custId));
+                query = query.Where(q => context.credits.Any(c => c.id == q.id && c.customer_id == custId));
             }
 
             // Execute the query
@@ -421,58 +425,36 @@
                 .ThenByDescending(q => q.id)
                 .ToListAsync();
 
-            // Step 2: Fetch sale item counts in one query using GroupBy
-            var saleIds = tempResults.Select(r => r.sale_id).Where(sid => sid != 0).Distinct().ToList();
-            
-            Dictionary<int, Dictionary<decimal, int>>? saleQtyMap = null;
-            if (saleIds.Any())
-            {
-                var saleGrouped = await context.sales
-                    .AsNoTracking()
-                    .Where(sd => saleIds.Contains(sd.sale_id))
-                    .GroupBy(sd => sd.sale_id)
-                    .ToDictionaryAsync(
-                        g => g.Key, 
-                        g => g.GroupBy(x => x.total_price)
-                              .ToDictionary(x => x.Key, x => x.Sum(y => y.qty))
-                    );
-                
-                saleQtyMap = saleGrouped;
-            }
-
-            // Step 3: Build final filteredDetails — use real-time paid/due per row based on credit status
+            // Build final filteredDetails
             filteredDetails = tempResults.Select(r =>
             {
-                // If the parent credit is fully paid, reflect that in this row's display values
-                bool isPaid = string.Equals(r.CreditStatus, "paid", StringComparison.OrdinalIgnoreCase)
-                           || string.Equals(r.status, "paid", StringComparison.OrdinalIgnoreCase);
-
-                return new CreditDetailRow
+                return new CreditRow
                 {
                     id = r.id,
-                    credit_id = r.credit_id,
-                    sale_id = r.sale_id,
+                    credit_id = r.id,
                     date = r.date,
-                    amount = r.amount,
-                    // Show real-time paid/due: if fully paid show amount as paid, 0 as due
-                    paid = isPaid ? r.amount : r.paid,
-                    due = isPaid ? 0 : r.due,
-                    payment_method = r.payment_method,
-                    status = isPaid ? "Paid" : (r.status ?? "Pending"),
-                    items = GetItemCountFromSaleQtyMap(saleQtyMap, r.sale_id, r.amount),
+                    total_credit = r.total_credit,
+                    paid = r.paid,
+                    remaining = r.remaining,
+                    recovery_paid = r.RecoveryPaid,
+                    recovery_remaining = r.RecoveryRemaining,
+                    payment_method = r.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(r.payment_method.Value) : null,
+                    status = r.status.HasValue ? PaymentHelper.GetStatusName(r.status.Value) : "Pending",
                     CustomerName = r.CustomerName
                 };
             }).ToList();
 
-            // Step 4: Calculate REAL-TIME totals from the filtered rows (which now reflect current paid/due state)
-            totalCreditAmount = filteredDetails.Sum(x => x.amount);
-            totalPaidAmount = filteredDetails.Sum(x => x.paid);       // Real-time: fully paid rows show full amount
-            totalRemainingAmount = filteredDetails.Sum(x => x.due);    // Real-time: fully paid rows show 0
+            // Calculate totals
+            totalCreditAmount = filteredDetails.Sum(x => x.total_credit);
+            totalPaidAmount = filteredDetails.Sum(x => x.paid);
+            totalRecoveryPaid = filteredDetails.Sum(x => x.recovery_paid);
+            totalRemainingAmount = filteredDetails.Sum(x => x.remaining);
+            totalRecoveryRemaining = filteredDetails.Sum(x => x.recovery_remaining);
             totalTransactions = filteredDetails.Count;
 
             // Chart Data Calculation
             var chartGroups = filteredDetails.GroupBy(s => s.date)
-                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.amount) })
+                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.total_credit) })
                 .OrderBy(g => g.Date)
                 .ToList();
 
@@ -483,10 +465,10 @@
                 await JSRuntime.InvokeVoidAsync("renderReportChart", "creditHubChart", new { labels, values, label = "Credit Amount" });
             }
 
-            // Top Customers - use the pre-loaded CustomerName
+            // Top Customers
             topCustomers = filteredDetails
                 .GroupBy(r => r.CustomerName)
-                .Select(g => new TopCustomer { Name = g.Key, Count = g.Count(), CreditAmount = g.Sum(r => r.amount) })
+                .Select(g => new TopCustomer { Name = g.Key, Count = g.Count(), CreditAmount = g.Sum(r => r.total_credit) })
                 .OrderByDescending(p => p.CreditAmount)
                 .Take(5)
                 .ToList();
@@ -509,16 +491,6 @@
             Console.WriteLine(ex.StackTrace);
         }
         finally { isLoading = false; StateHasChanged(); }
-    }
-
-    private int GetItemCountFromSaleQtyMap(Dictionary<int, Dictionary<decimal, int>>? saleQtyMap, int saleId, decimal amount)
-    {
-        if (saleId == 0 || saleQtyMap == null) return 0;
-        if (saleQtyMap.TryGetValue(saleId, out var priceGroups) && priceGroups.TryGetValue(amount, out var qty))
-        {
-            return qty;
-        }
-        return 0;
     }
 
     private async Task PrintReport()

@@ -34,7 +34,7 @@ namespace E_Invoice_system.Pages.Customer
             
             if (PageNumber < 1) PageNumber = 1;
             if (TotalPages > 0 && PageNumber > TotalPages) PageNumber = TotalPages;
-
+            
             Customers = await query.OrderByDescending(c => c.id)
                 .Skip((PageNumber - 1) * PageSize)
                 .Take(PageSize)

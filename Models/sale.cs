@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Models
 {
@@ -26,7 +27,7 @@ namespace E_Invoice_system.Models
         public decimal total_price { get; set; }
 
         [Column("status")]
-        public string? status { get; set; }
+        public int? status { get; set; } = (int)PaymentStatus.Pending;
 
         [ForeignKey(nameof(sale_id))]
         public SaleHeader? SaleHeader { get; set; }

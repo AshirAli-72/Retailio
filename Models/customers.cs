@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Models
 {
@@ -29,6 +30,6 @@ namespace E_Invoice_system.Models
         public decimal? credit_limit { get; set; }     // Best as decimal
 
         [Column("status")]
-        public string? status { get; set; }
+        public int? status { get; set; } = (int)EntityStatus.Active;
     }
 }

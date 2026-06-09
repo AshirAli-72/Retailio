@@ -2,6 +2,7 @@
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
 @using System.IO
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
@@ -50,8 +51,8 @@
                             <td class="font-sm">@emp.email</td>
                             <td class="font-bold">@emp.salary.ToString("N2")</td>
                             <td>
-                                <span class="status-badge @(emp.status == "Active" ? "status-active" : "status-inactive")">
-                                    @emp.status
+                                <span class="status-badge @(emp.status == (int?)EntityStatus.Active ? "status-active" : "status-inactive")">
+                                    @PaymentHelper.GetEntityStatusName(emp.status)
                                 </span>
                             </td>
                             <td class="text-right" style="padding-right: 1.5rem;">
@@ -196,8 +197,8 @@
                     <div class="form-group">
                         <label class="form-label">Status</label>
                         <InputSelect @bind-Value="employeeModel.status" class="form-control">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="@((int)EntityStatus.Active)">Active</option>
+                            <option value="@((int)EntityStatus.Inactive)">Inactive</option>
                         </InputSelect>
                     </div>
 
@@ -329,7 +330,7 @@
         employeeModel = new Employee 
         { 
             date = DateTime.Now.ToString("d-M-yyyy"),
-            status = "Active",
+            status = (int?)EntityStatus.Active,
             emp_code = "Generating..."
         };
         

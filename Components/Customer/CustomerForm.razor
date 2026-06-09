@@ -1,6 +1,7 @@
 @using E_Invoice_system.Models
 @using E_Invoice_system.Data
 @using Microsoft.EntityFrameworkCore
+@using E_Invoice_system.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
@@ -19,9 +20,6 @@
                 <i class="ph-user-plus"></i> Add New Customer
             </button>
         </div>
-
-
-
         <div class="table-container">
             <div class="table-responsive">
                 <table class="styled-table" style="margin-bottom: 0;">
@@ -66,8 +64,8 @@
                                 </td>
 
                                 <td>
-                                    <span class="status-badge status-active">
-                                        Active
+                                    <span class="status-badge status-@(item.status == (int)EntityStatus.Active ? "active" : "inactive")">
+                                        @PaymentHelper.GetEntityStatusName(item.status)
                                     </span>
                                 </td>
 
@@ -75,8 +73,8 @@
                                     <div class="actions-container actions-right">
 
                                         <select class="form-control" style="width: auto; padding: 0.2rem 1.5rem 0.2rem 0.5rem; height: 32px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: inline-block; margin-right: 0.5rem;" @onchange="(e) => ChangeCustomerStatus(item, e.Value?.ToString())">
-                                            <option value="Active" selected="@(item.status == "Active")">Enable</option>
-                                            <option value="Inactive" selected="@(item.status != "Active")">Disable</option>
+                                            <option value="@((int)EntityStatus.Active)" selected="@(item.status == (int)EntityStatus.Active)">Enable</option>
+                                            <option value="@((int)EntityStatus.Inactive)" selected="@(item.status != (int)EntityStatus.Active)">Disable</option>
                                         </select>
 
                                         <button class="btn-icon-sm btn-edit"
@@ -199,8 +197,8 @@
                 <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Status</label>
                         <InputSelect @bind-Value="customerModel.status" class="form-control">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="@((int)EntityStatus.Active)">Active</option>
+                            <option value="@((int)EntityStatus.Inactive)">Inactive</option>
                         </InputSelect>
                     </div>
             </div>
@@ -284,7 +282,7 @@
 
     private void ShowAddForm()
     {
-        customerModel = new customers { status = "Active" };
+        customerModel = new customers { status = (int?)EntityStatus.Active };
         editingCustomer = null;
         errorMessage = null;
         errorMessage = null;
@@ -379,9 +377,11 @@
         }
     }
 
-    private async Task ChangeCustomerStatus(customers customer, string? newStatus)
+    private async Task ChangeCustomerStatus(customers customer, string? newStatusStr)
     {
-        if (string.IsNullOrEmpty(newStatus) || customer.status == newStatus) return;
+        if (string.IsNullOrEmpty(newStatusStr)) return;
+        int? newStatus = int.TryParse(newStatusStr, out int s) ? s : null;
+        if (newStatus == null || customer.status == newStatus) return;
 
         try
         {
@@ -394,7 +394,7 @@
                 
                 customer.status = newStatus;
 
-                await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Customer {(newStatus == "Active" ? "enabled" : "disabled")} successfully!", "success");
+                await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Customer {(newStatus == (int?)EntityStatus.Active ? "enabled" : "disabled")} successfully!", "success");
                 await JSRuntime.InvokeVoidAsync("clearNavCache");
                 
                 await LoadCustomers();
