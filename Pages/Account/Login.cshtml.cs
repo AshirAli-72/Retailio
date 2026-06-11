@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Data;
 using E_Invoice_system.Models;
-using Microsoft.Extensions.Caching.Memory;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Pages.Account
 {
@@ -22,12 +22,18 @@ namespace E_Invoice_system.Pages.Account
         [BindProperty]
         public string Password { get; set; } = default!;
 
-        public async Task<IActionResult> OnGetAsync()
+        public IActionResult OnGet()
         {
+            var role = HttpContext.Session.GetString("UserRole") ?? "";
+
+            // Already logged in — send to correct destination
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
-                return RedirectToPage("/Index");
+                return PaymentHelper.HasAdminPanelAccess(role)
+                    ? RedirectToPage("/Admin/AdminPanel")
+                    : RedirectToPage("/Index");
             }
+
             return Page();
         }
 
@@ -42,25 +48,31 @@ namespace E_Invoice_system.Pages.Account
             try
             {
                 var inputEmail = Email.Trim();
-                var inputPass = Password.Trim();
+                var inputPass  = Password.Trim();
 
-                // High-performance query: Single round-trip, no tracking
                 var user = await _context.users
                     .Include(u => u.Role)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(u => u.email == inputEmail && u.password == inputPass);
+                    .FirstOrDefaultAsync(u => u.email == inputEmail);
 
-                if (user != null)
+                if (user != null && PaymentHelper.VerifyPassword(inputPass, user.password))
                 {
-                    string roleTitle = user.Role?.RoleTitle ?? "User";
+                    // Use the role title directly from the included Role navigation property
+                    string roleTitle = user.Role?.RoleTitle ?? "Unknown";
 
-                    // Fast session storage
-                    HttpContext.Session.SetString("UserName", user.email ?? "User");
-                    HttpContext.Session.SetString("UserRole", roleTitle);
+                    HttpContext.Session.SetString("UserName",  user.username ?? user.email ?? "User");
+                    HttpContext.Session.SetString("UserRole",  roleTitle);
                     HttpContext.Session.SetString("UserEmail", user.email ?? "");
-                    
+                    // Store numeric role_id for fast checks without string comparison
+                    HttpContext.Session.SetInt32("UserRoleId", user.role_id);
+
                     TempData["Success"] = "Welcome back! Login successful.";
-                    return RedirectToPage("/Index");
+
+                    // SuperAdmin (role=1) → Admin panel
+                    // Admin (role=2) and all others → POS dashboard
+                    return PaymentHelper.HasAdminPanelAccess(roleTitle)
+                        ? RedirectToPage("/Admin/AdminPanel")
+                        : RedirectToPage("/Index");
                 }
 
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");
@@ -69,9 +81,8 @@ namespace E_Invoice_system.Pages.Account
             {
                 ModelState.AddModelError(string.Empty, "Database connection error. Please try again.");
             }
-            
+
             return Page();
         }
     }
- }
-
+}

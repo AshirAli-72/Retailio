@@ -204,10 +204,6 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
-                    b.Property<int>("emp_id")
-                        .HasColumnType("int")
-                        .HasColumnName("emp_id");
-
                     b.Property<string>("password")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password");
@@ -226,23 +222,9 @@ namespace E_Invoice_system.Migrations
 
                     b.HasKey("id");
 
-                    b.HasIndex("emp_id");
-
                     b.HasIndex("role_id");
 
                     b.ToTable("users");
-
-                    b.HasData(
-                        new
-                        {
-                            id = 1,
-                            email = "admin@pos.com",
-                            emp_id = 1,
-                            password = "admin123",
-                            role_id = 1,
-                            status = "Active",
-                            username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.RolePermission", b =>
@@ -258,19 +240,11 @@ namespace E_Invoice_system.Migrations
 
             modelBuilder.Entity("E_Invoice_system.Models.users", b =>
                 {
-                    b.HasOne("E_Invoice_system.Models.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("emp_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("E_Invoice_system.Models.Role", "Role")
                         .WithMany()
                         .HasForeignKey("role_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Employee");
 
                     b.Navigation("Role");
                 });

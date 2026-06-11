@@ -20,8 +20,6 @@ namespace E_Invoice_system.Migrations
                     date = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     sale_id = table.Column<int>(type: "int", nullable: false),
                     amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    paid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    due = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     payment_method = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     status = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     file = table.Column<string>(type: "nvarchar(max)", nullable: true)

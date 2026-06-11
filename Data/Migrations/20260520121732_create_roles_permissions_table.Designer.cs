@@ -169,26 +169,15 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("settings");
 
+                    b.Property<bool>("Recovery")
+                        .HasColumnType("bit")
+                        .HasColumnName("recovery");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoleId");
 
                     b.ToTable("roles_permissions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Customers = true,
-                            Dashboard = true,
-                            Employees = true,
-                            Inventory = true,
-                            Products = true,
-                            Reports = true,
-                            RoleId = 1,
-                            Sales = true,
-                            Settings = true
-                        });
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.RolePermission", b =>

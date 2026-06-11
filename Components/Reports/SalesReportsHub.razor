@@ -416,7 +416,7 @@
             if (employeeId.HasValue)
             {
                 employeeUserIds = await context.users.AsNoTracking()
-                    .Where(u => u.emp_id == employeeId.Value)
+                    .Where(u => u.email != null && context.employees.Any(e => e.id == employeeId.Value && e.email == u.email))
                     .Select(u => u.id)
                     .ToListAsync();
             }

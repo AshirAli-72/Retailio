@@ -52,7 +52,8 @@
             catch { }
 
             // ── Permissions (cached 30 min per role) ───────────────
-            bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+            bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                        || E_Invoice_system.Services.PaymentHelper.HasAdminPanelAccess(userRole);
             RolePermission? perms = null;
 
             if (!string.IsNullOrEmpty(userRole) && !isAdmin)

@@ -253,35 +253,35 @@
         </div>
     </div>
 
-    <!-- Credits Table -->
+    <!-- Credits Section -->
     <div class="table-container">
         <div id="creditsTableSection" class="table-responsive" style="display: @(Model.Tab == "credits" ? "block" : "none");">
             <div style="padding: 1rem 1.5rem; background: var(--bg-light); border-bottom: 1px solid var(--border);">
-                <span class="text-muted font-sm font-bold" style="color: #d97706;"><i class="ph-credit-card"></i> CREDIT SALES (PENDING)</span>
+                <span class="text-muted font-sm font-bold" style="color: #d97706;"><i class="ph-credit-card"></i> CREDIT SALES</span>
             </div>
-            <table class="styled-table" style="min-width: 1400px; margin-bottom: 0;">
+            
+            <table class="styled-table" style="min-width: 1200px; margin-bottom: 0;">
                     <thead>
                         <tr>
-                            <th style="padding-left: 1.5rem;">Sale ID</th>
+                            <th style="padding-left: 1.5rem;">ID</th>
                             <th>Customer</th>
                             <th>Date</th>
-                            <th>Amount</th>
+                            <th>Total Credit</th>
                             <th>Paid</th>
-                            <th>Due</th>
+                            <th>Remaining</th>
                             <th>Credit Limit</th>
-                            <th>Used Credit</th>
                             <th class="text-center">Status</th>
-                            <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
+                            <th class="text-right" style="padding-right: 1.5rem;">Attachment</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Credits.Any())
+                        @if (Model.CreditTableItems.Any())
                         {
-                            @foreach (var credit in Model.Credits)
+                            @foreach (var credit in Model.CreditTableItems)
                             {
                                 <tr>
                                     <td style="padding-left: 1.5rem;">
-                                        <div class="font-bold font-sm font-monospace">@credit.SaleId</div>
+                                        <div class="font-bold font-sm font-monospace">@credit.id</div>
                                     </td>
                                     <td>
                                         <div class="font-bold font-sm">@credit.CustomerName</div>
@@ -289,39 +289,44 @@
                                     <td>
                                         <div class="font-bold font-sm">@credit.Date</div>
                                     </td>
-                                    <td class="text-muted">@CurrencyService.GetSymbol()@credit.amount.ToString("N2")</td>
-                                    <td class="text-muted">@CurrencyService.GetSymbol()@credit.paid.ToString("N2")</td>
+                                    <td class="text-muted">@CurrencyService.GetSymbol()@credit.total_credit.ToString("N2")</td>
+                                    <td class="text-success">@CurrencyService.GetSymbol()@credit.paid.ToString("N2")</td>
                                     <td>
-                                        <div class="font-bold text-danger">@CurrencyService.GetSymbol()@credit.due.ToString("N2")</div>
+                                        <div class="font-bold text-danger">@CurrencyService.GetSymbol()@credit.remaining.ToString("N2")</div>
                                     </td>
                                     <td class="text-muted">@CurrencyService.GetSymbol()@credit.CreditLimit.ToString("N2")</td>
-                                    <td class="text-muted">@CurrencyService.GetSymbol()@credit.UsedCredit.ToString("N2")</td>
                                     <td class="text-center">
-                                        <span class="status-badge status-pending">@(credit.Status ?? "Pending")</span>
+                                        @{
+                                            var mainCrStatusClass = "status-pending";
+                                            var mainCrDisplayStatus = credit.Status ?? "Pending";
+                                            if (mainCrDisplayStatus.Equals("Paid", StringComparison.OrdinalIgnoreCase)) { mainCrStatusClass = "status-paid"; }
+                                        }
+                                        <span class="status-badge @mainCrStatusClass">@mainCrDisplayStatus</span>
                                     </td>
                                     <td class="text-right" style="padding-right: 1.5rem;">
-                                        <div class="actions-container actions-right">
-                                            <a href="/recovery" class="btn-icon-sm" title="Add Recovery" style="background: #10b981; color: white;">
-                                                <i class="ph-receipt"></i>
+                                        @if (!string.IsNullOrEmpty(credit.File))
+                                        {
+                                            <a href="@credit.File" target="_blank" class="btn-icon-sm" title="View File" style="background: #3b82f6; color: white;">
+                                                <i class="ph-file"></i>
                                             </a>
-                                            <form method="post" asp-page-handler="DeleteCredit" asp-route-id="@credit.id" onsubmit="return confirm('Delete this credit record?');" style="display: inline;">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-icon-sm btn-delete" title="Delete">
-                                                    <i class="ph-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted font-sm">—</span>
+                                        }
                                     </td>
                                 </tr>
                             }
                         }
                 else
                 {
-                    <tr><td colspan="10" class="empty-state"><p>No credit records found.</p></td></tr>
+                    <tr><td colspan="9" class="empty-state"><p>No credit records found.</p></td></tr>
                 }
             </tbody>
         </table>
-        @if (Model.Credits.Any())
+
+        <!-- Pagination -->
+        @if (Model.CreditTableItems.Any())
         {
             <div class="pagination-footer">
                 <div class="pagination-info">

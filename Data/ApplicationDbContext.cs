@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using E_Invoice_system.Models;
+using E_Invoice_system.Services;
 
 namespace E_Invoice_system.Data
 {
@@ -37,27 +38,19 @@ namespace E_Invoice_system.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Customers Configuration
             modelBuilder.Entity<customers>(entity =>
             {
                 entity.HasKey(e => e.id);
-
-                entity.Property(e => e.id)
-                      .ValueGeneratedOnAdd()
-                      .UseIdentityColumn();
-
+                entity.Property(e => e.id).ValueGeneratedOnAdd().UseIdentityColumn();
                 entity.Property(e => e.name).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.cnic).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.contact).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.address).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.email).HasColumnType("nvarchar(max)");
-                entity.Property(e => e.credit_limit)
-                      .HasColumnType("decimal(18,2)");
-
+                entity.Property(e => e.credit_limit).HasColumnType("decimal(18,2)");
                 entity.ToTable("customers");
             });
 
-            // Other configurations
             modelBuilder.Entity<SaleHeader>(entity =>
             {
                 entity.ToTable("sales");
@@ -110,12 +103,9 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
-                // Relationship between Credit and Customer
                 entity.HasOne<customers>()
                       .WithMany()
                       .HasForeignKey(e => e.customer_id);
-                
-                // Relationship between Credit and CreditDetail
                 entity.HasMany<CreditDetail>()
                       .WithOne()
                       .HasForeignKey(d => d.credit_id);
@@ -124,14 +114,11 @@ namespace E_Invoice_system.Data
             modelBuilder.Entity<CreditDetail>(entity =>
             {
                 entity.Property(e => e.amount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.due).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Recovery>(entity =>
             {
                 entity.Property(e => e.total_credit).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.due).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.paid).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
             });
@@ -141,50 +128,52 @@ namespace E_Invoice_system.Data
                 entity.Property(e => e.salary).HasColumnType("decimal(18,2)");
             });
 
-            // Seed Data
-            modelBuilder.Entity<Role>().HasData(new Role { Id = 1, RoleTitle = "Admin" });
+            // ── Seed: Roles ──────────────────────────────────────────────────
+            // SuperAdmin (1) = admin panel only, Admin (2) = POS dashboard
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, RoleTitle = "SuperAdmin" },
+                new Role { Id = 2, RoleTitle = "Admin"      }
+            );
 
+            // ── Seed: Permissions — Admin role only (SuperAdmin skips POS perms) ──
             modelBuilder.Entity<RolePermission>().HasData(
                 new RolePermission
                 {
-                    Id = 1,
-                    RoleId = 1,
+                    Id        = 1,
+                    RoleId    = 2,
                     Dashboard = true,
                     Customers = true,
-                    Products = true,
-                    Sales = true,
+                    Products  = true,
+                    Sales     = true,
                     Employees = true,
-                    Reports = true,
-                    Settings = true,
-                    Inventory = true
-                });
+                    Reports   = true,
+                    Settings  = true,
+                    Inventory = true,
+                    Recovery  = true
+                }
+            );
 
-            modelBuilder.Entity<Employee>().HasData(
-                new Employee
-                {
-                    id = 1,
-                    date = "1-1-2024",
-                    full_name = "Admin",
-                    emp_code = "EMP-001",
-                    cnic = "00000-0000000-0",
-                    email = "admin@pos.com",
-                    mobile_no = "0000-0000000",
-                    address = "Admin Address",
-                    salary = 0,
-                    status = (int?)E_Invoice_system.Services.EntityStatus.Active
-                });
-
+            // ── Seed: Users — no emp_id, no employee records ─────────────────
             modelBuilder.Entity<users>().HasData(
                 new users
                 {
-                    id = 1,
+                    id       = 1,
+                    username = "superadmin",
+                    password = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
+                    email    = "superadmin@gmail.com",
+                    role_id  = 1,
+                    status   = (int)EntityStatus.Active
+                },
+                new users
+                {
+                    id       = 2,
                     username = "admin",
-                    password = "admin123",
-                    email = "admin@pos.com",
-                    role_id = 1,
-                    emp_id = 1,
-                    status = (int?)E_Invoice_system.Services.EntityStatus.Active
-                });
+                    password = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
+                    email    = "admin@gmail.com",
+                    role_id  = 2,
+                    status   = (int)EntityStatus.Active
+                }
+            );
         }
     }
 }

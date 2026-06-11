@@ -249,7 +249,11 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            rolesList = await context.roles.OrderBy(r => r.Id).ToListAsync();
+            // SuperAdmin is a system-only role — exclude it so admin cannot manage it
+            rolesList = await context.roles
+                .Where(r => r.RoleTitle != "SuperAdmin")
+                .OrderBy(r => r.Id)
+                .ToListAsync();
 
             // Set default selected role if not already set to a valid role
             if (string.IsNullOrEmpty(selectedRole) || !rolesList.Any(r => r.RoleTitle == selectedRole))
@@ -479,6 +483,13 @@
             return;
         }
 
+        // Protect the SuperAdmin role from being renamed
+        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "The SuperAdmin role cannot be modified.";
+            return;
+        }
+
         string newName = roleManagementInput.Trim();
         if (string.IsNullOrWhiteSpace(newName))
         {
@@ -538,6 +549,13 @@
         if (editingRole == null)
         {
             errorMessage = "Select a role to delete first.";
+            return;
+        }
+
+        // Protect the SuperAdmin role from deletion
+        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "The SuperAdmin role cannot be deleted.";
             return;
         }
 

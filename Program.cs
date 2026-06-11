@@ -10,6 +10,17 @@ builder.Services.AddMemoryCache();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMarketingSite", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+builder.Services.AddControllers();
+
 // Required for session to work reliably
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -98,8 +109,11 @@ app.UseSession();
 
 // app.UseAuthorization(); removed duplicate or check order
 
+app.UseCors("AllowMarketingSite");
+
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapRazorPages();
 app.MapBlazorHub();
 

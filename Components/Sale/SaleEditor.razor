@@ -528,27 +528,16 @@
                             <span style="color:#64748b;">Credit Limit</span>
                             <span style="font-weight:600;">@FormatCurrency(creditSelectedCustomer.credit_limit ?? 0)</span>
                         </div>
-                        @if (loadedCredit != null)
+                        @if (loadedCredit != null && loadedCredit.total_credit > 0)
                         {
                             <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                                <span style="color:#64748b;">Used Limit</span>
+                                <span style="color:#64748b;">Total Credit</span>
                                 <span style="font-weight:600;">@FormatCurrency(loadedCredit.total_credit)</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                                <span style="color:#64748b;">Paid Amount</span>
-                                <span style="font-weight:600; color:#16a34a;">@FormatCurrency(loadedCredit.remaining > 0 ? loadedCredit.paid : 0)</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-                                <span style="color:#64748b;">Remaining Amount</span>
-                                <span style="font-weight:800; color:#dc2626;">@FormatCurrency(loadedCredit.remaining)</span>
-                            </div>
-                            @if (loadedCredit.remaining > 0)
-                            {
-                                <button type="button" style="width:100%;margin-top:10px;padding:10px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
-                                        @onclick="GoToRecoveryFromCreditModal">
-                                    <i class="ph-arrow-counter-clockwise"></i> Record Recovery
-                                </button>
-                            }
+                            <button type="button" style="width:100%;margin-top:10px;padding:10px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;"
+                                    @onclick="GoToRecoveryFromCreditModal">
+                                <i class="ph-arrow-counter-clockwise"></i> Record Recovery
+                            </button>
                         }
                     </div>
                 }
@@ -564,12 +553,7 @@
                     }
                 </div>
 
-                <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:#c2410c; font-size:0.9rem; font-weight:700;">Remaining Amount</span>
-                        <span style="font-weight:900; font-size:1.1rem; color:#c2410c;">@FormatCurrency(creditRemainingAmount)</span>
-                    </div>
-                </div>
+
             </div>
 
             <div class="c-modal-footer">
@@ -622,17 +606,9 @@
                         </div>
                         @if (recoveryCustomerCredit != null)
                         {
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span class="text-muted font-sm">Used Limit</span>
-                                <span class="font-bold">@recoveryCustomerCredit.total_credit.ToString("N2")</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span class="text-muted font-sm">Paid Amount</span>
-                                <span class="font-bold text-success">@(recoveryCustomerCredit.remaining > 0 ? recoveryCustomerCredit.paid.ToString("N2") : "0.00")</span>
-                            </div>
                             <div style="display: flex; justify-content: space-between;">
-                                <span class="text-muted font-sm">Remaining Credit</span>
-                                <span class="font-bold text-danger">@recoveryCustomerCredit.remaining.ToString("N2")</span>
+                                <span class="text-muted font-sm">Total Credits</span>
+                                <span class="font-bold">@recoveryCustomerCredit.total_credit.ToString("N2")</span>
                             </div>
                         }
                     </div>
@@ -648,12 +624,12 @@
                     <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:event="oninput" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
                 </div>
 
-                @if (recoveryCustomerCredit != null && recoveryCustomerCredit.remaining > 0)
+                @if (recoveryCustomerCredit != null && recoveryCustomerCredit.total_credit > 0)
                 {
                     <div style="padding: 1rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; margin-top: 1rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="color: #c2410c; font-size: 0.9rem; font-weight: 700;">Remaining After Payment</span>
-                            <span style="font-weight: 900; font-size: 1.1rem; color: #c2410c;">@((recoveryCustomerCredit.remaining - recoveryModel.paid).ToString("N2"))</span>
+                            <span style="font-weight: 900; font-size: 1.1rem; color: #c2410c;">@((recoveryCustomerCredit.total_credit - recoveryModel.paid).ToString("N2"))</span>
                         </div>
                     </div>
                 }
@@ -845,8 +821,8 @@
 
     private async Task GoToRecoveryFromCreditModal()
     {
-        // Check if loadedCredit has remaining > 0
-        if (loadedCredit != null && loadedCredit.remaining <= 0)
+        // Check if loadedCredit has total_credit > 0
+        if (loadedCredit != null && loadedCredit.total_credit <= 0)
         {
             await JSRuntime.InvokeVoidAsync("showToast", "Warning", "Customer has no remaining credit to recover.", "warning");
             return;
@@ -883,8 +859,8 @@
             recoveryCustomerCredit = null;
         }
 
-        // Check if customer credit has remaining > 0
-        if (recoveryCustomerCredit != null && recoveryCustomerCredit.remaining <= 0)
+        // Check if customer credit has total_credit > 0
+        if (recoveryCustomerCredit != null && recoveryCustomerCredit.total_credit <= 0)
         {
             await JSRuntime.InvokeVoidAsync("showToast", "Warning", "Customer has no remaining credit to recover.", "warning");
             return;
@@ -979,9 +955,9 @@
             recoveryErrorMessage = "Paid amount must be greater than zero.";
             return;
         }
-        if (recoveryModel.paid > recoveryCustomerCredit.remaining)
+        if (recoveryModel.paid > recoveryCustomerCredit.total_credit)
         {
-            recoveryErrorMessage = "Paid amount cannot exceed remaining credit.";
+            recoveryErrorMessage = "Paid amount cannot exceed total credit.";
             return;
         }
 
@@ -992,47 +968,21 @@
             var creditToUpdate = await context.credits.FindAsync(recoveryCustomerCredit.id);
             if (creditToUpdate != null)
             {
+                creditToUpdate.total_credit -= recoveryModel.paid;
                 creditToUpdate.paid += recoveryModel.paid;
-                creditToUpdate.remaining = creditToUpdate.total_credit - creditToUpdate.paid;
-                if (creditToUpdate.remaining <= 0)
-            {
-                creditToUpdate.status = (int?)PaymentStatus.Paid;
-            }
+                creditToUpdate.remaining = creditToUpdate.total_credit;
+                if (creditToUpdate.total_credit <= 0)
+                {
+                    creditToUpdate.status = (int?)PaymentStatus.Paid;
+                }
             }
 
             recoveryModel.customer_id = recoverySelectedCustomer.id;
             recoveryModel.credit_id = recoveryCustomerCredit.id;
             recoveryModel.total_credit = recoveryCustomerCredit.total_credit;
-            recoveryModel.due = recoveryCustomerCredit.remaining;
-            recoveryModel.remaining = recoveryCustomerCredit.remaining - recoveryModel.paid;
+
+            recoveryModel.remaining = recoveryCustomerCredit.total_credit - recoveryModel.paid;
             context.recoveries.Add(recoveryModel);
-
-            // If credit is now paid, update all related credit details, sale headers, and sale details
-            if (creditToUpdate != null && creditToUpdate.remaining <= 0)
-            {
-                // Update all credit details for this credit to Paid
-                var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == creditToUpdate.id).ToListAsync();
-                foreach (var cd in creditDetailsToUpdate)
-            {
-                cd.status = (int?)PaymentStatus.Paid;
-            }
-
-                // Find all related sale headers via credit details
-                var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
-                var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
-                foreach (var sh in saleHeadersToUpdate)
-            {
-                sh.status = (int?)PaymentStatus.Paid;
-                sh.due = 0; // If fully paid, due should be 0
-            }
-
-            // Update all related sale details (sales DbSet, which maps to sale_details table)
-            var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
-            foreach (var sale in salesToUpdate)
-            {
-                sale.status = (int?)PaymentStatus.Paid;
-            }
-            }
 
             await context.SaveChangesAsync();
 
@@ -1685,28 +1635,13 @@
             creditCustomerSearch = selectedCustomer?.name ?? "";
             filteredCreditCustomers = allCustomersList.Where(c => c.status == (int?)EntityStatus.Active).Take(20).ToList();
 
-            creditEntry = new CreditEntry
-            {
-                paid_amount = 0
-            };
+            creditEntry = new CreditEntry();
             RecalcCredit();
             showCreditModal = true;
         }
     }
 
-    private void RecalcCredit()
-    {
-        var creditTotal = Math.Abs(currentTotal);
-        creditRemainingAmount = creditTotal - creditEntry.paid_amount;
-        if (creditRemainingAmount < 0) creditRemainingAmount = 0;
-    }
 
-    private void OnCreditPaidAmountInput(ChangeEventArgs e)
-    {
-        if (decimal.TryParse(e.Value?.ToString(), out var v))
-            creditEntry.paid_amount = v;
-        RecalcCredit();
-    }
 
     private async Task OnCreditCustomerInput(ChangeEventArgs e)
     {
@@ -1789,9 +1724,9 @@
             return;
         }
 
-        if (additionalPayment > loadedCredit.remaining)
+        if (additionalPayment > loadedCredit.total_credit)
         {
-            ShowAlert("Payment cannot exceed remaining balance.");
+            ShowAlert("Payment cannot exceed total credit.");
             return;
         }
 
@@ -1800,9 +1735,10 @@
         var credit = await context.credits.FindAsync(loadedCredit.id);
         if (credit == null) return;
 
+        credit.total_credit -= additionalPayment;
         credit.paid += additionalPayment;
-        credit.remaining = credit.total_credit - credit.paid;
-        credit.status = credit.remaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
+        credit.remaining = credit.total_credit;
+        credit.status = credit.total_credit > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
 
         // Create a SaleHeader so this payment counts in Total Sales
         var orderInvNo = await GenerateNextInvNoAsync(context);
@@ -1830,8 +1766,6 @@
             date = DateTime.Now.ToString("yyyy-MM-dd"),
             sale_id = paymentHeader.id,
             amount = additionalPayment,
-            paid = additionalPayment,
-            due = 0,
             payment_method = (int?)PaymentMethod.Credit,
             status = (int?)PaymentStatus.Paid,
             file = filePath
@@ -1840,33 +1774,6 @@
         if (!string.IsNullOrEmpty(filePath))
         {
             credit.file = filePath;
-        }
-
-        // If credit is now paid, update all related credit details, sale headers, and sale details
-        if (credit.remaining <= 0)
-        {
-            // Update all credit details for this credit to Paid
-            var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == credit.id).ToListAsync();
-            foreach (var cd in creditDetailsToUpdate)
-            {
-                cd.status = (int?)PaymentStatus.Paid;
-            }
-
-            // Find all related sale headers via credit details
-            var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
-            var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
-            foreach (var sh in saleHeadersToUpdate)
-            {
-                sh.status = (int?)PaymentStatus.Paid;
-                sh.due = 0; // If fully paid, due should be 0
-            }
-
-            // Update all related sale details (sales table)
-            var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
-            foreach (var sale in salesToUpdate)
-            {
-                sale.status = (int?)PaymentStatus.Paid;
-            }
         }
 
         await context.SaveChangesAsync();
@@ -1895,6 +1802,14 @@
         creditEntry = new CreditEntry { paid_amount = 0 };
         creditRemainingAmount = loadedCredit.remaining;
         showCreditModal = true;
+    }
+
+    private void RecalcCredit()
+    {
+        // Calculate the remaining amount the customer still owes after any upfront payment
+        var grandTotal = Math.Abs(currentTotal);
+        var paid = creditEntry.paid_amount;
+        creditRemainingAmount = Math.Max(0, grandTotal - paid);
     }
 
     private async void ConfirmCreditAndProceed()
@@ -1974,8 +1889,8 @@
                 var existing = await context.credits
                     .Where(c => c.customer_id == creditCust.id && c.status != (int)PaymentStatus.Paid)
                     .FirstOrDefaultAsync();
-                var outstanding = existing?.remaining ?? 0;
-                var newCreditTotal = Math.Abs(currentTotal) - creditEntry.paid_amount;
+                var outstanding = existing?.total_credit ?? 0;
+                var newCreditTotal = Math.Max(0, Math.Abs(currentTotal) - (tenderedAmount ?? 0));
                 if (outstanding + newCreditTotal > creditCust.credit_limit.Value)
                 {
                     ShowAlert($"Credit limit exceeded! Outstanding: {outstanding:N0}, New credit: {newCreditTotal:N0}, Limit: {creditCust.credit_limit:N0}");
@@ -2027,9 +1942,9 @@
                     gross_total = saleItems.Sum(i => Math.Abs(i.price * i.qty)),
                     discount = saleItems.Sum(i => Math.Abs(i.discount * i.qty)),
                     net_payable = Math.Abs(currentTotal),
-                    paid = isCredit ? creditEntry.paid_amount : (tenderedAmount ?? Math.Abs(currentTotal)),
-                    due = isCredit ? creditRemainingAmount : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
-                    status = isCredit ? (creditRemainingAmount > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid) : (int?)PaymentStatus.Paid,
+                    paid = isCredit ? (tenderedAmount ?? 0) : (tenderedAmount ?? Math.Abs(currentTotal)),
+                    due = isCredit ? (Math.Abs(currentTotal) - (tenderedAmount ?? 0)) : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
+                    status = isCredit ? ((Math.Abs(currentTotal) - (tenderedAmount ?? 0)) > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid) : (int?)PaymentStatus.Paid,
                     payment_method = (int?)paymentMethod
                 };
                 context.SalesHeader.Add(saleHeader);
@@ -2040,24 +1955,26 @@
                         .Where(c => c.customer_id == creditCust!.id && c.status != (int)PaymentStatus.Paid)
                         .FirstOrDefaultAsync();
 
+                    // creditTotal = only the unpaid/deferred portion (total - upfront payment)
+                    var creditTotal = Math.Max(0, Math.Abs(currentTotal) - (tenderedAmount ?? 0));
+
                     if (newCredit != null)
                     {
-                        newCredit.total_credit += Math.Abs(currentTotal) - creditEntry.paid_amount;
-                        newCredit.remaining = newCredit.total_credit;
-                        newCredit.status = newCredit.remaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
+                        // Only grow total_credit — paid/remaining are managed by Recovery only
+                        newCredit.total_credit += creditTotal;
+                        newCredit.status = newCredit.total_credit > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
                         if (!string.IsNullOrEmpty(creditFilePath))
                             newCredit.file = creditFilePath;
                     }
                     else
                     {
-                        var creditTotal = Math.Abs(currentTotal) - creditEntry.paid_amount;
                         newCredit = new Credit
                         {
                             customer_id = creditCust!.id,
                             date = DateTime.Now.ToString("yyyy-MM-dd"),
                             total_credit = creditTotal,
                             paid = 0,
-                            remaining = creditTotal,
+                            remaining = 0,
                             payment_method = (int?)PaymentMethod.Credit,
                             status = creditTotal > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid,
                             file = creditFilePath
@@ -2146,18 +2063,17 @@
 
             if (newCredit != null)
             {
+                newCredit.status = newCredit.total_credit > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
+
                 foreach (var item in saleRecords)
                 {
                     var lineAmount = Math.Abs(item.sale.total_price);
-
                     context.credits_details.Add(new CreditDetail
                     {
                         credit_id = newCredit.id,
                         date = DateTime.Now.ToString("yyyy-MM-dd"),
                         sale_id = saleHeader!.id,
                         amount = lineAmount,
-                        paid = 0,
-                        due = lineAmount,
                         payment_method = (int?)PaymentMethod.Credit,
                         status = (int?)PaymentStatus.Pending,
                         file = creditFilePath
@@ -2213,18 +2129,15 @@
                             .ToListAsync();
 
                         foreach (var credit in credits)
-                        {
-                            // Recalculate total_credit and remaining based on updated CreditDetails
-                            var updatedLines = creditLines.Where(cl => cl.credit_id == credit.id).ToList();
-                            decimal newTotalCredit = updatedLines.Sum(cl => cl.amount);
-                            decimal newPaid = updatedLines.Sum(cl => cl.paid);
-                            decimal newRemaining = newTotalCredit - newPaid;
-                            
-                            credit.total_credit = newTotalCredit;
-                            credit.paid = newPaid;
-                            credit.remaining = newRemaining;
-                            credit.status = newRemaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
-                        }
+                    {
+                        // Recalculate total_credit and remaining based on updated CreditDetails
+                        var updatedLines = creditLines.Where(cl => cl.credit_id == credit.id).ToList();
+                        decimal newTotalCredit = updatedLines.Sum(cl => cl.amount);
+                        
+                        credit.total_credit = newTotalCredit;
+                        credit.remaining = credit.total_credit - credit.paid;
+                        credit.status = credit.remaining > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid;
+                    }
                     }
                 }
             }
@@ -2238,8 +2151,8 @@
                 _receiptSnapshot = BuildReceiptSnapshot();
                 if (paymentMethod == PaymentMethod.Credit)
                 {
-                    _receiptSnapshot.CreditPaid = creditEntry.paid_amount;
-                    _receiptSnapshot.CreditRemaining = creditRemainingAmount;
+                    _receiptSnapshot.CreditPaid = tenderedAmount ?? 0;
+                    _receiptSnapshot.CreditRemaining = Math.Abs(currentTotal) - (tenderedAmount ?? 0);
                 }
                 await InvokeAsync(StateHasChanged);
                 await Task.Delay(400);
@@ -2372,9 +2285,9 @@
 
     public class CreditEntry
     {
-        public decimal paid_amount { get; set; }
         public IBrowserFile? file_browser { get; set; }
         public string? file { get; set; }
+        public decimal paid_amount { get; set; } = 0;
     }
 
     private sealed class ReceiptSnapshot

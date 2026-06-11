@@ -23,8 +23,6 @@ namespace E_Invoice_system.Models
         [Column("total_credit")]
         public decimal total_credit { get; set; }
 
-        [Column("due")]
-        public decimal due { get; set; }
 
         [Column("paid")]
         public decimal paid { get; set; }

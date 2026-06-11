@@ -37,6 +37,9 @@ namespace E_Invoice_system.Models
         [Column("inventory")]
         public bool Inventory { get; set; }
 
+        [Column("recovery")]
+        public bool Recovery { get; set; }
+
         [ForeignKey("RoleId")]
         public virtual Role? Role { get; set; }
     }

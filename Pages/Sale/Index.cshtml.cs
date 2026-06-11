@@ -21,6 +21,10 @@ namespace E_Invoice_system.Pages.Sale
         public IList<SaleDisplayItem> Sales { get; set; } = new List<SaleDisplayItem>();
         public IList<ReturnDisplayItem> Returns { get; set; } = new List<ReturnDisplayItem>();
         public IList<CreditDisplayItem> Credits { get; set; } = new List<CreditDisplayItem>();
+        public IList<CreditTableDisplayItem> CreditTableItems { get; set; } = new List<CreditTableDisplayItem>();
+
+        [BindProperty(SupportsGet = true)]
+        public string CreditSubTab { get; set; } = "details";
 
         [BindProperty(SupportsGet = true)]
         public int PageNumber { get; set; } = 1;
@@ -82,11 +86,22 @@ namespace E_Invoice_system.Pages.Sale
             public string? CustomerName { get; set; }
             public string? Date { get; set; }
             public decimal amount { get; set; }
-            public decimal paid { get; set; }
-            public decimal due { get; set; }
             public decimal CreditLimit { get; set; }
             public decimal UsedCredit { get; set; }
             public string? Status { get; set; }
+        }
+
+        public class CreditTableDisplayItem
+        {
+            public int id { get; set; }
+            public string? CustomerName { get; set; }
+            public string? Date { get; set; }
+            public decimal total_credit { get; set; }
+            public decimal paid { get; set; }
+            public decimal remaining { get; set; }
+            public decimal CreditLimit { get; set; }
+            public string? Status { get; set; }
+            public string? File { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -160,49 +175,36 @@ namespace E_Invoice_system.Pages.Sale
                         })
                     .ToListAsync();
 
-                var creditsQuery = _context.credits_details.AsNoTracking()
-                    .Where(c => c.status == null || c.status != (int?)PaymentStatus.Returned);
-                CreditTotalCount = await creditsQuery.CountAsync();
+                var creditTableQuery = _context.credits.AsNoTracking();
+                CreditTotalCount = await creditTableQuery.CountAsync();
                 CreditTotalPages = (int)Math.Ceiling(CreditTotalCount / (double)CreditPageSize);
                 if (CreditPageNumber < 1) CreditPageNumber = 1;
                 if (CreditTotalPages > 0 && CreditPageNumber > CreditTotalPages) CreditPageNumber = CreditTotalPages;
-
-                Credits = await creditsQuery
+                
+                // Load Credit Table items (main credit table)
+                CreditTableItems = await creditTableQuery
                     .OrderByDescending(c => c.id)
                     .Skip((CreditPageNumber - 1) * CreditPageSize)
                     .Take(CreditPageSize)
                     .GroupJoin(
-                        _context.credits.AsNoTracking(),
-                        c => c.credit_id,
-                        cr => cr.id,
-                        (c, crs) => new { c, crs }
-                    )
-                    .SelectMany(
-                        x => x.crs.DefaultIfEmpty(),
-                        (x, cr) => new { x.c, cr }
-                    )
-                    .GroupJoin(
                         _context.customers.AsNoTracking(),
-                        x => x.cr != null ? x.cr.customer_id : 0,
+                        c => c.customer_id,
                         cust => cust.id,
-                        (x, custs) => new { x.c, x.cr, custs }
+                        (c, custs) => new { c, custs }
                     )
                     .SelectMany(
                         x => x.custs.DefaultIfEmpty(),
-                        (x, cust) => new CreditDisplayItem
+                        (x, cust) => new CreditTableDisplayItem
                         {
                             id = x.c.id,
-                            CreditId = x.cr != null ? x.cr.id : 0,
-                            CustomerId = cust != null ? cust.id : 0,
-                            SaleId = x.c.sale_id,
                             CustomerName = cust != null ? cust.name : "Walk in",
                             Date = x.c.date,
-                            amount = x.c.amount,
+                            total_credit = x.c.total_credit,
                             paid = x.c.paid,
-                            due = x.c.due,
+                            remaining = x.c.remaining,
                             CreditLimit = cust != null ? (cust.credit_limit ?? 0) : 0,
-                            UsedCredit = x.cr != null ? x.cr.total_credit : 0,
-                            Status = x.c.status.HasValue ? PaymentHelper.GetStatusName(x.c.status.Value) : "Pending"
+                            Status = x.c.status.HasValue ? PaymentHelper.GetStatusName(x.c.status.Value) : "Pending",
+                            File = x.c.file
                         })
                     .ToListAsync();
             }

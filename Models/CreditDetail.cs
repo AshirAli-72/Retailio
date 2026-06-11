@@ -23,12 +23,6 @@ namespace E_Invoice_system.Models
         [Column("amount")]
         public decimal amount { get; set; }
 
-        [Column("paid")]
-        public decimal paid { get; set; }
-
-        [Column("due")]
-        public decimal due { get; set; }
-
         [Column("payment_method")]
         public int? payment_method { get; set; }
 

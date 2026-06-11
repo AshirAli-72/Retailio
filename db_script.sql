@@ -229,6 +229,7 @@ CREATE TABLE [roles_permissions] (
     [returns_report] bit NOT NULL,
     [daily_summary] bit NOT NULL,
     [inventory] bit NOT NULL,
+    [recovery] bit NOT NULL,
     CONSTRAINT [PK_roles_permissions] PRIMARY KEY ([id]),
     CONSTRAINT [FK_roles_permissions_roles_role_id] FOREIGN KEY ([role_id]) REFERENCES [roles] ([id]) ON DELETE CASCADE
 );
@@ -241,10 +242,8 @@ CREATE TABLE [users] (
     [username] nvarchar(max) NULL,
     [password] nvarchar(max) NULL,
     [role_id] int NOT NULL,
-    [emp_id] int NOT NULL,
     [status] nvarchar(max) NULL,
     CONSTRAINT [PK_users] PRIMARY KEY ([id]),
-    CONSTRAINT [FK_users_employee_emp_id] FOREIGN KEY ([emp_id]) REFERENCES [employee] ([id]) ON DELETE CASCADE,
     CONSTRAINT [FK_users_roles_role_id] FOREIGN KEY ([role_id]) REFERENCES [roles] ([id]) ON DELETE CASCADE
 );
 GO
@@ -287,7 +286,7 @@ CREATE TABLE [recoveries] (
     [credit_id] int NULL,
     [date] nvarchar(max) NOT NULL,
     [total_credit] decimal(18,2) NOT NULL,
-    [due] decimal(18,2) NOT NULL,
+
     [paid] decimal(18,2) NOT NULL,
     [remaining] decimal(18,2) NOT NULL,
     [status] nvarchar(max) NULL,
@@ -297,47 +296,36 @@ CREATE TABLE [recoveries] (
 GO
 
 
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'address', N'cnic', N'date', N'email', N'emp_code', N'full_name', N'image_path', N'mobile_no', N'salary', N'status') AND [object_id] = OBJECT_ID(N'[employee]'))
-    SET IDENTITY_INSERT [employee] ON;
-INSERT INTO [employee] ([id], [address], [cnic], [date], [email], [emp_code], [full_name], [image_path], [mobile_no], [salary], [status])
-VALUES (1, N'Admin Address', N'00000-0000000-0', N'1-1-2024', N'admin@pos.com', N'EMP-001', N'Admin', NULL, N'0000-0000000', 0.0, N'Active');
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'address', N'cnic', N'date', N'email', N'emp_code', N'full_name', N'image_path', N'mobile_no', N'salary', N'status') AND [object_id] = OBJECT_ID(N'[employee]'))
-    SET IDENTITY_INSERT [employee] OFF;
-GO
-
-
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'role_title') AND [object_id] = OBJECT_ID(N'[roles]'))
     SET IDENTITY_INSERT [roles] ON;
 INSERT INTO [roles] ([id], [role_title])
-VALUES (1, N'Admin');
+VALUES (1, N'SuperAdmin'),
+       (2, N'Admin');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'role_title') AND [object_id] = OBJECT_ID(N'[roles]'))
     SET IDENTITY_INSERT [roles] OFF;
 GO
 
 
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings', N'recovery') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
     SET IDENTITY_INSERT [roles_permissions] ON;
-INSERT INTO [roles_permissions] ([id], [customer_report], [customers], [daily_summary], [dashboard], [employee_report], [employees], [inventory], [invoice_report], [invoices], [product_report], [products], [Reports], [returns_report], [role_id], [sale_report], [sales], [settings])
-VALUES (1, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), 1, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit));
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
+INSERT INTO [roles_permissions] ([id], [customer_report], [customers], [daily_summary], [dashboard], [employee_report], [employees], [inventory], [invoice_report], [invoices], [product_report], [products], [Reports], [returns_report], [role_id], [sale_report], [sales], [settings], [recovery])
+VALUES (1, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), 2, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit));
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings', N'recovery') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
     SET IDENTITY_INSERT [roles_permissions] OFF;
 GO
 
 
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'emp_id', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
     SET IDENTITY_INSERT [users] ON;
-INSERT INTO [users] ([id], [email], [emp_id], [password], [role_id], [status], [username])
-VALUES (1, N'admin@pos.com', 1, N'admin123', 1, N'Active', N'admin');
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'emp_id', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
+INSERT INTO [users] ([id], [email], [password], [role_id], [status], [username])
+VALUES (1, N'superadmin@pos.com', N'admin123', 1, N'Active', N'superadmin'),
+       (2, N'admin@pos.com', N'admin123', 2, N'Active', N'admin');
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
     SET IDENTITY_INSERT [users] OFF;
 GO
 
 
 CREATE INDEX [IX_roles_permissions_role_id] ON [roles_permissions] ([role_id]);
-GO
-
-
-CREATE INDEX [IX_users_emp_id] ON [users] ([emp_id]);
 GO
 
 

@@ -31,11 +31,6 @@ namespace E_Invoice_system.Migrations
                 {
                     table.PrimaryKey("PK_employee", x => x.id);
                 });
-
-            migrationBuilder.InsertData(
-                table: "employee",
-                columns: new[] { "id", "address", "cnic", "date", "email", "emp_code", "full_name", "image_path", "mobile_no", "salary", "status" },
-                values: new object[] { 1, "Admin Address", "00000-0000000-0", "1-1-2024", "admin@pos.com", "EMP-001", "Admin", null, "0000-0000000", 0m, "Active" });
         }
 
         /// <inheritdoc />

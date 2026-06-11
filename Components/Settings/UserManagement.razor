@@ -36,7 +36,7 @@
                 <thead>
                     <tr>
                         <th style="padding-left: 1.5rem;">ID</th>
-                        <th>User / Employee</th>
+                        <th>Username</th>
                         <th>Email</th>
                         <th>Security Role</th>
                         <th>Status</th>
@@ -57,13 +57,10 @@
                     {
                         <tr>
                             <td class="font-bold" style="padding-left: 1.5rem;">#@user.id</td>
-                             <td>
+                            <td>
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
                                     <span class="user-avatar-chip">@(user.username?.Length > 0 ? user.username[0].ToString().ToUpper() : "?")</span>
-                                    <div>
-                                        <div class="font-bold">@user.username</div>
-                                        <div class="text-muted" style="font-size:0.75rem;">@user.Employee?.full_name</div>
-                                    </div>
+                                    <div class="font-bold">@user.username</div>
                                 </div>
                             </td>
                             <td class="text-muted" style="font-size:0.85rem;">@user.email</td>
@@ -156,17 +153,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Link Employee</label>
-                        <select @bind="userModel.emp_id" class="form-control">
-                            <option value="0">-- Select Employee --</option>
-                            @foreach (var emp in employeeList)
-                            {
-                                <option value="@emp.id">@emp.full_name (@emp.emp_code)</option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="form-group">
                         <label class="form-label">Account Password</label>
                         <InputText @bind-Value="userModel.password" type="password" class="form-control" placeholder="••••••••" />
                         <ValidationMessage For="@(() => userModel.password)" />
@@ -224,7 +210,6 @@
     private bool showForm = false;
     private users? editingUser = null;
     private List<Role> rolesList = new();
-    private List<Employee> employeeList = new();
     private bool isSubmitting = false;
     private string? errorMessage;
 
@@ -245,7 +230,11 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            rolesList = await context.roles.OrderBy(r => r.Id).ToListAsync();
+            // SuperAdmin is a system-only role — exclude it so admin cannot manage it
+            rolesList = await context.roles
+                .Where(r => r.RoleTitle != "SuperAdmin")
+                .OrderBy(r => r.Id)
+                .ToListAsync();
         }
         catch { }
     }
@@ -254,15 +243,12 @@
     {
         using var context = DbFactory.CreateDbContext();
         totalCount = await context.users.CountAsync();
-        
         userList = await context.users
             .Include(u => u.Role)
-            .Include(u => u.Employee)
             .OrderByDescending(u => u.id)
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
-            
         await InvokeAsync(StateHasChanged);
     }
 
@@ -290,20 +276,9 @@
         }
     }
 
-    private async Task LoadEmployees()
-    {
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-            employeeList = await context.employees.OrderBy(e => e.full_name).ToListAsync();
-        }
-        catch { }
-    }
-
     private async Task ShowAddForm()
     {
         await LoadRoles();
-        await LoadEmployees();
         userModel = new users { status = (int?)EntityStatus.Active, role_id = rolesList.FirstOrDefault()?.Id ?? 0 };
         editingUser = null;
         showForm = true;
@@ -312,7 +287,6 @@
     private async Task EditUser(users user)
     {
         await LoadRoles();
-        await LoadEmployees();
         editingUser = user;
         userModel = new users
         {
@@ -321,7 +295,6 @@
             username = user.username,
             password = user.password,
             role_id = user.role_id,
-            emp_id = user.emp_id,
             status = user.status
         };
         showForm = true;
@@ -342,10 +315,19 @@
             using var context = DbFactory.CreateDbContext();
             if (editingUser == null)
             {
+                // Hash the password before storing
+                if (!string.IsNullOrWhiteSpace(userModel.password))
+                    userModel.password = PaymentHelper.HashPassword(userModel.password);
                 context.users.Add(userModel);
             }
             else
             {
+                // Only re-hash if the password field was changed (not the stored hash)
+                if (!string.IsNullOrWhiteSpace(userModel.password) &&
+                    userModel.password != editingUser.password)
+                {
+                    userModel.password = PaymentHelper.HashPassword(userModel.password);
+                }
                 context.users.Update(userModel);
             }
             await context.SaveChangesAsync();

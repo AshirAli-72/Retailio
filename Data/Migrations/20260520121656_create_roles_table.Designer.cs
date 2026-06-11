@@ -42,13 +42,6 @@ namespace E_Invoice_system.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            RoleTitle = "Admin"
-                        });
                 });
 #pragma warning restore 612, 618
         }

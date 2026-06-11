@@ -36,6 +36,7 @@ namespace E_Invoice_system.Pages
             public int LowStockCount { get; set; }
             public int TotalEmployees { get; set; }
             public decimal CreditRemaining { get; set; }
+            public decimal TotalCreditAmount { get; set; }
             public decimal TotalRefund { get; set; }
         }
 
@@ -59,6 +60,7 @@ namespace E_Invoice_system.Pages
         public int LowStockCount { get; set; }
         public int TotalEmployees { get; set; }
         public decimal CreditRemaining { get; set; }
+        public decimal TotalCreditAmount { get; set; }
         public decimal TotalRefund { get; set; }
         public List<RecentSaleItem> RecentSales { get; set; } = new();
         public string? ErrorMessage { get; set; }
@@ -176,6 +178,8 @@ namespace E_Invoice_system.Pages
                 stats.CreditRemaining = await context.credits.AsNoTracking()
                     .Where(c => c.status != (int?)PaymentStatus.Paid)
                     .SumAsync(c => (decimal?)c.remaining) ?? 0;
+                stats.TotalCreditAmount = await context.credits.AsNoTracking()
+                    .SumAsync(c => (decimal?)c.total_credit) ?? 0;
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
 
@@ -227,6 +231,7 @@ namespace E_Invoice_system.Pages
             LowStockCount = stats.LowStockCount;
             TotalEmployees = stats.TotalEmployees;
             CreditRemaining = stats.CreditRemaining;
+            TotalCreditAmount = stats.TotalCreditAmount;
             TotalRefund = stats.TotalRefund;
         }
     }

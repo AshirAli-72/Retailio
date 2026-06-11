@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "ContainingType": "E_Invoice_system.Controllers.StatsController",
+    "Method": "GetStats",
+    "RelativePath": "api/Stats",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

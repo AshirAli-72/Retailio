@@ -23,16 +23,10 @@ namespace E_Invoice_system.Models
         [Column("role_id")]
         public int role_id { get; set; }
 
-        [Column("emp_id")]
-        public int emp_id { get; set; }
-
         [Column("status")]
         public int? status { get; set; } = (int)EntityStatus.Active;
 
         [ForeignKey("role_id")]
         public virtual Role? Role { get; set; }
-
-        [ForeignKey("emp_id")]
-        public virtual Employee? Employee { get; set; }
     }
 }

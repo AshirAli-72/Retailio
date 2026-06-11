@@ -251,3 +251,5 @@ D:\netcore\E-Invoice_system\obj\Debug\net10.0\refint\E-Invoice_system.dll
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\E-Invoice_system.pdb
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\E-Invoice_system.genruntimeconfig.cache
 D:\netcore\E-Invoice_system\obj\Debug\net10.0\ref\E-Invoice_system.dll
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\compressed\47fw20vpxs-{0}-wsw22pv48k-wsw22pv48k.gz
+D:\netcore\E-Invoice_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

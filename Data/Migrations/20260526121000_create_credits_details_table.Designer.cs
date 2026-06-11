@@ -135,17 +135,9 @@ namespace E_Invoice_system.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("date");
 
-                    b.Property<decimal>("due")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("due");
-
                     b.Property<string>("file")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("file");
-
-                    b.Property<decimal>("paid")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("paid");
 
                     b.Property<string>("payment_method")
                         .HasColumnType("nvarchar(max)")

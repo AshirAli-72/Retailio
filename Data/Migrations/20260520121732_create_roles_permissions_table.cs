@@ -24,7 +24,8 @@ namespace E_Invoice_system.Migrations
                     employees = table.Column<bool>(type: "bit", nullable: false),
                     Reports = table.Column<bool>(type: "bit", nullable: false),
                     settings = table.Column<bool>(type: "bit", nullable: false),
-                    inventory = table.Column<bool>(type: "bit", nullable: false)
+                    inventory = table.Column<bool>(type: "bit", nullable: false),
+                    recovery = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,11 +37,6 @@ namespace E_Invoice_system.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.InsertData(
-                table: "roles_permissions",
-                columns: new[] { "id", "customers", "dashboard", "employees", "inventory", "products", "Reports", "role_id", "sales", "settings" },
-                values: new object[] { 1, true, true, true, true, true, true, 1, true, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_roles_permissions_role_id",

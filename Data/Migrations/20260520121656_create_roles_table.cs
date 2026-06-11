@@ -22,11 +22,6 @@ namespace E_Invoice_system.Migrations
                 {
                     table.PrimaryKey("PK_roles", x => x.id);
                 });
-
-            migrationBuilder.InsertData(
-                table: "roles",
-                columns: new[] { "id", "role_title" },
-                values: new object[] { 1, "Admin" });
         }
 
         /// <inheritdoc />

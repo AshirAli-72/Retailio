@@ -1,4 +1,7 @@
 
+using System.Security.Cryptography;
+using System.Text;
+
 namespace E_Invoice_system.Services
 {
     public enum PaymentMethod
@@ -79,16 +82,41 @@ namespace E_Invoice_system.Services
             return GetEntityStatusName((EntityStatus)status.Value);
         }
 
+        // ── Role helpers ──────────────────────────────────────────────────
+        /// <summary>
+        /// Returns the role title for a given role_id by looking it up from the
+        /// provided role title string. Since roles are now fully dynamic (admins
+        /// can create any role), callers should pass user.Role?.RoleTitle directly.
+        /// This overload is kept as a fallback that returns "Unknown" when no title
+        /// is available.
+        /// </summary>
+        public static string GetRoleName(int? roleId) => "Unknown";
+
+        public static bool IsSuperAdmin(string? roleTitle) =>
+            string.Equals(roleTitle, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Returns true for SuperAdmin only (admin panel access).</summary>
+        public static bool HasAdminPanelAccess(string? roleTitle) =>
+            IsSuperAdmin(roleTitle);
+
+        /// <summary>
+        /// Returns true for any user that has a non-empty role — since roles are
+        /// dynamic, every assigned role is considered to have POS access.
+        /// SuperAdmin is the only role that goes to the admin panel instead.
+        /// </summary>
+        public static bool HasPosAccess(string? roleTitle) =>
+            !string.IsNullOrWhiteSpace(roleTitle);
+
         // Parse methods
         public static PaymentMethod? ParsePaymentMethod(string? methodName)
         {
             return methodName switch
             {
-                "Cash" => PaymentMethod.Cash,
-                "Card" => PaymentMethod.Card,
+                "Cash"     => PaymentMethod.Cash,
+                "Card"     => PaymentMethod.Card,
                 "Transfer" => PaymentMethod.Online,
-                "Online" => PaymentMethod.Online,
-                "Credit" => PaymentMethod.Credit,
+                "Online"   => PaymentMethod.Online,
+                "Credit"   => PaymentMethod.Credit,
                 _ => null
             };
         }
@@ -97,8 +125,8 @@ namespace E_Invoice_system.Services
         {
             return statusName switch
             {
-                "Paid" => PaymentStatus.Paid,
-                "Pending" => PaymentStatus.Pending,
+                "Paid"     => PaymentStatus.Paid,
+                "Pending"  => PaymentStatus.Pending,
                 "Returned" => PaymentStatus.Returned,
                 _ => null
             };
@@ -108,10 +136,23 @@ namespace E_Invoice_system.Services
         {
             return statusName switch
             {
-                "Active" or "Enable" => EntityStatus.Active,
+                "Active"   or "Enable"  => EntityStatus.Active,
                 "Inactive" or "Disable" => EntityStatus.Inactive,
                 _ => null
             };
         }
+
+        // ── Password hashing ──────────────────────────────────────────────
+        /// <summary>Returns the SHA-256 hex digest of the given plain-text password.</summary>
+        public static string HashPassword(string plainText)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(plainText));
+            return Convert.ToHexString(bytes).ToLowerInvariant();
+        }
+
+        /// <summary>Returns true when the plain-text matches the stored hash.</summary>
+        public static bool VerifyPassword(string plainText, string? storedHash)
+            => !string.IsNullOrEmpty(storedHash) &&
+               string.Equals(HashPassword(plainText), storedHash, StringComparison.OrdinalIgnoreCase);
     }
 }

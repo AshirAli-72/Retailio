@@ -29,7 +29,7 @@
                         <th>Customer</th>
                         <th>Date</th>
                         <th>Total Credit</th>
-                        <th>Due</th>
+
                         <th>Paid</th>
                         <th>Remaining</th>
                         <th>Status</th>
@@ -56,9 +56,7 @@
                                     @item.total_credit.ToString("N2")
                                 </td>
 
-                                <td class="text-danger font-bold">
-                                    @item.due.ToString("N2")
-                                </td>
+
 
                                 <td class="text-success font-bold">
                                     @item.paid.ToString("N2")
@@ -175,7 +173,7 @@
                         @if (customerCredits.Any())
                         {
                             <div style="display: flex; justify-content: space-between;">
-                                <span class="text-muted font-sm">Total Credit</span>
+                                <span class="text-muted font-sm">Total Credits</span>
                                 <span class="font-bold">@customerTotalCredit.ToString("N2")</span>
                             </div>
                         }
@@ -264,7 +262,7 @@
         public string? CustomerName { get; set; }
         public string? date { get; set; }
         public decimal total_credit { get; set; }
-        public decimal due { get; set; }
+
         public decimal paid { get; set; }
         public decimal remaining { get; set; }
         public string? status { get; set; }
@@ -299,7 +297,7 @@
                     CustomerName = c != null ? c.name : "Unknown",
                     date = x.r.date,
                     total_credit = x.r.total_credit,
-                    due = x.r.due,
+
                     paid = x.r.paid,
                     remaining = x.r.remaining,
                     status = x.r.status.HasValue ? PaymentHelper.GetStatusName(x.r.status.Value) : null
@@ -332,12 +330,10 @@
             // Calculate totals from all customer credits
             customerTotalCredit = customerCredits.Sum(c => c.total_credit);
             customerTotalPaid = customerCredits.Sum(c => c.paid);
-            customerTotalRemaining = customerCredits.Sum(c => c.remaining);
+            customerTotalRemaining = customerTotalCredit;
 
-            // Set recovery model's total_credit and due
-            recoveryModel.total_credit = customerTotalCredit;
-            recoveryModel.due = customerTotalRemaining;
-            recoveryModel.remaining = customerTotalRemaining;
+            // Set recovery model's total_credit
+            recoveryModel.remaining = customerTotalCredit;
         }
         else
         {
@@ -354,10 +350,10 @@
     {
         if (selectedCustomer != null)
         {
-            recoveryModel.remaining = customerTotalRemaining - recoveryModel.paid;
+            recoveryModel.remaining = customerTotalCredit - recoveryModel.paid;
             
             // Auto select Paid if paid amount equals total remaining credit
-            if (recoveryModel.paid == customerTotalRemaining)
+            if (recoveryModel.paid == customerTotalCredit)
             {
                 recoveryModel.status = (int?)PaymentStatus.Paid;
             }
@@ -388,7 +384,7 @@
             status = (int?)PaymentStatus.Pending,
             paid = 0,
             total_credit = 0,
-            due = 0,
+
             remaining = 0
         };
 
@@ -436,9 +432,9 @@
             return;
         }
 
-        if (recoveryModel.paid > customerTotalRemaining)
+        if (recoveryModel.paid > customerTotalCredit)
         {
-            errorMessage = "Paid amount cannot exceed total remaining credit.";
+            errorMessage = "Paid amount cannot exceed total credit.";
             return;
         }
 
@@ -448,7 +444,7 @@
         {
             using var context = DbFactory.CreateDbContext();
 
-            // Get all customer's credits (we'll use the first one as primary, but apply payment proportionally to all pending credits)
+            // Get all customer's credits
             var customerCreditsFromDb = await context.credits
                 .Where(c => c.customer_id == recoveryModel.customer_id)
                 .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending)
@@ -463,51 +459,24 @@
                 if (remainingToPay <= 0) break;
 
                 // Calculate how much we can apply to this credit
-                decimal paymentForThisCredit = Math.Min(remainingToPay, credit.remaining);
+                decimal paymentForThisCredit = Math.Min(remainingToPay, credit.total_credit);
 
-                // Update this credit like SaleEditor does
+                // Update this credit: subtract from total_credit, set paid and remaining
+                credit.total_credit -= paymentForThisCredit;
                 credit.paid += paymentForThisCredit;
-                credit.remaining = credit.total_credit - credit.paid;
-                credit.status = credit.remaining <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
+                credit.remaining = credit.total_credit;
+                credit.status = credit.total_credit <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
 
                 remainingToPay -= paymentForThisCredit;
 
-                // If this credit is now fully paid, update related records
-                if (credit.remaining <= 0)
-                {
-                    // Update all credit details for this credit to Paid
-                    var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == credit.id).ToListAsync();
-                    foreach (var cd in creditDetailsToUpdate)
-                    {
-                        cd.status = (int?)PaymentStatus.Paid;
-                    }
 
-                    // Find all related sale headers via credit details
-                    var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
-                    if (saleIdsFromCreditDetails.Any())
-                    {
-                        var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
-                        foreach (var sh in saleHeadersToUpdate)
-                        {
-                            sh.status = (int?)PaymentStatus.Paid;
-                            sh.due = 0; // If fully paid, due should be 0
-                        }
-
-                        // Update all related sale details (sales table)
-                        var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
-                        foreach (var sale in salesToUpdate)
-                        {
-                            sale.status = (int?)PaymentStatus.Paid;
-                        }
-                    }
-                }
             }
 
             // Set recovery model fields correctly
-            recoveryModel.credit_id = primaryCreditId; // Use first credit as linked credit
+            recoveryModel.credit_id = primaryCreditId;
             recoveryModel.total_credit = customerTotalCredit;
-            recoveryModel.due = customerTotalRemaining; // Due is original total remaining before payment
-            recoveryModel.remaining = customerTotalRemaining - recoveryModel.paid; // Remaining after payment
+
+            recoveryModel.remaining = customerTotalCredit - recoveryModel.paid;
             context.recoveries.Add(recoveryModel);
 
             await context.SaveChangesAsync();
@@ -558,41 +527,14 @@
                 // For this credit, how much can we reverse?
                 decimal reverseForThisCredit = Math.Min(remainingToReverse, credit.paid);
 
+                credit.total_credit += reverseForThisCredit;
                 credit.paid -= reverseForThisCredit;
-                credit.remaining = credit.total_credit - credit.paid;
-                credit.status = credit.remaining <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
+                credit.remaining = credit.total_credit;
+                credit.status = credit.total_credit <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
 
                 remainingToReverse -= reverseForThisCredit;
 
-                // If credit now has remaining, update related records back to Pending
-                if (credit.remaining > 0)
-                {
-                    // Update all credit details for this credit to Pending
-                    var creditDetailsToUpdate = await context.credits_details.Where(cd => cd.credit_id == credit.id).ToListAsync();
-                    foreach (var cd in creditDetailsToUpdate)
-                    {
-                        cd.status = (int?)PaymentStatus.Pending;
-                    }
 
-                    // Find all related sale headers via credit details
-                    var saleIdsFromCreditDetails = creditDetailsToUpdate.Select(cd => cd.sale_id).Distinct().ToList();
-                    if (saleIdsFromCreditDetails.Any())
-                    {
-                        var saleHeadersToUpdate = await context.SalesHeader.Where(sh => saleIdsFromCreditDetails.Contains(sh.id)).ToListAsync();
-                        foreach (var sh in saleHeadersToUpdate)
-                        {
-                            sh.status = (int?)PaymentStatus.Pending;
-                            sh.due = sh.net_payable - sh.paid; // Recalculate due
-                        }
-
-                        // Update all related sale details (sales table)
-                        var salesToUpdate = await context.sales.Where(s => saleIdsFromCreditDetails.Contains(s.sale_id)).ToListAsync();
-                        foreach (var sale in salesToUpdate)
-                        {
-                            sale.status = (int?)PaymentStatus.Pending;
-                        }
-                    }
-                }
             }
 
             context.recoveries.Remove(recovery);

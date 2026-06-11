@@ -80,21 +80,6 @@ namespace E_Invoice_system.Migrations
                     b.HasKey("id");
 
                     b.ToTable("employee");
-
-                    b.HasData(
-                        new
-                        {
-                            id = 1,
-                            address = "Admin Address",
-                            cnic = "00000-0000000-0",
-                            date = "1-1-2024",
-                            email = "admin@pos.com",
-                            emp_code = "EMP-001",
-                            full_name = "Admin",
-                            mobile_no = "0000-0000000",
-                            salary = 0m,
-                            status = "Active"
-                        });
                 });
 
             modelBuilder.Entity("E_Invoice_system.Models.Role", b =>
@@ -115,13 +100,6 @@ namespace E_Invoice_system.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            RoleTitle = "Admin"
-                        });
                 });
 #pragma warning restore 612, 618
         }
