@@ -1,0 +1,341 @@
+﻿@page "/"
+@model Retailio.Pages.HomeModel
+@{
+    Layout = null;
+    var phone1   = Model.StorePhone1;
+    var phone2   = Model.StorePhone2;
+    var address  = Model.StoreAddress;
+    var city     = Model.StoreCity;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retailio - Smart POS &amp; Invoicing System</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/marketing/marketing.css" asp-append-version="true" />
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <i class="fas fa-store"></i>
+            <span>Retailio</span>
+        </div>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="/Account/Login" class="btn-primary nav-login-btn"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        </ul>
+        <div class="nav-actions">
+            <button class="theme-toggle" id="themeToggle" title="Switch to Dark Mode">
+                <i class="fas fa-sun"></i>
+            </button>
+            <div class="nav-toggle" id="navToggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="home" class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">Streamline Your Business with <span class="gradient-text">Retailio</span></h1>
+            <p class="hero-subtitle">Complete invoicing, inventory management, and POS solution for modern retail businesses</p>
+            <div class="hero-buttons">
+                <a href="#features" class="btn-primary btn-lg">Explore Features</a>
+                <a href="#contact" class="btn-outline btn-lg"><i class="fas fa-play-circle"></i> Watch Demo</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number" data-key="users" data-target="@Model.TotalUsers" data-suffix="+">@Model.TotalUsers</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" data-key="sales" data-target="@Model.TotalSales" data-suffix="+">@Model.TotalSales</div>
+                    <div class="stat-label">Sales Generated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" data-key="satisfaction" data-target="@Model.SatisfactionPct" data-suffix="%">@Model.SatisfactionPct</div>
+                    <div class="stat-label">Satisfaction</div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="screenshots-container">
+                <img src="/marketing-login.png" alt="Retailio Login" class="screenshot screenshot-login" onerror="this.style.display='none'" />
+                <img src="/marketing-dash.png" alt="Retailio Dashboard" class="screenshot screenshot-dashboard" onerror="this.style.display='none'" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features" class="features">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Everything you need to manage your business efficiently</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card" data-feature="invoicing">
+                <div class="feature-icon"><i class="fas fa-receipt"></i></div>
+                <h3>Smart Invoicing</h3>
+                <p>Create professional invoices with customizable templates and automated calculations</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="inventory">
+                <div class="feature-icon"><i class="fas fa-boxes"></i></div>
+                <h3>Inventory Management</h3>
+                <p>Track stock levels, manage products, and receive low stock alerts automatically</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="customers">
+                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                <h3>Customer Management</h3>
+                <p>Organize customer information, track purchase history, and build relationships</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="analytics">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Real-time Analytics</h3>
+                <p>Get insights with beautiful charts and reports for sales, inventory, and more</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="roles">
+                <div class="feature-icon"><i class="fas fa-user-shield"></i></div>
+                <h3>User Roles</h3>
+                <p>Manage permissions with role-based access control for your team</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="credits">
+                <div class="feature-icon"><i class="fas fa-credit-card"></i></div>
+                <h3>Credit &amp; Refunds</h3>
+                <p>Handle customer credits and returns with ease and accuracy</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="reports">
+                <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                <h3>Comprehensive Reports</h3>
+                <p>Generate detailed reports for sales, inventory, customers, and employees</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+            <div class="feature-card" data-feature="currency">
+                <div class="feature-icon"><i class="fas fa-coins"></i></div>
+                <h3>Multi-Currency</h3>
+                <p>Support for multiple currencies to expand your business globally</p>
+                <span class="feature-learn-more"><i class="fas fa-arrow-right"></i> Learn more</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section id="pricing" class="pricing">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Simple Pricing</h2>
+            <p class="section-subtitle">Choose the plan that fits your business needs</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3 class="pricing-plan">Starter</h3>
+                <div class="pricing-price">
+                    <span class="currency">$</span><span class="amount">0</span><span class="period">/month</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check"></i> Up to 5 employees</li>
+                    <li><i class="fas fa-check"></i> Basic inventory tracking</li>
+                    <li><i class="fas fa-check"></i> Standard reports</li>
+                    <li><i class="fas fa-check"></i> Email support</li>
+                </ul>
+                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+            </div>
+            <div class="pricing-card pricing-featured">
+                <div class="pricing-badge">Most Popular</div>
+                <h3 class="pricing-plan">Professional</h3>
+                <div class="pricing-price">
+                    <span class="currency">$</span><span class="amount">49</span><span class="period">/month</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check"></i> Unlimited employees</li>
+                    <li><i class="fas fa-check"></i> Advanced inventory</li>
+                    <li><i class="fas fa-check"></i> All reports &amp; analytics</li>
+                    <li><i class="fas fa-check"></i> Priority support</li>
+                    <li><i class="fas fa-check"></i> Multi-currency</li>
+                </ul>
+                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+            </div>
+            <div class="pricing-card">
+                <h3 class="pricing-plan">Enterprise</h3>
+                <div class="pricing-price">
+                    <span class="currency">$</span><span class="amount">99</span><span class="period">/month</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check"></i> Everything in Pro</li>
+                    <li><i class="fas fa-check"></i> Custom integrations</li>
+                    <li><i class="fas fa-check"></i> Dedicated account manager</li>
+                    <li><i class="fas fa-check"></i> 24/7 phone support</li>
+                    <li><i class="fas fa-check"></i> SLA guarantee</li>
+                </ul>
+                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ CONTACT ═══ -->
+<section id="contact" class="contact">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Get In Touch</h2>
+            <p class="section-subtitle">Have questions? We're here to help!</p>
+        </div>
+        <div class="contact-content">
+            <div class="contact-info">
+                @if (!string.IsNullOrEmpty(phone1))
+                {
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div><h4>Phone</h4><p>@phone1@(string.IsNullOrEmpty(phone2) ? "" : " / " + phone2)</p></div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(address) || !string.IsNullOrEmpty(city))
+                {
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h4>Address</h4>
+                            <p>
+                                @if (!string.IsNullOrEmpty(address)) { @address }
+                                @if (!string.IsNullOrEmpty(city)) { <br />@city }
+                            </p>
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.BusinessNature))
+                {
+                    <div class="contact-item">
+                        <i class="fas fa-briefcase"></i>
+                        <div><h4>Business</h4><p>@Model.BusinessNature</p></div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.StoreComments))
+                {
+                    <div class="contact-item">
+                        <i class="fas fa-info-circle"></i>
+                        <div><h4>Note</h4><p>@Model.StoreComments</p></div>
+                    </div>
+                }
+                @if (string.IsNullOrEmpty(phone1) && string.IsNullOrEmpty(address))
+                {
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div><h4>Email</h4><p>contact@retailio.com</p></div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div><h4>Phone</h4><p>+1 (555) 123-4567</p></div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div><h4>Address</h4><p>123 Business Ave, Suite 100<br />New York, NY 10001</p></div>
+                    </div>
+                }
+            </div>
+            <form class="contact-form" id="contactForm">
+                <div class="form-group">
+                    <input type="text" placeholder="Your Name" required />
+                </div>
+                <div class="form-group">
+                    <input type="email" placeholder="Your Email" required />
+                </div>
+                <div class="form-group">
+                    <textarea placeholder="Your Message" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary btn-lg btn-block">Send Message</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="nav-brand">
+                    <i class="fas fa-store"></i>
+                    <span>Retailio</span>
+                </div>
+                <p>Transforming business management with smart POS and inventory solutions.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h4>Follow Us</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; @DateTime.Now.Year Retailio. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- ═══ FEATURE MODAL ═══ -->
+<div class="modal-overlay" id="featureModal">
+    <div class="modal-container feature-modal-container">
+        <div class="feature-modal-hero" id="featureModalHero">
+            <div class="feature-modal-icon" id="featureModalIcon"></div>
+            <button class="modal-close feature-modal-close" id="closeFeatureModal">&times;</button>
+        </div>
+        <div class="modal-body feature-modal-body">
+            <h3 id="featureModalTitle"></h3>
+            <p class="feature-modal-tagline" id="featureModalTagline"></p>
+            <div class="feature-modal-highlights" id="featureModalHighlights"></div>
+            <div class="feature-modal-cta">
+                <a href="/Account/Login" class="btn-primary" style="flex:1;text-align:center;">
+                    <i class="fas fa-sign-in-alt"></i> Login to Get Started
+                </a>
+                <a href="#pricing" class="btn-outline feature-modal-pricing-link" id="featureModalPricingLink">
+                    <i class="fas fa-tag"></i> View Pricing
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/css/marketing/marketing.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using Retailio.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IJSRuntime JSRuntime
+
+<div class="employee-hub-container">
+    <!-- Breadcrumbs -->
+    <div class="hub-breadcrumbs no-print">
+        <div class="breadcrumb-item">
+            <i class="ph-house-line"></i>
+            <span>Dashboard</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item clickable" @onclick="OnBack">
+            <span>Reports Center</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item active">
+            <span>Staff Analytics</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="hub-header no-print">
+        <div class="header-content">
+            <h1 class="hub-title">Human Resources</h1>
+            <p class="hub-subtitle">Analyze staff composition, performance, and roster intelligence</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-outline" @onclick='() => ExportToCSV("employeeTable")'>
+                <i class="ph-file-csv"></i> Export CSV
+            </button>
+            <button class="btn-primary-gradient" @onclick="PrintReport">
+                <i class="ph-printer"></i> Print Roster
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Glass -->
+    <div class="filters-glass no-print">
+        <div class="filters-inner">
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> From Date</label>
+                <input type="date" @bind="fromDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> To Date</label>
+                <input type="date" @bind="toDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-users"></i> Select Staff</label>
+                <select @bind="selectedEmployeeId">
+                    <option value="All">All Staff Members</option>
+                    @foreach (var emp in allEmployeesForDropdown)
+                    {
+                        <option value="@emp.id">@emp.full_name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-funnel"></i> Staff Status</label>
+                <select @bind="selectedStatus">
+                    <option value="All">All Staff</option>
+                    <option value="Active">Active Only</option>
+                    <option value="Inactive">Inactive Only</option>
+                </select>
+            </div>
+            <div class="filter-actions-row">
+                <button class="btn-reset-text" @onclick="ResetFilters">Reset Filters</button>
+                <button class="btn-generate-glow" @onclick="LoadData">
+                    <i class="ph-lightning"></i> Generate HR Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullReportContainer">
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card-premium border-purple">
+                    <div class="stat-info">
+                        <span class="label">Total Workforce</span>
+                        <h2 class="value">@(isGenerated ? allEmployees.Count.ToString() : "---")</h2>
+                    </div>
+                    <div class="stat-icon purple-glow"><i class="ph-users"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #8b5cf6;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-green">
+                    <div class="stat-info">
+                        <span class="label">Active Staff</span>
+                        <h2 class="value">@(isGenerated ? allEmployees.Count(e => e.status == (int?)EntityStatus.Active).ToString() : "---")</h2>
+                    </div>
+                    <div class="stat-icon green-glow"><i class="ph-user-check"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated && allEmployees.Count > 0 ? (allEmployees.Count(e => e.status == (int?)EntityStatus.Active) * 100 / allEmployees.Count) : 0)%; background: #10b981;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-orange">
+                    <div class="stat-info">
+                        <span class="label">Total Payroll</span>
+                        <h2 class="value">@(isGenerated ? allEmployees.Sum(e => e.salary).ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon orange-glow"><i class="ph-money"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-blue">
+                    <div class="stat-info">
+                        <span class="label">Avg Salary</span>
+                        <h2 class="value">@(isGenerated && allEmployees.Any() ? (allEmployees.Average(e => e.salary)).ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon blue-glow"><i class="ph-trend-up"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #3b82f6;"></div></div>
+                </div>
+            </div>
+
+            <!-- Chart & Insight Row -->
+            <div class="insight-row">
+                <div class="glass-card chart-container">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="ph-chart-bar"></i> Salary Distribution</h3>
+                        <div class="card-badge">Payroll Spread</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        @if (isGenerated)
+                        {
+                            <canvas id="employeeHubChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="chart-skeleton">
+                                <i class="ph-identification-card"></i>
+                                <p>Generate report to see payroll distribution</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="glass-card side-insights">
+                    <div class="insights-tabs">
+                        <div class="tab-item active"><i class="ph-identification-card"></i> Top Earners</div>
+                    </div>
+                    <div class="insights-content">
+                        @if (isGenerated && earnerInsights.Any())
+                        {
+                            @foreach (var emp in earnerInsights.Take(5))
+                            {
+                                <div class="product-mini-item">
+                                    <div class="prod-details">
+                                        <span class="prod-name">@emp.Name</span>
+                                        <span class="prod-meta">@emp.Code</span>
+                                    </div>
+                                    <div class="prod-value" style="color: #BC1823;">@emp.Salary.ToString("N0")</div>
+                                </div>
+                            }
+                        }
+                        else if (!isGenerated)
+                        {
+                            <div class="empty-mini">Awaiting analysis...</div>
+                        }
+                        else
+                        {
+                            <div class="empty-mini">No staff data</div>
+                        }
+
+                        <div class="mix-header">
+                            <h4 class="mix-title">Staff Status Mix</h4>
+                        </div>
+                        <div class="mix-content">
+                            @if (isGenerated)
+                            {
+                                @foreach (var stat in statusStats)
+                                {
+                                    <div class="mix-item">
+                                        <div class="mix-labels">
+                                            <span>@stat.Label</span>
+                                            <span>@stat.Percent.ToString("N0")%</span>
+                                        </div>
+                                        <div class="mix-bar-wrap">
+                                            <div class="mix-bar" style="width: @(stat.Percent)%; background: @(stat.Color);"></div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="mix-skeleton"></div>
+                                <div class="mix-skeleton"></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="glass-card table-section">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ph-identification-card"></i> Staff Directory</h3>
+                    <div class="card-actions no-print">
+                         <span class="count-badge">@(isGenerated ? filteredEmployees.Count : 0) Staff Members</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    @if (isLoading)
+                    {
+                        <div class="premium-loader">
+                            <i class="ph-spinner ph-spin"></i>
+                            <span>Syncing HR Records...</span>
+                        </div>
+                    }
+                    else if (isGenerated && filteredEmployees.Any())
+                    {
+                        <table class="premium-table" id="employeeTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Mobile No</th>
+                                    <th>CNIC</th>
+                                    <th>Salary</th>
+                                    <th>Joining Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in filteredEmployees)
+                                {
+                                    <tr>
+                                        <td class="font-bold">@e.full_name</td>
+                                        <td><span class="badge-bill">@e.emp_code</span></td>
+                                        <td>@e.mobile_no</td>
+                                        <td>@e.cnic</td>
+                                        <td>@e.salary.ToString("N0")</td>
+                                        <td class="td-date">@e.date</td>
+                                        <td><span class="badge-status @(e.status == (int?)EntityStatus.Active ? "sale" : "return")">@PaymentHelper.GetEntityStatusName(e.status)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (!isGenerated)
+                    {
+                        <div class="empty-hero">
+                            <i class="ph-identification-badge"></i>
+                            <h3>HR Intelligence Ready</h3>
+                            <p>Filter your workforce records and click <strong>Generate Analysis</strong> to view profiles.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-hero">
+                            <i class="ph-users"></i>
+                            <h3>No Employees Found</h3>
+                            <p>No staff records match your current criteria.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="/css/reports/employeereport.css" rel="stylesheet" />
+
+@code {
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private DateTime fromDate = DateTime.Now.AddDays(-30);
+    private DateTime toDate = DateTime.Now;
+    private string selectedEmployeeId = "All";
+    private List<Employee> allEmployeesForDropdown = new();
+    private string searchTerm = "";
+    private string selectedStatus = "All";
+    private List<Employee> allEmployees = new();
+    private List<Employee> filteredEmployees = new();
+    private bool isLoading = false;
+    private bool isGenerated = false;
+    private StoreConfiguration storeInfo = new();
+
+    private class EarnerInsight { public string Name { get; set; } = ""; public string Code { get; set; } = ""; public decimal Salary { get; set; } }
+    private List<EarnerInsight> earnerInsights = new();
+
+    private class EmpStatusStat { public string Label { get; set; } = ""; public decimal Percent { get; set; } public string Color { get; set; } = ""; }
+    private List<EmpStatusStat> statusStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        allEmployeesForDropdown = await context.employees.AsNoTracking().OrderBy(x => x.full_name).ToListAsync();
+        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        if (config != null) storeInfo = config;
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        isGenerated = true;
+        StateHasChanged();
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            allEmployees = await context.employees.AsNoTracking().OrderByDescending(x => x.salary).ToListAsync();
+            
+            filteredEmployees = allEmployees.Where(e => 
+                (selectedEmployeeId == "All" || e.id.ToString() == selectedEmployeeId) &&
+                (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
+            ).ToList();
+
+            var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+            if (config != null) storeInfo = config;
+
+            // Insights
+            earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.full_name, Code = e.emp_code, Salary = e.salary }).ToList();
+
+            var statuses = allEmployees.GroupBy(e => PaymentHelper.GetEntityStatusName(e.status))
+                .Select(g => new { Label = g.Key, Count = g.Count() })
+                .ToList();
+            
+            int total = allEmployees.Count;
+            statusStats = statuses.Select(s => new EmpStatusStat {
+                Label = s.Label,
+                Percent = total > 0 ? (s.Count * 100m / total) : 0,
+                Color = s.Label == "Active" ? "#10b981" : "#f59e0b"
+            }).ToList();
+
+            // Chart Data (Salary Spread)
+            var groups = allEmployees.GroupBy(e => (e.salary / 5000) * 5000)
+                .Select(g => new { Range = $"{g.Key:N0} - {g.Key + 5000:N0}", Count = g.Count() })
+                .OrderBy(g => g.Range)
+                .ToList();
+
+            if (groups.Any())
+            {
+                var labels = groups.Select(g => g.Range).ToArray();
+                var values = groups.Select(g => (decimal)g.Count).ToArray();
+                await JSRuntime.InvokeVoidAsync("renderReportChart", "employeeHubChart", new { labels, values, label = "Staff Count", type = "bar" });
+            }
+        }
+        catch (Exception ex) { Console.WriteLine(ex.Message); }
+        finally { isLoading = false; StateHasChanged(); }
+    }
+
+    private void HandleSearch()
+    {
+        var term = searchTerm.ToLower();
+        filteredEmployees = allEmployees.Where(e => 
+            ((e.full_name?.ToLower().Contains(term) ?? false) || 
+             (e.mobile_no?.ToLower().Contains(term) ?? false) || 
+             (e.cnic?.ToLower().Contains(term) ?? false) ||
+             (e.emp_code?.ToLower().Contains(term) ?? false)) &&
+            (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
+        ).ToList();
+    }
+
+    private async Task ResetFilters()
+    {
+        searchTerm = "";
+        selectedEmployeeId = "All";
+        selectedStatus = "All";
+        fromDate = DateTime.Now.AddDays(-30);
+        toDate = DateTime.Now;
+        isGenerated = false;
+        filteredEmployees.Clear();
+        StateHasChanged();
+    }
+
+    private async Task PrintReport() { 
+        string logoUrl = "";
+        if (!string.IsNullOrEmpty(storeInfo.LogoPath)) logoUrl = $"/store-logo/{Path.GetFileName(storeInfo.LogoPath)}";
+
+        var printData = new {
+            shopName = storeInfo.ShopName,
+            address = storeInfo.Address,
+            phone = storeInfo.Phone1,
+            email = "", 
+            logoUrl = logoUrl
+        };
+
+        await JSRuntime.InvokeVoidAsync("printElement", "fullReportContainer", "Employee Roster", printData); 
+    }
+    private async Task ExportToCSV(string id) { await JSRuntime.InvokeVoidAsync("exportTableToCSV", id, "Employee_Roster.csv"); }
+}
+

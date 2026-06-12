@@ -1,0 +1,366 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using Retailio.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Web
+@rendermode RenderMode.InteractiveServer
+
+<link href="/css/settings/user.css" rel="stylesheet" />
+<link href="/css/settings/index.css" rel="stylesheet" />
+
+<div class="management-container @(showForm ? "modal-active" : "")">
+    <div class="card card-no-padding">
+        <div class="page-header">
+            <div class="page-header-left">
+                <i class="ph-users-three page-header-icon"></i>
+                <h2 class="page-header-title">User Management</h2>
+            </div>
+            <div class="page-header-actions">
+                <a href="/settings" class="btn-secondary">
+                    <i class="ph-arrow-left"></i> Back to Settings
+                </a>
+            </div>
+        </div>
+
+
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="styled-table" style="margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th style="padding-left: 1.5rem;">ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Security Role</th>
+                        <th>Status</th>
+                        <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (userList.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="ph-users empty-state-icon"></i>
+                                <p>No users found. Users are created automatically when you add employees.</p>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var user in userList)
+                    {
+                        <tr>
+                            <td class="font-bold" style="padding-left: 1.5rem;">#@user.id</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <span class="user-avatar-chip">@(user.username?.Length > 0 ? user.username[0].ToString().ToUpper() : "?")</span>
+                                    <div class="font-bold">@user.username</div>
+                                </div>
+                            </td>
+                            <td class="text-muted" style="font-size:0.85rem;">@user.email</td>
+                            <td>
+                                <span class="role-badge">@user.Role?.RoleTitle</span>
+                            </td>
+                            <td>
+                                <span class="status-badge @(user.status == (int?)EntityStatus.Active ? "status-active" : "status-inactive")">
+                                    @PaymentHelper.GetEntityStatusName(user.status)
+                                </span>
+                            </td>
+                            <td class="text-right" style="padding-right: 1.5rem;">
+                                <div class="actions-container actions-right">
+                                    <button class="btn-icon-sm btn-edit" @onclick="() => EditUser(user)" title="Edit">
+                                        <i class="ph-pencil"></i>
+                                    </button>
+                                    <button class="btn-icon-sm btn-delete" @onclick="() => DeleteUser(user.id)" title="Delete">
+                                        <i class="ph-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @if (userList.Any())
+        {
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing <b>@((currentPage - 1) * pageSize + 1)</b> to <b>@(Math.Min(currentPage * pageSize, totalCount))</b> of <b>@totalCount</b> entries
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn-pagination" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                        <i class="ph-caret-left"></i>
+                    </button>
+                    
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        @if (i == 1 || i == TotalPages || (i >= currentPage - 2 && i <= currentPage + 2))
+                        {
+                            <button class="btn-pagination @(currentPage == pageNumber ? "active" : "")" @onclick="() => GoToPage(pageNumber)">
+                                @pageNumber
+                            </button>
+                        }
+                        else if (i == currentPage - 3 || i == currentPage + 3)
+                        {
+                            <span class="pagination-ellipsis">...</span>
+                        }
+                    }
+
+                    <button class="btn-pagination" @onclick="NextPage" disabled="@(currentPage == TotalPages)">
+                        <i class="ph-caret-right"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+</div>
+
+@if (showForm)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-user @(editingUser == null ? "form-icon-primary" : "")"></i>
+                    @(editingUser == null ? "Add New User" : "Edit User Account")
+                </div>
+                <button type="button" class="form-panel-close" @onclick="HideForm"><i class="ph-x"></i></button>
+            </div>
+
+            <div class="form-panel-body">
+                <EditForm Model="userModel" OnValidSubmit="SaveUser">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <InputText @bind-Value="userModel.username" class="form-control" placeholder="e.g. john_doe" />
+                        <ValidationMessage For="@(() => userModel.username)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Login Email</label>
+                        <InputText @bind-Value="userModel.email" class="form-control" placeholder="user@example.com" />
+                        <ValidationMessage For="@(() => userModel.email)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account Password</label>
+                        <InputText @bind-Value="userModel.password" type="password" class="form-control" placeholder="••••••••" />
+                        <ValidationMessage For="@(() => userModel.password)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select @bind="userModel.role_id" class="form-control">
+                            <option value="0" disabled selected hidden>-- Select Role --</option>
+                            @foreach (var role in rolesList)
+                            {
+                                <option value="@role.Id">@role.RoleTitle</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account Status</label>
+                        <select @bind="userModel.status" class="form-control">
+                            <option value="@((int)EntityStatus.Active)">Active</option>
+                            <option value="@((int)EntityStatus.Inactive)">Inactive</option>
+                        </select>
+                    </div>
+                </EditForm>
+            </div>
+
+            <div class="form-panel-footer">
+                @if (editingUser != null)
+                {
+                    <button type="button" @onclick="() => DeleteUser(editingUser.id)" class="btn-delete" style="margin-right: auto;" disabled="@isSubmitting">
+                        <i class="ph-trash"></i> Delete
+                    </button>
+                }
+                <button type="button" class="btn-cancel" @onclick="HideForm" disabled="@isSubmitting">Cancel</button>
+                <button type="button" class="btn-save" @onclick="SaveUser" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <i class="ph-spinner ph-spin"></i> @("Saving...")
+                    }
+                    else
+                    {
+                        <i class="ph-check"></i> @(editingUser == null ? "Save User" : "Update User")
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private List<users> userList = new();
+    private users userModel = new();
+    private bool showForm = false;
+    private users? editingUser = null;
+    private List<Role> rolesList = new();
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    // Pagination state
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+        await LoadUsers();
+    }
+
+    private async Task LoadRoles()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            // SuperAdmin is a system-only role — exclude it so admin cannot manage it
+            rolesList = await context.roles
+                .Where(r => r.RoleTitle != "SuperAdmin")
+                .OrderBy(r => r.Id)
+                .ToListAsync();
+        }
+        catch { }
+    }
+
+    private async Task LoadUsers()
+    {
+        using var context = DbFactory.CreateDbContext();
+        totalCount = await context.users.CountAsync();
+        userList = await context.users
+            .Include(u => u.Role)
+            .OrderByDescending(u => u.id)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GoToPage(int page)
+    {
+        currentPage = page;
+        await LoadUsers();
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await LoadUsers();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadUsers();
+        }
+    }
+
+    private async Task ShowAddForm()
+    {
+        await LoadRoles();
+        userModel = new users { status = (int?)EntityStatus.Active, role_id = rolesList.FirstOrDefault()?.Id ?? 0 };
+        editingUser = null;
+        showForm = true;
+    }
+
+    private async Task EditUser(users user)
+    {
+        await LoadRoles();
+        editingUser = user;
+        userModel = new users
+        {
+            id = user.id,
+            email = user.email,
+            username = user.username,
+            password = user.password,
+            role_id = user.role_id,
+            status = user.status
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        errorMessage = null;
+    }
+
+    private async Task SaveUser()
+    {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        errorMessage = null;
+        try {
+            using var context = DbFactory.CreateDbContext();
+            if (editingUser == null)
+            {
+                // Hash the password before storing
+                if (!string.IsNullOrWhiteSpace(userModel.password))
+                    userModel.password = PaymentHelper.HashPassword(userModel.password);
+                context.users.Add(userModel);
+            }
+            else
+            {
+                // Only re-hash if the password field was changed (not the stored hash)
+                if (!string.IsNullOrWhiteSpace(userModel.password) &&
+                    userModel.password != editingUser.password)
+                {
+                    userModel.password = PaymentHelper.HashPassword(userModel.password);
+                }
+                context.users.Update(userModel);
+            }
+            await context.SaveChangesAsync();
+            var msg = editingUser == null ? "User created successfully!" : "User updated successfully!";
+            await JS.InvokeVoidAsync("showToast", "Success", msg, "success");
+            await LoadUsers();
+            HideForm();
+        } catch (Exception ex) {
+            errorMessage = "Error saving user: " + ex.Message;
+            await JS.InvokeVoidAsync("showToast", "Error", errorMessage, "error");
+        } finally {
+            isSubmitting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        if (isSubmitting) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this user?")) return;
+        
+        isSubmitting = true;
+        try {
+            using var context = DbFactory.CreateDbContext();
+            var user = await context.users.FindAsync(id);
+            if (user != null)
+            {
+                context.users.Remove(user);
+                await context.SaveChangesAsync();
+                await JS.InvokeVoidAsync("showToast", "Success", "User deleted successfully!", "success");
+                await LoadUsers();
+                if (showForm) HideForm();
+            }
+        } finally {
+            isSubmitting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

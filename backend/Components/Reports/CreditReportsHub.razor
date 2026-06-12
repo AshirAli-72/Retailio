@@ -1,0 +1,516 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using Retailio.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IJSRuntime JSRuntime
+
+<div class="sales-hub-container">
+    <!-- Breadcrumbs -->
+    <div class="hub-breadcrumbs no-print">
+        <div class="breadcrumb-item">
+            <i class="ph-house-line"></i>
+            <span>Dashboard</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item clickable" @onclick="OnBack">
+            <span>Reports Center</span>
+        </div>
+        <i class="ph-caret-right separator"></i>
+        <div class="breadcrumb-item active">
+            <span>Credit Reports</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="hub-header no-print">
+        <div class="header-content">
+            <h1 class="hub-title">Credit Analytics</h1>
+            <p class="hub-subtitle">Monitor customer credit limits, paid amounts, and outstanding balances</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-outline" @onclick='() => ExportToCSV("creditTable")'>
+                <i class="ph-file-csv"></i> Export CSV
+            </button>
+            <button class="btn-primary-gradient" @onclick="PrintReport">
+                <i class="ph-printer"></i> Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filters-glass no-print">
+        <div class="filters-inner">
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> From Date</label>
+                <input type="date" @bind="fromDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-calendar"></i> To Date</label>
+                <input type="date" @bind="toDate" />
+            </div>
+            <div class="filter-group">
+                <label><i class="ph-users"></i> Customer</label>
+                <select @bind="selectedCustomerId">
+                    <option value="All">All Customers</option>
+                    @foreach (var c in allCustomersForDropdown)
+                    {
+                        <option value="@c.id">@c.name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-actions-row">
+                <button class="btn-reset-text" @onclick="ResetFilters">Reset Filters</button>
+                <button class="btn-generate-glow" @onclick="GenerateReport">
+                    <i class="ph-lightning"></i> Generate Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullReportContainer">
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card-premium border-blue">
+                    <div class="stat-info">
+                        <span class="label">Total Credit Amount</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalCreditAmount.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon blue-glow"><i class="ph-money"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #3b82f6;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-green">
+                    <div class="stat-info">
+                        <span class="label">Total Paid</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalPaidAmount.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon green-glow"><i class="ph-check-circle"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #10b981;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-green">
+                    <div class="stat-info">
+                        <span class="label">Total Recovery Paid</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalRecoveryPaid.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon green-glow"><i class="ph-check-double"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #10b981;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-orange">
+                    <div class="stat-info">
+                        <span class="label">Total Remaining</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalRemainingAmount.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon orange-glow"><i class="ph-warning-circle"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-orange">
+                    <div class="stat-info">
+                        <span class="label">Total Recovery Remaining</span>
+                        <h2 class="value">@currencySymbol @(isGenerated ? totalRecoveryRemaining.ToString("N0") : "---")</h2>
+                    </div>
+                    <div class="stat-icon orange-glow"><i class="ph-warning"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
+                </div>
+
+                <div class="stat-card-premium border-red">
+                    <div class="stat-info">
+                        <span class="label">Total Transactions</span>
+                        <h2 class="value">@(isGenerated ? totalTransactions.ToString() : "---")</h2>
+                    </div>
+                    <div class="stat-icon red-glow"><i class="ph-receipt"></i></div>
+                    <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #BC1823;"></div></div>
+                </div>
+            </div>
+
+            <!-- Chart & Insight Row -->
+            <div class="insight-row">
+                <div class="glass-card chart-container">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="ph-chart-line-up"></i> Credit Performance</h3>
+                        <div class="card-badge">Daily Breakdown</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        @if (isGenerated)
+                        {
+                            <canvas id="creditHubChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="chart-skeleton">
+                                <i class="ph-chart-line"></i>
+                                <p>Generate report to see trends</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="glass-card side-insights">
+                    <div class="insights-tabs">
+                        <div class="tab-item active"><i class="ph-trophy"></i> Top Customers</div>
+                    </div>
+                    <div class="insights-content">
+                        @if (isGenerated && topCustomers.Any())
+                        {
+                            @foreach (var cust in topCustomers.Take(4))
+                            {
+                                <div class="product-mini-item">
+                                    <div class="prod-details">
+                                        <span class="prod-name">@cust.Name</span>
+                                        <span class="prod-meta">@cust.Count Transactions</span>
+                                    </div>
+                                    <div class="prod-value">@currencySymbol@cust.CreditAmount.ToString("N0")</div>
+                                </div>
+                            }
+                        }
+                        else if (!isGenerated)
+                        {
+                            <div class="empty-mini">Awaiting analysis...</div>
+                        }
+                        else
+                        {
+                            <div class="empty-mini">No data available</div>
+                        }
+
+                        <div class="mix-header">
+                            <h4 class="mix-title">Status Distribution</h4>
+                        </div>
+                        <div class="mix-content">
+                            @if (isGenerated)
+                            {
+                                @foreach (var stat in statusStats)
+                                {
+                                    <div class="mix-item">
+                                        <div class="mix-labels">
+                                            <span>@stat.Status</span>
+                                            <span>@stat.Percent.ToString("N0")%</span>
+                                        </div>
+                                        <div class="mix-bar-wrap">
+                                            <div class="mix-bar" style="width: @(stat.Percent)%; background: @(stat.Color);"></div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="mix-skeleton"></div>
+                                <div class="mix-skeleton"></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Large Table Section -->
+            <div class="glass-card table-section">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ph-list-bullets"></i> Credit Ledger</h3>
+                    <div class="card-actions no-print">
+                            <span class="count-badge">@(isGenerated ? filteredDetails.Count : 0) Records</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    @if (isLoading)
+                    {
+                        <div class="premium-loader">
+                            <i class="ph-spinner ph-spin"></i>
+                            <span>Processing Intelligence...</span>
+                        </div>
+                    }
+                    else if (isGenerated && filteredDetails.Any())
+                    {
+                        <table class="premium-table" id="creditTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Credit ID</th>
+                                    <th>Customer</th>
+                                    <th>Total Credit</th>
+                                    <th>Paid</th>
+                                    <th>Recovery Paid</th>
+                                    <th>Remaining</th>
+                                    <th>Recovery Remaining</th>
+                                    <th>Payment Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in filteredDetails)
+                                {
+                                    <tr>
+                                        <td class="td-date">@row.date</td>
+                                        <td>@row.credit_id</td>
+                                        <td>@row.CustomerName</td>
+                                        <td>@currencySymbol@row.total_credit.ToString("N2")</td>
+                                        <td class="text-green">@currencySymbol@row.paid.ToString("N2")</td>
+                                        <td class="text-green">@currencySymbol@row.recovery_paid.ToString("N2")</td>
+                                        <td class="text-orange">@currencySymbol@row.remaining.ToString("N2")</td>
+                                        <td class="text-orange">@currencySymbol@row.recovery_remaining.ToString("N2")</td>
+                                        <td><span class="badge-method">@(row.payment_method ?? "—")</span></td>
+                                        <td>
+                                            <span class="badge-status @(row.status?.ToLower() == "paid" ? "sale" : "return")">@(row.status ?? "Pending")</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (!isGenerated)
+                    {
+                        <div class="empty-hero">
+                            <i class="ph-lightning"></i>
+                            <h3>Ready for Analysis</h3>
+                            <p>Set your criteria above and click <strong>Generate Analysis</strong> to visualize your credit data.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-hero">
+                            <i class="ph-file-search"></i>
+                            <h3>No Transactions Found</h3>
+                            <p>Adjust your filters or generate a new report to view data.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="/css/reports/salereport.css" rel="stylesheet" />
+
+@code {
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private DateTime fromDate = DateTime.Now.AddDays(-30);
+    private DateTime toDate = DateTime.Now;
+    private string selectedCustomerId = "All";
+
+    private decimal totalCreditAmount = 0;
+    private decimal totalPaidAmount = 0;
+    private decimal totalRecoveryPaid = 0;
+    private decimal totalRemainingAmount = 0;
+    private decimal totalRecoveryRemaining = 0;
+    private int totalTransactions = 0;
+    private string currencySymbol = "Rs";
+
+    private List<customers> allCustomersForDropdown = new();
+    private List<CreditRow> filteredDetails = new();
+    private bool isLoading = false;
+    private bool isGenerated = false;
+    private StoreConfiguration storeInfo = new();
+
+    private class TopCustomer { public string Name { get; set; } = ""; public int Count { get; set; } public decimal CreditAmount { get; set; } }
+    private List<TopCustomer> topCustomers = new();
+
+    private class StatusStat { public string Status { get; set; } = ""; public decimal Percent { get; set; } public string Color { get; set; } = ""; }
+    private List<StatusStat> statusStats = new();
+
+    private class CreditRow
+    {
+        public int id { get; set; }
+        public int credit_id { get; set; }
+        public string date { get; set; } = "";
+        public decimal total_credit { get; set; }
+        public decimal paid { get; set; }
+        public decimal remaining { get; set; }
+        public decimal recovery_paid { get; set; }
+        public decimal recovery_remaining { get; set; }
+        public string? payment_method { get; set; }
+        public string? status { get; set; }
+        public string CustomerName { get; set; } = "Unknown";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialData();
+    }
+
+    private async Task LoadInitialData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        allCustomersForDropdown = await context.customers.AsNoTracking().OrderBy(c => c.name).ToListAsync();
+
+        var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+        if (currency != null) currencySymbol = currency.symbol ?? "Rs";
+
+        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        if (config != null) storeInfo = config;
+    }
+
+    private async Task ResetFilters()
+    {
+        fromDate = DateTime.Now.AddDays(-30);
+        toDate = DateTime.Now;
+        selectedCustomerId = "All";
+        filteredDetails.Clear();
+        isGenerated = false;
+        StateHasChanged();
+    }
+
+    private static bool TryParseDateRobust(string? dateStr, out DateTime parsedDate)
+    {
+        parsedDate = DateTime.MinValue;
+        if (string.IsNullOrWhiteSpace(dateStr)) return false;
+
+        string cleaned = dateStr.Trim();
+        if (DateTime.TryParse(cleaned, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out parsedDate))
+        {
+            return true;
+        }
+        if (DateTime.TryParse(cleaned, out parsedDate))
+        {
+            return true;
+        }
+        string[] formats = { "yyyy-MM-dd", "dd-MM-yyyy", "d-M-yyyy", "MM/dd/yyyy", "yyyy/MM/dd" };
+        if (DateTime.TryParseExact(cleaned, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out parsedDate))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private async Task GenerateReport()
+    {
+        isLoading = true;
+        isGenerated = true;
+        StateHasChanged();
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            
+            var fromDateStr = fromDate.ToString("yyyy-MM-dd");
+            var toDateStr = toDate.ToString("yyyy-MM-dd");
+
+            // Query credits table joined with customers and recoveries
+            var query = from c in context.credits.AsNoTracking()
+                        join cust in context.customers.AsNoTracking() 
+                            on c.customer_id equals cust.id into customerGroup
+                        from cust in customerGroup.DefaultIfEmpty()
+                        join rec in context.recoveries.AsNoTracking()
+                            on c.id equals rec.credit_id into recGroup
+                        from rec in recGroup.DefaultIfEmpty()
+                        where string.Compare(c.date, fromDateStr) >= 0
+                           && string.Compare(c.date, toDateStr) <= 0
+                        group new { c, cust, rec } by new { c.id, c.date, c.total_credit, c.paid, c.remaining, c.payment_method, c.status, CustomerName = cust.name ?? "Unknown" } into g
+                        select new 
+                        {
+                            g.Key.id,
+                            g.Key.date,
+                            g.Key.total_credit,
+                            g.Key.paid,
+                            g.Key.remaining,
+                            g.Key.payment_method,
+                            g.Key.status,
+                            g.Key.CustomerName,
+                            RecoveryPaid = g.Sum(x => x.rec != null ? x.rec.paid : 0),
+                            RecoveryRemaining = g.Sum(x => x.rec != null ? x.rec.remaining : 0)
+                        };
+
+            // Apply customer filter if selected
+            if (selectedCustomerId != "All" && int.TryParse(selectedCustomerId, out int custId))
+            {
+                query = query.Where(q => context.credits.Any(c => c.id == q.id && c.customer_id == custId));
+            }
+
+            // Execute the query
+            var tempResults = await query
+                .OrderByDescending(q => q.date)
+                .ThenByDescending(q => q.id)
+                .ToListAsync();
+
+            // Build final filteredDetails
+            filteredDetails = tempResults.Select(r =>
+            {
+                return new CreditRow
+                {
+                    id = r.id,
+                    credit_id = r.id,
+                    date = r.date,
+                    total_credit = r.total_credit,
+                    paid = r.paid,
+                    remaining = r.remaining,
+                    recovery_paid = r.RecoveryPaid,
+                    recovery_remaining = r.RecoveryRemaining,
+                    payment_method = r.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(r.payment_method.Value) : null,
+                    status = r.status.HasValue ? PaymentHelper.GetStatusName(r.status.Value) : "Pending",
+                    CustomerName = r.CustomerName
+                };
+            }).ToList();
+
+            // Calculate totals
+            totalCreditAmount = filteredDetails.Sum(x => x.total_credit);
+            totalPaidAmount = filteredDetails.Sum(x => x.paid);
+            totalRecoveryPaid = filteredDetails.Sum(x => x.recovery_paid);
+            totalRemainingAmount = filteredDetails.Sum(x => x.remaining);
+            totalRecoveryRemaining = filteredDetails.Sum(x => x.recovery_remaining);
+            totalTransactions = filteredDetails.Count;
+
+            // Chart Data Calculation
+            var chartGroups = filteredDetails.GroupBy(s => s.date)
+                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.total_credit) })
+                .OrderBy(g => g.Date)
+                .ToList();
+
+            if (chartGroups.Any())
+            {
+                var labels = chartGroups.Select(g => g.Date).ToArray();
+                var values = chartGroups.Select(g => g.Total).ToArray();
+                await JSRuntime.InvokeVoidAsync("renderReportChart", "creditHubChart", new { labels, values, label = "Credit Amount" });
+            }
+
+            // Top Customers
+            topCustomers = filteredDetails
+                .GroupBy(r => r.CustomerName)
+                .Select(g => new TopCustomer { Name = g.Key, Count = g.Count(), CreditAmount = g.Sum(r => r.total_credit) })
+                .OrderByDescending(p => p.CreditAmount)
+                .Take(5)
+                .ToList();
+
+            // Status Mix
+            var statuses = filteredDetails.GroupBy(s => s.status ?? "Pending")
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToList();
+
+            var colors = new[] { "#BC1823", "#10b981", "#3b82f6", "#f59e0b" };
+            statusStats = statuses.Select((m, index) => new StatusStat {
+                Status = m.Status,
+                Percent = totalTransactions > 0 ? (m.Count * 100m / totalTransactions) : 0,
+                Color = colors[index % colors.Length]
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CreditReportsHub] Error: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+        }
+        finally { isLoading = false; StateHasChanged(); }
+    }
+
+    private async Task PrintReport()
+    {
+        string logoUrl = "";
+        if (!string.IsNullOrEmpty(storeInfo.LogoPath)) logoUrl = $"/store-logo/{Path.GetFileName(storeInfo.LogoPath)}";
+
+        var printData = new {
+            shopName = storeInfo.ShopName,
+            address = storeInfo.Address,
+            phone = storeInfo.Phone1,
+            email = "",
+            logoUrl = logoUrl
+        };
+
+        await JSRuntime.InvokeVoidAsync("printElement", "fullReportContainer", "Credit Reports", printData);
+    }
+
+    private async Task ExportToCSV(string tableId)
+    {
+        await JSRuntime.InvokeVoidAsync("exportTableToCSV", tableId, $"Credit_Report_{DateTime.Now:yyyyMMdd}.csv");
+    }
+}

@@ -1,0 +1,9 @@
+﻿@page
+@model Retailio.Pages.Sale.CreateModel
+@{
+    Layout = "_SaleLayout";
+    ViewData["Title"] = "Create Sale";
+}
+
+<component type="typeof(Retailio.backend.Components.Sale.SaleEditor)" render-mode="ServerPrerendered"
+           param-UserName='@HttpContext.Session.GetString("UserName")' />

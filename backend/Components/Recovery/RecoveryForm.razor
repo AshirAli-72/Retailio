@@ -1,0 +1,564 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using Retailio.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+@rendermode RenderMode.InteractiveServer
+
+<div class="management-container @(showForm ? "modal-active" : "")">
+    <div class="card card-no-padding">
+        <div class="page-header">
+            <div class="page-header-left">
+                <i class="ph-receipt page-header-icon"></i>
+                <h2 class="page-header-title">Recovery Management</h2>
+            </div>
+            <button type="button" class="btn-primary" @onclick="ShowAddForm">
+                <i class="ph-user-plus"></i> Recovery
+            </button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="styled-table" style="margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th style="padding-left: 1.5rem;">ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total Credit</th>
+
+                        <th>Paid</th>
+                        <th>Remaining</th>
+                        <th>Status</th>
+                        <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        @foreach (var item in recoveryList)
+                        {
+                            <tr>
+                                <td class="font-bold" style="padding-left: 1.5rem;">
+                                    @item.id
+                                </td>
+
+                                <td class="font-medium">
+                                    @item.CustomerName
+                                </td>
+
+                                <td>
+                                    @item.date
+                                </td>
+
+                                <td class="text-muted font-sm">
+                                    @item.total_credit.ToString("N2")
+                                </td>
+
+
+
+                                <td class="text-success font-bold">
+                                    @item.paid.ToString("N2")
+                                </td>
+
+                                <td class="text-primary font-bold">
+                                    @item.remaining.ToString("N2")
+                                </td>
+
+                                <td>
+                                    <span class="status-badge @(item.status == "Paid" ? "status-active" : (item.status == "Pending" ? "status-pending" : "status-inactive"))">
+                                        @item.status
+                                    </span>
+                                </td>
+
+                                <td class="text-right" style="padding-right: 1.5rem;">
+                                    <div class="actions-container actions-right">
+                                        <button class="btn-icon-sm btn-delete"
+                                                @onclick="() => DeleteRecovery(item.id)"
+                                                title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    @if (!recoveryList.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <i class="ph-receipt empty-state-icon"></i>
+                                <p>No recoveries found. Click <strong>Add Recovery</strong> to get started.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+            @if (recoveryList.Any())
+            {
+                <div class="pagination-footer">
+                    <div class="pagination-info">
+                        Showing <span>@((currentPage - 1) * pageSize + 1)</span> to <span>@(Math.Min(currentPage * pageSize, totalCount))</span> of <span>@totalCount</span> recoveries
+                    </div>
+                    <div class="pagination-controls">
+                        @if (currentPage > 1)
+                        {
+                            <button class="btn-pagination" @onclick="PreviousPage">
+                                <i class="ph-caret-left"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn-pagination" disabled><i class="ph-caret-left"></i></button>
+                        }
+
+                        <button class="btn-pagination active">@currentPage</button>
+
+                        @if (currentPage < TotalPages)
+                        {
+                            <button class="btn-pagination" @onclick="NextPage">
+                                <i class="ph-caret-right"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn-pagination" disabled><i class="ph-caret-right"></i></button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (showForm)
+{
+    <div class="modal-overlay show" style="display:flex;">
+        <div class="modal-content">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-plus-circle"></i> Add Recovery
+                </div>
+                <button type="button" class="form-panel-close" @onclick="HideForm"><i class="ph-x"></i></button>
+            </div>
+
+            <div class="form-panel-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div style="padding: 1rem; border-radius: 8px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; font-size: 0.9rem;">
+                        <i class="ph-warning"></i> @errorMessage
+                    </div>
+                }
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Customer</label>
+                    <select value="@selectedCustomerId" class="form-control" @onchange="OnCustomerChanged">
+                        <option value="">Select Customer</option>
+                        @foreach (var customer in customerList)
+                        {
+                            <option value="@customer.id">@customer.name</option>
+                        }
+                    </select>
+                </div>
+
+                @if (selectedCustomer != null)
+                {
+                    <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span class="text-muted font-sm">Credit Limit</span>
+                            <span class="font-bold">@(selectedCustomer.credit_limit?.ToString("N2") ?? "0.00")</span>
+                        </div>
+                        @if (customerCredits.Any())
+                        {
+                            <div style="display: flex; justify-content: space-between;">
+                                <span class="text-muted font-sm">Total Credits</span>
+                                <span class="font-bold">@customerTotalCredit.ToString("N2")</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Date</label>
+                    <input type="date" @bind="tempDate" class="form-control" />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Paid Amount</label>
+                    <input type="number" step="0.01" @bind="recoveryModel.paid" @bind:event="oninput" @bind:after="CalculateRemaining" class="form-control" placeholder="Enter paid amount" />
+                </div>
+
+                @if (customerCredits.Any())
+                {
+                    <div style="padding: 1rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.5rem; margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #c2410c; font-size: 0.9rem; font-weight: 700;">Remaining After Payment</span>
+                            <span style="font-weight: 900; font-size: 1.1rem; color: #c2410c;">@((customerTotalRemaining - recoveryModel.paid).ToString("N2"))</span>
+                        </div>
+                    </div>
+                }
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Status</label>
+                    <select @bind="recoveryModel.status" class="form-control">
+                        <option value="@((int?)PaymentStatus.Pending)">Pending</option>
+                        <option value="@((int?)PaymentStatus.Paid)">Paid</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">File (Optional)</label>
+                    <InputFile OnChange="OnFileSelected" class="form-control" />
+                    @if (!string.IsNullOrEmpty(recoveryModel.file))
+                    {
+                        <p class="text-muted font-sm mt-2">@System.IO.Path.GetFileName(recoveryModel.file)</p>
+                    }
+                </div>
+            </div>
+
+            <div class="form-panel-footer">
+                <button type="button" class="btn-cancel" @onclick="HideForm">Cancel</button>
+                <button type="button" class="btn-save" @onclick="SaveRecovery" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <i class="ph-spinner ph-spin"></i>                     
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <i class="ph-check"></i>
+                        <span>Save Recovery</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RecoveryDisplayItem> recoveryList = new();
+    private List<customers> customerList = new();
+    private Recovery recoveryModel = new();
+    private customers? selectedCustomer;
+    private List<Credit> customerCredits = new(); // All customer's credits
+    private decimal customerTotalCredit; // Total of all credits
+    private decimal customerTotalPaid; // Total paid across all credits
+    private decimal customerTotalRemaining; // Total remaining across all credits
+    private bool showForm = false;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+    private string? selectedCustomerId;
+    private DateTime? tempDate = null;
+
+    public class RecoveryDisplayItem
+    {
+        public int id { get; set; }
+        public string? CustomerName { get; set; }
+        public string? date { get; set; }
+        public decimal total_credit { get; set; }
+
+        public decimal paid { get; set; }
+        public decimal remaining { get; set; }
+        public string? status { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecoveries();
+        await LoadCustomers();
+    }
+
+    private async Task LoadRecoveries()
+    {
+        using var context = DbFactory.CreateDbContext();
+        totalCount = await context.recoveries.CountAsync();
+
+        recoveryList = await context.recoveries
+            .OrderByDescending(r => r.id)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .GroupJoin(
+                context.customers.AsNoTracking(),
+                r => r.customer_id,
+                c => c.id,
+                (r, cs) => new { r, cs }
+            )
+            .SelectMany(
+                x => x.cs.DefaultIfEmpty(),
+                (x, c) => new RecoveryDisplayItem
+                {
+                    id = x.r.id,
+                    CustomerName = c != null ? c.name : "Unknown",
+                    date = x.r.date,
+                    total_credit = x.r.total_credit,
+
+                    paid = x.r.paid,
+                    remaining = x.r.remaining,
+                    status = x.r.status.HasValue ? PaymentHelper.GetStatusName(x.r.status.Value) : null
+                }
+            )
+            .ToListAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadCustomers()
+    {
+        using var context = DbFactory.CreateDbContext();
+        customerList = await context.customers.Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
+    }
+
+    private async Task OnCustomerChanged(ChangeEventArgs e)
+    {
+        selectedCustomerId = e.Value?.ToString();
+        if (int.TryParse(selectedCustomerId, out int customerId))
+        {
+            recoveryModel.customer_id = customerId;
+            selectedCustomer = customerList.FirstOrDefault(c => c.id == customerId);
+            using var context = DbFactory.CreateDbContext();
+            // Load all customer's credits
+            customerCredits = await context.credits
+                .Where(c => c.customer_id == customerId)
+                .ToListAsync();
+
+            // Calculate totals from all customer credits
+            customerTotalCredit = customerCredits.Sum(c => c.total_credit);
+            customerTotalPaid = customerCredits.Sum(c => c.paid);
+            customerTotalRemaining = customerTotalCredit;
+
+            // Set recovery model's total_credit
+            recoveryModel.remaining = customerTotalCredit;
+        }
+        else
+        {
+            selectedCustomer = null;
+            customerCredits.Clear();
+            customerTotalCredit = 0;
+            customerTotalPaid = 0;
+            customerTotalRemaining = 0;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CalculateRemaining()
+    {
+        if (selectedCustomer != null)
+        {
+            recoveryModel.remaining = customerTotalCredit - recoveryModel.paid;
+            
+            // Auto select Paid if paid amount equals total remaining credit
+            if (recoveryModel.paid == customerTotalCredit)
+            {
+                recoveryModel.status = (int?)PaymentStatus.Paid;
+            }
+            else
+            {
+                recoveryModel.status = (int?)PaymentStatus.Pending;
+            }
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            recoveryModel.file = file.Name;
+        }
+    }
+
+    private void ShowAddForm()
+    {
+        tempDate = DateTime.Now;
+
+        recoveryModel = new Recovery
+        {
+            date = tempDate.Value.ToString("yyyy-MM-dd"),
+            status = (int?)PaymentStatus.Pending,
+            paid = 0,
+            total_credit = 0,
+
+            remaining = 0
+        };
+
+        selectedCustomer = null;
+        customerCredits.Clear();
+        customerTotalCredit = 0;
+        customerTotalPaid = 0;
+        customerTotalRemaining = 0;
+        selectedCustomerId = null;
+        errorMessage = null;
+
+        showForm = true;
+
+        StateHasChanged();
+    }
+
+    private async Task HideForm()
+    {
+        showForm = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveRecovery()
+    {
+        if (tempDate.HasValue)
+        {
+            recoveryModel.date = tempDate.Value.ToString("yyyy-MM-dd");
+        }
+
+        if (recoveryModel.customer_id == 0)
+        {
+            errorMessage = "Please select a customer.";
+            return;
+        }
+
+        if (!customerCredits.Any())
+        {
+            errorMessage = "No credit records found for this customer.";
+            return;
+        }
+
+        if (recoveryModel.paid <= 0)
+        {
+            errorMessage = "Paid amount must be greater than zero.";
+            return;
+        }
+
+        if (recoveryModel.paid > customerTotalCredit)
+        {
+            errorMessage = "Paid amount cannot exceed total credit.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            // Get all customer's credits
+            var customerCreditsFromDb = await context.credits
+                .Where(c => c.customer_id == recoveryModel.customer_id)
+                .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending)
+                .ThenBy(c => c.id)
+                .ToListAsync();
+
+            decimal remainingToPay = recoveryModel.paid;
+            int? primaryCreditId = customerCreditsFromDb.FirstOrDefault()?.id;
+
+            foreach (var credit in customerCreditsFromDb)
+            {
+                if (remainingToPay <= 0) break;
+
+                // Calculate how much we can apply to this credit
+                decimal paymentForThisCredit = Math.Min(remainingToPay, credit.total_credit);
+
+                // Update this credit: subtract from total_credit, set paid and remaining
+                credit.total_credit -= paymentForThisCredit;
+                credit.paid += paymentForThisCredit;
+                credit.remaining = credit.total_credit;
+                credit.status = credit.total_credit <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
+
+                remainingToPay -= paymentForThisCredit;
+
+
+            }
+
+            // Set recovery model fields correctly
+            recoveryModel.credit_id = primaryCreditId;
+            recoveryModel.total_credit = customerTotalCredit;
+
+            recoveryModel.remaining = customerTotalCredit - recoveryModel.paid;
+            context.recoveries.Add(recoveryModel);
+
+            await context.SaveChangesAsync();
+
+            await LoadRecoveries();
+            await HideForm();
+
+            await JSRuntime.InvokeVoidAsync(
+                "showToast",
+                "Success",
+                "Recovery saved successfully!",
+                "success");
+
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error saving recovery: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteRecovery(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Delete this recovery record?");
+        if (!confirmed) return;
+
+        using var context = DbFactory.CreateDbContext();
+        var recovery = await context.recoveries.FindAsync(id);
+        if (recovery != null)
+        {
+            // Get all customer's credits from database (ordered to reverse the payment)
+            var customerCreditsFromDb = await context.credits
+                .Where(c => c.customer_id == recovery.customer_id)
+                .OrderByDescending(c => c.id) // Newest first to reverse payment
+                .ToListAsync();
+
+            decimal remainingToReverse = recovery.paid;
+
+            foreach (var credit in customerCreditsFromDb)
+            {
+                if (remainingToReverse <= 0) break;
+
+                // For this credit, how much can we reverse?
+                decimal reverseForThisCredit = Math.Min(remainingToReverse, credit.paid);
+
+                credit.total_credit += reverseForThisCredit;
+                credit.paid -= reverseForThisCredit;
+                credit.remaining = credit.total_credit;
+                credit.status = credit.total_credit <= 0 ? (int?)PaymentStatus.Paid : (int?)PaymentStatus.Pending;
+
+                remainingToReverse -= reverseForThisCredit;
+
+
+            }
+
+            context.recoveries.Remove(recovery);
+            await context.SaveChangesAsync();
+            await JSRuntime.InvokeVoidAsync("showToast", "Success", "Recovery deleted successfully!", "success");
+            await LoadRecoveries();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadRecoveries();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await LoadRecoveries();
+        }
+    }
+}

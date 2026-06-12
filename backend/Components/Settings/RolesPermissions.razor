@@ -1,0 +1,598 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Text.Json
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IJSRuntime JS
+@rendermode RenderMode.InteractiveServer
+
+<link href="/css/settings/user.css" rel="stylesheet" />
+<link href="/css/settings/index.css" rel="stylesheet" />
+
+<div class="management-container">
+    <div class="card card-no-padding">
+        <div class="page-header">
+            <div class="page-header-left">
+                <i class="ph-shield-check page-header-icon"></i>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <h2 class="page-header-title">Roles & Permissions</h2>
+                    <p class="text-muted font-sm" style="margin: 0;">Control system access and feature visibility per user role</p>
+                </div>
+            </div>
+            <div class="page-header-actions">
+                <a href="/settings" class="btn-back-hub">
+                    <i class="ph-arrow-left"></i> Back to Settings
+                </a>
+            </div>
+        </div>
+
+        <div style="padding: 1.5rem;">
+
+    <!-- Top Role Selector Bar -->
+    <div class="rp-topbar">
+        <div class="rp-role-group">
+            <label class="rp-role-label">Select Role:</label>
+            <div class="rp-role-select-wrapper">
+                <select class="rp-role-select force-primary-border" @onchange="OnRoleChangedInternal">
+                    @foreach (var role in rolesList)
+                    {
+                        <option value="@role.RoleTitle" selected="@(role.RoleTitle == selectedRole)">@role.RoleTitle</option>
+                    }
+                </select>
+            </div>
+            
+            <div class="rp-role-controls">
+                <button class="rp-control-btn btn-add" @onclick="OpenAddRoleModal" title="Manage Roles">
+                    <i class="ph-plus" style="font-weight:bold; font-size: 1.2rem;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- SECTION 1: SYSTEM AUTHORITIES -->
+    <div class="rp-section">
+        <div class="rp-section-header">
+            <span class="rp-section-title">SYSTEM AUTHORITIES:</span>
+            <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
+                   checked="@AllSystemChecked"
+                   @onchange="ToggleAllSystem" />
+        </div>
+        <div class="rp-check-grid">
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Dashboard" />
+                <span class="rp-check-box @(currentPermissions.Dashboard ? "checked" : "")">
+                    @if (currentPermissions.Dashboard) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Dashboard</span>
+            </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Customers" />
+                <span class="rp-check-box @(currentPermissions.Customers ? "checked" : "")">
+                    @if (currentPermissions.Customers) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Customers</span>
+            </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Products" />
+                <span class="rp-check-box @(currentPermissions.Products ? "checked" : "")">
+                    @if (currentPermissions.Products) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Products</span>
+            </label>
+             <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Sales" />
+                <span class="rp-check-box @(currentPermissions.Sales ? "checked" : "")">
+                    @if (currentPermissions.Sales) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Sales / POS</span>
+            </label>
+
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Settings" />
+                <span class="rp-check-box @(currentPermissions.Settings ? "checked" : "")">
+                    @if (currentPermissions.Settings) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Settings</span>
+            </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Inventory" />
+                <span class="rp-check-box @(currentPermissions.Inventory ? "checked" : "")">
+                    @if (currentPermissions.Inventory) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Inventory</span>
+            </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Employees" />
+                <span class="rp-check-box @(currentPermissions.Employees ? "checked" : "")">
+                    @if (currentPermissions.Employees) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Employees</span>
+            </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Reports" />
+                <span class="rp-check-box @(currentPermissions.Reports ? "checked" : "")">
+                    @if (currentPermissions.Reports) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Reports</span>
+            </label>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--primary);">
+            <button class="rp-btn-primary" @onclick="SavePermissions" disabled="@isSaving" style="padding: 0.625rem 1.4rem;">
+                @if (isSaving)
+                {
+                    <i class="ph-spinner ph-spin"></i> <span>Saving...</span>
+                }
+                else
+                {
+                    <i class="ph-floppy-disk"></i> <span>Save Permissions</span>
+                }
+            </button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+@if (showAddRoleModal)
+{
+    <div class="modal-overlay" @onclick="CloseAddRoleModal">
+        <div class="modal-content" @onclick:stopPropagation>
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-shield-plus" style="color: var(--primary);"></i> Manage Roles
+                </div>
+                <button type="button" class="form-panel-close" @onclick="CloseAddRoleModal"><i class="ph-x"></i></button>
+            </div>
+            
+            <div class="form-panel-body">
+                @if (isDeleteConfirmMode)
+                {
+                    <div style="background: #fee2e2; padding: 1.25rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 0;">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <i class="ph-warning-fill" style="color: #dc2626; font-size: 1.5rem;"></i>
+                            <div>
+                                <strong style="color: #991b1b; display: block; margin-bottom: 0.25rem;">Confirm Deletion</strong>
+                                <p style="margin: 0; font-size: 0.9rem; color: #b91c1c;">Are you sure you want to delete role <strong>"@editingRole?.RoleTitle"</strong>?</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group-custom">
+                        <label>Role Name</label>
+                        <div style="position: relative;">
+                            <input type="text" class="form-control-custom" @bind="roleManagementInput" @bind:event="oninput" placeholder="e.g. Manager" />
+                            <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                @foreach (var role in rolesList)
+                                {
+                                    <span class="role-badge" style="cursor:pointer; @(editingRole?.Id == role.Id ? "border-color: var(--primary); background: var(--primary-glow); color: var(--primary);" : "")" 
+                                          @onclick="() => { roleManagementInput = role.RoleTitle; editingRole = role; }">
+                                        @role.RoleTitle
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="form-panel-footer">
+                @if (isDeleteConfirmMode)
+                {
+                    <button type="button" class="btn-cancel" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn-save" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSubmitting">
+                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Deleting...</span> }
+                        else { <span>Confirm Delete</span> }
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn-cancel" @onclick="DeleteRole" title="Delete Role"><i class="ph-trash"></i> Delete</button>
+                    <button type="button" class="btn-cancel" @onclick="UpdateRole" disabled="@isSubmitting">Update</button>
+                    <button type="button" class="btn-save" @onclick="SaveNewRole" disabled="@isSubmitting">
+                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
+                        else { <span>Save New</span> }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private string selectedRole = "";
+    private bool isSaving = false;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    // Roles list from database
+    private List<Role> rolesList = new();
+    private bool showAddRoleModal = false;
+    
+    private string _roleManagementInput = "";
+    private string roleManagementInput 
+    {
+        get => _roleManagementInput;
+        set 
+        {
+            _roleManagementInput = value;
+            var matchedRole = rolesList.FirstOrDefault(r => r.RoleTitle.Equals(value, StringComparison.OrdinalIgnoreCase));
+            if (matchedRole != null)
+            {
+                editingRole = matchedRole;
+            }
+        }
+    }
+    
+    private Role? editingRole = null;
+    private bool isDeleteConfirmMode = false; // Flag to show delete confirmation in modal
+
+    // Permission model
+    private RolePermission currentPermissions = new();
+
+    private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+        await LoadPermissions();
+    }
+
+    private async Task LoadRoles()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            // SuperAdmin is a system-only role — exclude it so admin cannot manage it
+            rolesList = await context.roles
+                .Where(r => r.RoleTitle != "SuperAdmin")
+                .OrderBy(r => r.Id)
+                .ToListAsync();
+
+            // Set default selected role if not already set to a valid role
+            if (string.IsNullOrEmpty(selectedRole) || !rolesList.Any(r => r.RoleTitle == selectedRole))
+            {
+                selectedRole = rolesList.FirstOrDefault()?.RoleTitle ?? "";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading roles: " + ex.Message;
+        }
+    }
+
+    private async Task OnRoleChanged(ChangeEventArgs e)
+    {
+        selectedRole = e.Value?.ToString() ?? "";
+        await LoadPermissions();
+    }
+
+    private async Task LoadPermissions()
+    {
+        errorMessage = null;
+        errorMessage = null;
+        currentPermissions = new RolePermission(); // Reset to empty defaults
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
+            if (role != null)
+            {
+                var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id);
+                if (perms != null)
+                {
+                    currentPermissions = perms;
+                }
+                else if (selectedRole == "Admin")
+                {
+                    // Admin gets all by default if no record exists
+                    currentPermissions.Dashboard = true;
+                    currentPermissions.Customers = true;
+                    currentPermissions.Products = true;
+                    currentPermissions.Sales = true;
+                    currentPermissions.Employees = true;
+                    currentPermissions.Reports = true;
+                    currentPermissions.Settings = true;
+                    currentPermissions.Inventory = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading permissions: " + ex.Message;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SavePermissions()
+    {
+        isSaving = true;
+        errorMessage = null;
+        errorMessage = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
+            if (role == null)
+            {
+                // Special case: if it's "Admin" and it's missing from roles table, create it
+                if (selectedRole == "Admin")
+                {
+                    role = new Role { RoleTitle = "Admin" };
+                    context.roles.Add(role);
+                    await context.SaveChangesAsync();
+                }
+                else
+                {
+                    errorMessage = "Role not found in the roles table.";
+                    return;
+                }
+            }
+
+            var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id);
+            bool isNew = false;
+            if (perms == null)
+            {
+                perms = new RolePermission { RoleId = role.Id };
+                isNew = true;
+            }
+
+            // Explicitly copy values from currentPermissions (which is bound to UI)
+            perms.Dashboard = currentPermissions.Dashboard;
+            perms.Customers = currentPermissions.Customers;
+            perms.Products = currentPermissions.Products;
+            perms.Sales = currentPermissions.Sales;
+            perms.Employees = currentPermissions.Employees;
+            perms.Reports = currentPermissions.Reports;
+            perms.Settings = currentPermissions.Settings;
+            perms.Inventory = currentPermissions.Inventory;
+
+            if (isNew)
+            {
+                context.roles_permissions.Add(perms);
+            }
+            else
+            {
+                context.roles_permissions.Update(perms);
+            }
+
+            await context.SaveChangesAsync();
+            await JS.InvokeVoidAsync("showToast", "Success", $"Permissions for '{selectedRole}' saved successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error saving: " + ex.InnerException?.Message ?? ex.Message;
+            await JS.InvokeVoidAsync("showToast", "Error", errorMessage, "error");
+        }
+        finally
+        {
+            isSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleAllSystem(ChangeEventArgs e)
+    {
+        var val = (bool)(e.Value ?? false);
+        currentPermissions.Dashboard = val;
+        currentPermissions.Customers = val;
+        currentPermissions.Products = val;
+        currentPermissions.Sales = val;
+        currentPermissions.Employees = val;
+        currentPermissions.Reports = val;
+        currentPermissions.Settings = val;
+        currentPermissions.Inventory = val;
+    }
+
+
+    // Role Management Methods
+    private void OpenAddRoleModal()
+    {
+        // Pre-populate with currently selected role from the main dropdown
+        editingRole = rolesList.FirstOrDefault(r => r.RoleTitle == selectedRole);
+        roleManagementInput = selectedRole; // Always pre-fill with selected role
+        isDeleteConfirmMode = false;
+        showAddRoleModal = true;
+    }
+
+    private void OpenRenameModal()
+    {
+        if (selectedRole == "Admin") return;
+        editingRole = rolesList.FirstOrDefault(r => r.RoleTitle == selectedRole);
+        roleManagementInput = selectedRole;
+        showAddRoleModal = true;
+    }
+
+    private async Task OnRoleChangedInternal(ChangeEventArgs e)
+    {
+        selectedRole = e.Value?.ToString() ?? "";
+        await OnRoleChanged(e);
+    }
+
+    private void CloseAddRoleModal()
+    {
+        showAddRoleModal = false;
+        roleManagementInput = "";
+        editingRole = null;
+        isDeleteConfirmMode = false;
+    }
+
+    private void CancelDelete()
+    {
+        isDeleteConfirmMode = false;
+        StateHasChanged();
+    }
+
+    // Removed OnManageRoleSelected as we use a single field now
+
+    private async Task SaveNewRole()
+    {
+        if (string.IsNullOrWhiteSpace(roleManagementInput))
+        {
+            errorMessage = "Please enter a role name first.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null; 
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            
+            // Check if role already exists
+            if (await context.roles.AnyAsync(r => r.RoleTitle.ToLower() == roleManagementInput.ToLower()))
+            {
+                errorMessage = $"'{roleManagementInput}' already exists!";
+                isSubmitting = false;
+                return;
+            }
+
+            var newRole = new Role { RoleTitle = roleManagementInput.Trim() };
+            context.roles.Add(newRole);
+            await context.SaveChangesAsync();
+
+            await LoadRoles();
+            CloseAddRoleModal();
+            await JS.InvokeVoidAsync("showToast", "Success", $"Role '{roleManagementInput}' created successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error creating role: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task UpdateRole()
+    {
+        if (editingRole == null)
+        {
+            errorMessage = "Please select a role from the list first (or select it on the main page).";
+            return;
+        }
+
+        // Protect the SuperAdmin role from being renamed
+        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "The SuperAdmin role cannot be modified.";
+            return;
+        }
+
+        string newName = roleManagementInput.Trim();
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            errorMessage = "New role name cannot be empty.";
+            return;
+        }
+
+        if (newName.Equals(editingRole.RoleTitle, StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "New name is the same as the current name.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null; 
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            // Check if another role with same name exists
+            if (await context.roles.AnyAsync(r => r.Id != editingRole.Id && r.RoleTitle.ToLower() == newName.ToLower()))
+            {
+                errorMessage = $"' {newName}' already exists!";
+                isSubmitting = false;
+                return;
+            }
+
+            var dbRole = await context.roles.FindAsync(editingRole.Id);
+            if (dbRole != null)
+            {
+                string oldTitle = dbRole.RoleTitle;
+                string newTitle = newName;
+                dbRole.RoleTitle = newTitle;
+                await context.SaveChangesAsync();
+                
+                // Update local state
+                selectedRole = newTitle;
+            }
+
+            await LoadRoles();
+            await LoadPermissions(); // Reload perms for the new name
+            CloseAddRoleModal();
+            await JS.InvokeVoidAsync("showToast", "Success", $"Role renamed to '{newName}' successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error updating role: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteRole()
+    {
+        if (editingRole == null)
+        {
+            errorMessage = "Select a role to delete first.";
+            return;
+        }
+
+        // Protect the SuperAdmin role from deletion
+        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "The SuperAdmin role cannot be deleted.";
+            return;
+        }
+
+        // If not already in confirm mode, show confirmation
+        if (!isDeleteConfirmMode)
+        {
+            isDeleteConfirmMode = true;
+            StateHasChanged();
+            return;
+        }
+
+        // Proceed with deletion after confirmation
+        isSubmitting = true;
+        errorMessage = null; 
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var dbRole = await context.roles.FindAsync(editingRole.Id);
+            if (dbRole != null)
+            {
+                context.roles.Remove(dbRole);
+                await context.SaveChangesAsync();
+            }
+
+            await LoadRoles();
+            selectedRole = rolesList.FirstOrDefault()?.RoleTitle ?? "Admin";
+            await LoadPermissions();
+            CloseAddRoleModal();
+            await JS.InvokeVoidAsync("showToast", "Success", "Role deleted successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error deleting role: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

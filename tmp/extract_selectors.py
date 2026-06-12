@@ -1,4 +1,4 @@
-import re
+﻿import re
 import os
 
 def extract_selectors(css_content):
@@ -22,7 +22,7 @@ def check_usage(selectors, search_path):
         pass
     return unused
 
-with open(r'd:\netcore\E-Invoice_system\wwwroot\css\sale.css', 'r', encoding='utf-8') as f:
+with open(r'd:\netcore\Retailio\wwwroot\css\sale.css', 'r', encoding='utf-8') as f:
     content = f.read()
 
 classes, ids = extract_selectors(content)

@@ -1,0 +1,431 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@using Retailio.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+@rendermode RenderMode.InteractiveServer
+
+<link href="/css/customer/index.css" rel="stylesheet" />
+
+<div class="management-container @(showForm ? "modal-active" : "")">
+    <div class="card card-no-padding">
+        <div class="page-header">
+            <div class="page-header-left">
+                <i class="ph-users page-header-icon"></i>
+                <h2 class="page-header-title">Customer Management</h2>
+            </div>
+            <button class="btn-primary" @onclick="ShowAddForm">
+                <i class="ph-user-plus"></i> Add New Customer
+            </button>
+        </div>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="styled-table" style="margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th style="padding-left: 1.5rem;">ID</th>
+                        <th>Name</th>
+                        <th>CNIC</th>
+                        <th>Contact</th>
+                            <th>Email</th>
+                            <th>Credit Limit</th>
+                            <th>Status</th>
+                        <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        @foreach (var item in customerList)
+                        {
+                            <tr>
+                                <td class="font-bold" style="padding-left: 1.5rem;">
+                                    @item.id
+                                </td>
+
+                                <td class="font-medium">
+                                    @item.name
+                                </td>
+
+                                <td>
+                                    @item.cnic
+                                </td>
+
+                                <td>
+                                    @item.contact
+                                </td>
+
+                                <td class="text-muted font-sm">
+                                    @item.email
+                                </td>
+
+                                <td>
+                                    @(item.credit_limit?.ToString("N2") ?? "0.00")
+                                </td>
+
+                                <td>
+                                    <span class="status-badge status-@(item.status == (int)EntityStatus.Active ? "active" : "inactive")">
+                                        @PaymentHelper.GetEntityStatusName(item.status)
+                                    </span>
+                                </td>
+
+                                <td class="text-right" style="padding-right: 1.5rem;">
+                                    <div class="actions-container actions-right">
+
+                                        <select class="form-control" style="width: auto; padding: 0.2rem 1.5rem 0.2rem 0.5rem; height: 32px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: inline-block; margin-right: 0.5rem;" @onchange="(e) => ChangeCustomerStatus(item, e.Value?.ToString())">
+                                            <option value="@((int)EntityStatus.Active)" selected="@(item.status == (int)EntityStatus.Active)">Enable</option>
+                                            <option value="@((int)EntityStatus.Inactive)" selected="@(item.status != (int)EntityStatus.Active)">Disable</option>
+                                        </select>
+
+                                        <button class="btn-icon-sm btn-edit"
+                                                @onclick="() => EditCustomer(item)"
+                                                title="Edit">
+                                            <i class="ph-pencil"></i>
+                                        </button>
+
+                                        <button class="btn-icon-sm btn-delete"
+                                                @onclick="() => DeleteCustomer(item.id)"
+                                                title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    @if (!customerList.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="ph-users empty-state-icon"></i>
+                                <p>No customers found. Click <strong>Add New Customer</strong> to get started.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @if (customerList.Any())
+        {
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing <b>@((currentPage - 1) * pageSize + 1)</b> to <b>@(Math.Min(currentPage * pageSize, totalCount))</b> of <b>@totalCount</b> entries
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn-pagination" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                        <i class="ph-caret-left"></i>
+                    </button>
+                    
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        @if (i == 1 || i == TotalPages || (i >= currentPage - 2 && i <= currentPage + 2))
+                        {
+                            <button class="btn-pagination @(currentPage == pageNumber ? "active" : "")" @onclick="() => GoToPage(pageNumber)">
+                                @pageNumber
+                            </button>
+                        }
+                        else if (i == currentPage - 3 || i == currentPage + 3)
+                        {
+                            <span class="pagination-ellipsis">...</span>
+                        }
+                    }
+
+                    <button class="btn-pagination" @onclick="NextPage" disabled="@(currentPage == TotalPages)">
+                        <i class="ph-caret-right"></i>
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+</div>
+
+@if (showForm)
+{
+    <div class="modal-overlay show" style="display:flex;">
+        <div class="modal-content">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-user-plus @(editingCustomer == null ? "form-icon-primary" : "")"></i>
+                    @(editingCustomer == null ? "Add New Customer" : "Edit Customer Details")
+                </div>
+                <button type="button" class="form-panel-close" @onclick="HideForm"><i class="ph-x"></i></button>
+            </div>
+
+            <div class="form-panel-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div style="padding: 1rem; border-radius: 8px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; font-size: 0.9rem;">
+                        <i class="ph-warning"></i> @errorMessage
+                    </div>
+                }
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" @bind="customerModel.name" class="form-control" placeholder="Enter customer's full name" required />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">CNIC</label>
+                    <input type="text" @bind="customerModel.cnic" class="form-control" placeholder="Enter CNIC" />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Contact Number</label>
+                    <input type="text" @bind="customerModel.contact" class="form-control" placeholder="Enter contact number" />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" @bind="customerModel.email" class="form-control" placeholder="Enter email address" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Credit Limit</label>
+                    <input type="number"
+                           step="0.01"
+                           @bind="customerModel.credit_limit"
+                           class="form-control"
+                           placeholder="Enter credit limit" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" rows="3" @bind="customerModel.address" placeholder="Enter physical address"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Status</label>
+                        <InputSelect @bind-Value="customerModel.status" class="form-control">
+                            <option value="@((int)EntityStatus.Active)">Active</option>
+                            <option value="@((int)EntityStatus.Inactive)">Inactive</option>
+                        </InputSelect>
+                    </div>
+            </div>
+
+            <div class="form-panel-footer">
+                <button type="button" class="btn-cancel" @onclick="HideForm">Cancel</button>
+                <button type="button" class="btn-save" @onclick="SaveCustomer" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <i class="ph-spinner ph-spin"></i> @("Saving...")
+                    }
+                    else
+                    {
+                        <i class="ph-check"></i> @(editingCustomer == null ? "Save Customer" : "Update Details")
+                    }
+                </button>
+            </div>
+    </div>
+</div>
+}
+
+
+
+@code {
+    private List<customers> customerList = new();
+    private customers customerModel = new();
+    private bool showForm = false;
+    private customers? editingCustomer = null;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private string? originalName;
+
+    // Pagination state
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        using var context = DbFactory.CreateDbContext();
+        totalCount = await context.customers.CountAsync();
+        
+        customerList = await context.customers
+            .OrderByDescending(c => c.id)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+            
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GoToPage(int page)
+    {
+        currentPage = page;
+        await LoadCustomers();
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await LoadCustomers();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadCustomers();
+        }
+    }
+
+    private void ShowAddForm()
+    {
+        customerModel = new customers { status = (int?)EntityStatus.Active };
+        editingCustomer = null;
+        errorMessage = null;
+        errorMessage = null;
+        showForm = true;
+    }
+
+    private void EditCustomer(customers customer)
+    {
+        editingCustomer = customer;
+        originalName = customer.name;
+
+        customerModel = new customers
+        {
+            id = customer.id,
+            name = customer.name,
+            cnic = customer.cnic,
+            contact = customer.contact,
+            email = customer.email,
+            address = customer.address,
+            credit_limit = customer.credit_limit,
+            status = customer.status
+        };
+
+        errorMessage = null;
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveCustomer()
+    {
+        if (string.IsNullOrWhiteSpace(customerModel.name))
+        {
+            errorMessage = "Full Name is required.";
+            return;
+        }
+
+        // Optional: prevent negative credit limit
+        if (customerModel.credit_limit < 0)
+        {
+            errorMessage = "Credit Limit cannot be negative.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            if (editingCustomer == null)
+            {
+                context.customers.Add(customerModel);
+            }
+            else
+            {
+                context.customers.Update(customerModel);
+            }
+
+            await context.SaveChangesAsync();
+
+            await JSRuntime.InvokeVoidAsync("clearNavCache");
+
+            await LoadCustomers();
+
+            HideForm();
+
+            var msg = editingCustomer == null
+                ? "Customer created successfully!"
+                : "Customer updated successfully!";
+
+            await JSRuntime.InvokeVoidAsync(
+                "showToast",
+                "Success",
+                msg,
+                "success"
+            );
+
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error saving customer: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ChangeCustomerStatus(customers customer, string? newStatusStr)
+    {
+        if (string.IsNullOrEmpty(newStatusStr)) return;
+        int? newStatus = int.TryParse(newStatusStr, out int s) ? s : null;
+        if (newStatus == null || customer.status == newStatus) return;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var dbCustomer = await context.customers.FindAsync(customer.id);
+            if (dbCustomer != null)
+            {
+                dbCustomer.status = newStatus;
+                await context.SaveChangesAsync();
+                
+                customer.status = newStatus;
+
+                await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Customer {(newStatus == (int?)EntityStatus.Active ? "enabled" : "disabled")} successfully!", "success");
+                await JSRuntime.InvokeVoidAsync("clearNavCache");
+                
+                await LoadCustomers();
+            }
+        }
+        catch (Microsoft.JSInterop.JSDisconnectedException)
+        {
+            // Ignore disconnected circuit
+        }
+        catch (Exception ex)
+        {
+            try {
+                await JSRuntime.InvokeVoidAsync("showToast", "Error", $"Failed to update status: {ex.Message}", "error");
+            } catch { }
+        }
+    }
+
+    private async Task DeleteCustomer(int id)
+    {
+        // Use JS interop if you want a real confirm box in Blazor without injecting IJSRuntime just for this, 
+        // since we didn't inject IJSRuntime, we'll assume they hit delete and want it gone for now,
+        // but normally we'd wire up JS.
+        using var context = DbFactory.CreateDbContext();
+        var customer = await context.customers.FindAsync(id);
+        if (customer != null)
+        {
+            context.customers.Remove(customer);
+            await context.SaveChangesAsync();
+            await JSRuntime.InvokeVoidAsync("showToast", "Success", "Customer deleted successfully!", "success");
+            await JSRuntime.InvokeVoidAsync("clearNavCache");
+            await LoadCustomers();
+        }
+    }
+}

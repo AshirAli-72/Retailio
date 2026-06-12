@@ -1,0 +1,262 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<div class="reports-center-container">
+    <div class="page-header-minimal">
+        <h1 class="page-title">Reports Center</h1>
+        <p class="page-subtitle">Access detailed insights and generate downloadable reports for your business.</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="reports-summary-grid">
+        <div class="summary-card primary-red">
+            <div class="card-info">
+                <span class="card-value">@currencySymbol@todayRevenue.ToString("N0")</span>
+                <span class="card-label">Today's Revenue</span>
+            </div>
+            <div class="card-icon-circle">
+                <i class="ph-trend-up"></i>
+            </div>
+        </div>
+
+        <div class="summary-card dark-gray">
+            <div class="card-info">
+                <span class="card-value">@currencySymbol@monthlyRevenue.ToString("N0")</span>
+                <span class="card-label">Monthly Revenue</span>
+            </div>
+            <div class="card-icon-circle">
+                <i class="ph-chart-line-up"></i>
+            </div>
+        </div>
+
+        <div class="summary-card white">
+            <div class="card-info">
+                <span class="card-value">@activeSkus</span>
+                <span class="card-label">Total Products</span>
+            </div>
+            <div class="card-icon-circle red-icon">
+                <i class="ph-package"></i>
+            </div>
+        </div>
+
+        <div class="summary-card white">
+            <div class="card-info">
+                <span class="card-value">@lowStockAlerts</span>
+                <span class="card-label">Stock Alerts</span>
+            </div>
+            <div class="card-icon-circle red-icon">
+                <i class="ph-warning"></i>
+            </div>
+        </div>
+
+        <div class="summary-card white">
+            <div class="card-info">
+                <span class="card-value">@customerCount</span>
+                <span class="card-label">Total Customers</span>
+            </div>
+            <div class="card-icon-circle blue-icon">
+                <i class="ph-users"></i>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Available Reports</h2>
+
+    <!-- Available Reports Grid -->
+    <div class="available-reports-grid">
+        <!-- Sales & Revenue -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-shopping-cart"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Sales & Revenue</h3>
+                <p class="report-desc">Analyze transaction patterns, revenue trends, and discount impacts.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Date-wise Breakdown</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("sales")'>
+                    View Sales Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stock & Inventory -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-cube"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Stock & Inventory</h3>
+                <p class="report-desc">Real-time stock levels, category distribution, and low-stock alerts.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Inventory Insights</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("inventory")'>
+                    View Inventory Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Customer Reports -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-user-list"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Customer Insights</h3>
+                <p class="report-desc">Detailed list of customers, contact info, and purchase history overview.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Customer List</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("customers")'>
+                    View Customer Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Reports -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-tag"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Product Analytics</h3>
+                <p class="report-desc">Performance of different products, services, and categories.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Catalog Details</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("products")'>
+                    View Product Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Employee Reports -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-users-three"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Employee Reports</h3>
+                <p class="report-desc">Staff performance, roles, and basic payroll insights.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Staff Directory</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("employees")'>
+                    View Employee Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Credits Reports -->
+        <div class="report-main-card">
+            <div class="report-card-header">
+                <div class="report-icon-wrap red-bg">
+                    <i class="ph-money"></i>
+                </div>
+            </div>
+            <div class="report-card-body">
+                <h3 class="report-name">Credit Reports</h3>
+                <p class="report-desc">Customer credit limits, payments, and outstanding balances.</p>
+                <div class="report-meta">
+                    <i class="ph-check-circle"></i>
+                    <span>Credit Details</span>
+                </div>
+            </div>
+            <div class="report-card-footer">
+                <button class="view-hub-btn" @onclick='() => OnViewHub.InvokeAsync("credits")'>
+                    View Credit Hub <i class="ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="/css/reports/centerreport.css" rel="stylesheet" />
+
+@code {
+    [Parameter] public EventCallback<string> OnViewHub { get; set; }
+
+    private decimal todayRevenue = 0;
+    private decimal monthlyRevenue = 0;
+    private int activeSkus = 0;
+    private int lowStockAlerts = 0;
+    private int customerCount = 0;
+    private string currencySymbol = "$";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            
+            // Currency
+            var currency = await context.currencies.AsNoTracking().FirstOrDefaultAsync(c => c.is_active);
+            if (currency != null) currencySymbol = currency.symbol ?? "$";
+
+            // Revenue
+            var todayStr = DateTime.Now.ToString("yyyy-MM-dd");
+            var monthPrefix = DateTime.Now.ToString("yyyy-MM");
+
+            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+            todayRevenue = allSalesHeaders.Where(s => s.date == todayStr).Sum(s => s.net_payable);
+            monthlyRevenue = allSalesHeaders.Where(s => s.date != null && s.date.StartsWith(monthPrefix)).Sum(s => s.net_payable);
+
+            // SKUs - Use StockDetail count as that's where the actual inventory resides
+            activeSkus = await context.products_services.CountAsync();
+            if (activeSkus == 0) {
+                // Fallback to stock details if products table is used differently
+                activeSkus = await context.stock_details.CountAsync();
+            }
+
+            // Customers
+            customerCount = await context.customers.CountAsync();
+
+            // Low Stock - Use actual stock alert levels from each item
+            var allStock = await context.stock_details.AsNoTracking().ToListAsync();
+            lowStockAlerts = allStock.Count(s => s.quantity <= s.stock_alert);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading report data: {ex.Message}");
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

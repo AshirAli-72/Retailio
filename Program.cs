@@ -1,11 +1,14 @@
-using E_Invoice_system.Data;
+﻿using Retailio.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.RootDirectory = "/frontend/Pages";
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpContextAccessor();
@@ -46,7 +49,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ApplicationDbContext>(p => 
     p.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
-builder.Services.AddScoped<E_Invoice_system.Services.CurrencyService>();
+builder.Services.AddScoped<Retailio.Services.CurrencyService>();
 
 
 builder.Services.AddResponseCompression(options =>
@@ -100,18 +103,13 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseStaticFiles(); // Default for wwwroot
 
-
-
 app.UseRouting();
-
-
-app.UseSession();
-
-// app.UseAuthorization(); removed duplicate or check order
 
 app.UseCors("AllowMarketingSite");
 
 app.UseAuthorization();
+
+app.UseSession(); // Session must be after UseRouting/UseAuthorization but before endpoints
 
 app.MapControllers();
 app.MapRazorPages();

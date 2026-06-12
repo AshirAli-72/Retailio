@@ -1,0 +1,14 @@
+﻿@page "/settings/about"
+@model Retailio.Pages.Settings.About.IndexModel
+@{
+    ViewData["Title"] = "About Store";
+}
+
+
+<div class="dashboard-panel">
+    <component type="typeof(Retailio.backend.Components.Settings.AboutStore)" render-mode="ServerPrerendered" />
+</div>
+
+@section Scripts {
+    @* Additional scripts if needed *@
+}

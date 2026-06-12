@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="~/" />
+    <title>@ViewData["Title"] - Sale Terminal</title>
+    
+    <!-- Local Fonts: Inter -->
+    <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
+    
+    <!-- Phosphor Icons -->
+    <link rel="stylesheet" href="~/lib/phosphor/icons.css" asp-append-version="true" />
+    
+    <link rel="stylesheet" href="~/css/dashboard/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/responsive-global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sale/create.css" asp-append-version="true" />
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    
+    <!-- jQuery -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    
+</head>
+<body>
+    <div class="sale-layout-container">
+        <!-- Main Content Area (Now Full Width) -->
+        <div class="sale-main-wrapper">
+            <header class="top-bar sale-terminal-top-bar">
+
+                <div class="top-bar-left">
+                    @using Microsoft.EntityFrameworkCore
+                    @using Retailio.Data
+                    @inject IDbContextFactory<ApplicationDbContext> DbFactory
+                    @{
+                        using var context = DbFactory.CreateDbContext();
+                        var store = context.store_configurations.FirstOrDefault();
+                        string logoSrc = "/images/sata-logo.png";
+                        if (store != null && !string.IsNullOrEmpty(store.LogoPath))
+                        {
+                            try { logoSrc = "/store-logo/" + System.IO.Path.GetFileName(store.LogoPath); }
+                            catch { }
+                        }
+                    }
+                    <div style="display:flex; align-items:center; gap: 1.5rem;">
+                        <img src="@logoSrc" alt="SATA Logo" style="height: 32px; object-fit: contain;" />
+                        <span style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">Welcome back!</span>
+                    </div>
+                </div>
+
+                <div class="top-bar-center sale-terminal-clock">
+                    <span id="liveClock" class="live-clock"></span>
+                </div>
+
+                <div class="top-bar-right sale-terminal-profile">
+                    @{
+                        var userName = Context.Session.GetString("UserName") ?? "User";
+                        var userRole = Context.Session.GetString("UserRole") ?? "Staff";
+                        var userEmail = Context.Session.GetString("UserEmail") ?? (userName + "@system.com");
+                        var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";
+                    }
+                    <div class="user-profile-wrapper">
+                        <div class="user-avatar-initial" id="profileDropdownToggle" title="Account">
+                            @initial
+                        </div>
+
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div style="padding: 12px; border-bottom: 1px solid var(--border);">
+                                <div class="user-name" style="font-size: 1rem; font-weight: 800;">@userName</div>
+                                <div class="user-role-label" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">@userRole</div>
+                                @{
+                                    var displayEmail = Context.Session.GetString("UserEmail");
+                                    if (string.IsNullOrEmpty(displayEmail)) {
+                                        displayEmail = userName.Contains("@") ? userName : userName + "@system.com";
+                                    }
+                                }
+                                @if (displayEmail != userName)
+                                {
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; word-break: break-all;">@displayEmail</div>
+                                }
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+                            
+                            <form asp-page="/Account/Logout" asp-area="" method="post" style="padding: 0; margin: 0;">
+                                <button type="submit" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; border: none; background: transparent; color: #ef4444; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-align: left;">
+                                    <i class="ph-sign-out"></i>
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="sale-content-body">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const isSmall = window.innerWidth < 480;
+            const options = isSmall ? { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            } : { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            };
+            const clockEl = document.getElementById('liveClock');
+            if (clockEl) {
+                let text = now.toLocaleString('en-US', options);
+                if (!isSmall) text = text.replace(',', ' -');
+                clockEl.innerText = text;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function showToast(title, message, type) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const icons = { success: 'ph-check-circle', error: 'ph-warning-circle', warning: 'ph-warning', info: 'ph-info' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type || 'success'}`;
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="${icons[type] || icons.success}"></i></div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.classList.remove('show'); setTimeout(()=>this.parentElement.remove(),400);">
+                    <i class="ph-x"></i>
+                </button>
+                <div class="toast-progress"></div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => setTimeout(() => toast.classList.add('show'), 10));
+            setTimeout(() => {
+                if (toast.parentNode) { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }
+            }, type === 'error' ? 5000 : 3000);
+        }
+
+        const successMessage = '@TempData["Success"]';
+        if (successMessage) showToast('Success', successMessage, 'success');
+
+        // Profile Dropdown (matching dashboard implementation)
+        const profileToggle = document.getElementById('profileDropdownToggle');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (profileToggle && profileDropdown) {
+            profileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                profileDropdown.classList.remove('show');
+            });
+
+            profileDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+    </script>
+    <script src="~/lib/jsbarcode/JsBarcode.all.min.js" asp-append-version="true"></script>
+    <script>
+        window.renderBarcode = function (elementId, value) {
+            var el = document.getElementById(elementId);
+            if (!el || !value) return false;
+            var code = String(value).trim().toUpperCase();
+            el.innerHTML = '';
+            try {
+                JsBarcode(el, code, {
+                    format: 'CODE128',
+                    width: 2.5,
+                    height: 70,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 12,
+                    background: '#ffffff',
+                    lineColor: '#000000'
+                });
+                return true;
+            } catch (e) {
+                console.warn('Barcode render failed:', e);
+                return false;
+            }
+        };
+
+        window.saleReceiptPrint = {
+            dotNetRef: null,
+            init: function (ref) { this.dotNetRef = ref; },
+            onFinished: function () {
+                if (this.dotNetRef) {
+                    this.dotNetRef.invokeMethodAsync('OnReceiptPrintFinished').catch(function () { });
+                }
+            }
+        };
+
+        window.printSaleReceipt = function (invNo) {
+            var receipt = document.getElementById('invoice-to-print');
+            if (!receipt) {
+                console.warn('Invoice element #invoice-to-print not found');
+                if (window.saleReceiptPrint) window.saleReceiptPrint.onFinished();
+                return;
+            }
+
+            var invEl = document.getElementById('rcpt-inv-no');
+            if (invEl && invNo) invEl.textContent = invNo;
+
+            /* Move invoice to body so print CSS is not blocked by layout wrappers */
+            var marker = document.createComment('invoice-print-marker');
+            var originalParent = receipt.parentNode;
+            if (originalParent) {
+                originalParent.insertBefore(marker, receipt);
+            }
+            document.body.appendChild(receipt);
+            receipt.classList.add('invoice-printing');
+            document.body.classList.add('printing-invoice');
+
+            window.renderBarcode('rcptBarcodeSvg', invNo);
+
+            var finished = false;
+            var finish = function () {
+                if (finished) return;
+                finished = true;
+                window.removeEventListener('afterprint', finish);
+                receipt.classList.remove('invoice-printing');
+                document.body.classList.remove('printing-invoice');
+                if (marker.parentNode) {
+                    marker.parentNode.insertBefore(receipt, marker);
+                    marker.remove();
+                } else if (originalParent) {
+                    originalParent.appendChild(receipt);
+                }
+                if (window.saleReceiptPrint) window.saleReceiptPrint.onFinished();
+            };
+
+            setTimeout(function () {
+                window.addEventListener('afterprint', finish);
+                window.print();
+                setTimeout(finish, 3000);
+            }, 450);
+        };
+    </script>
+    <script src="_framework/blazor.server.js"></script>
+    <script src="~/js/app-main.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,9 +1,0 @@
-@page
-@model E_Invoice_system.Pages.Sale.CreateModel
-@{
-    Layout = "/Pages/Sale/_SaleLayout.cshtml";
-    ViewData["Title"] = "Create Sale";
-}
-
-<component type="typeof(E_Invoice_system.Components.Sale.SaleEditor)" render-mode="ServerPrerendered"
-           param-UserName='@HttpContext.Session.GetString("UserName")' />

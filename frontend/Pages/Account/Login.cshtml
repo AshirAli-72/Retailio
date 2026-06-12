@@ -1,0 +1,396 @@
+﻿@page
+@model Retailio.Pages.Account.LoginModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Retailio</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/phosphor/icons.css" asp-append-version="true" />
+    <style>
+        :root {
+            --primary: #BC1823;
+            --primary-dark: #9c141d;
+            --primary-glow: rgba(188,24,35,0.12);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* ── CARD ── */
+        .login-card {
+            display: flex;
+            width: 100%;
+            max-width: 960px;
+            min-height: 560px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            animation: cardIn 0.6s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        @@keyframes cardIn {
+            from { opacity:0; transform: translateY(30px) scale(0.97); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── LEFT PANEL (brand) ── */
+        .card-left {
+            flex: 1.1;
+            background: linear-gradient(160deg, var(--primary-dark) 0%, #6b0a10 100%);
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-left::before {
+            content: '';
+            position: absolute;
+            top: -80px; right: -80px;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .card-left::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -60px;
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .brand-block {
+            position: relative; z-index: 2;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-icon {
+            width: 48px; height: 48px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; color: #fff;
+            backdrop-filter: blur(4px);
+        }
+
+        .brand-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-tagline {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.75);
+            font-weight: 400;
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative; z-index: 2;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .feature-icon {
+            width: 34px; height: 34px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: #fff;
+            flex-shrink: 0;
+        }
+
+        .left-footer {
+            position: relative; z-index: 2;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* ── RIGHT PANEL (form) ── */
+        .card-right {
+            flex: 1;
+            background: #fff;
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-heading {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.5px;
+        }
+
+        .form-sub {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+
+        .form-divider {
+            width: 40px; height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+            margin-bottom: 2rem;
+        }
+
+        /* Validation summary */
+        .validation-summary {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .field-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.02em;
+        }
+
+        .field-wrap {
+            position: relative;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.15rem;
+            color: #94a3b8;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.75rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: #0f172a;
+            background: #f8fafc;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .field-input::placeholder { color: #cbd5e1; }
+
+        .field-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .field-input:focus + .field-icon,
+        .field-wrap:focus-within .field-icon { color: var(--primary); }
+
+        .btn-login {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.25s;
+            box-shadow: 0 6px 20px rgba(188,24,35,0.25);
+        }
+
+        .btn-login:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(188,24,35,0.35);
+        }
+
+        .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .btn-loader {
+            width: 18px; height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+        @@keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 760px) {
+            .login-card { flex-direction: column; max-width: 420px; }
+            .card-left { padding: 2rem; min-height: auto; }
+            .features-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+            .left-footer { display: none; }
+            .card-right { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+
+    <!-- LEFT: Brand + Features -->
+    <div class="card-left">
+        <div class="brand-block">
+            <div class="brand-logo">
+                <div class="brand-icon"><i class="ph-storefront"></i></div>
+                <span class="brand-name">Retailio</span>
+            </div>
+            <p class="brand-tagline">
+                Smart Point-of-Sale<br>
+                built for modern retail businesses.
+            </p>
+        </div>
+
+        <div class="features-list">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="ph-receipt"></i></div>
+                <span>Fast Reports Generation</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="ph-chart-line-up"></i></div>
+                <span>Real-time Sales Analytics</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="ph-users-three"></i></div>
+                <span>Customer &amp; Credit Management</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="ph-package"></i></div>
+                <span>Inventory &amp; Stock Alerts</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="ph-shield-check"></i></div>
+                <span>Role-based Access Control</span>
+            </div>
+        </div>
+
+        <div class="left-footer">© @DateTime.Now.Year Retailio. All rights reserved.</div>
+    </div>
+
+    <!-- RIGHT: Login Form -->
+    <div class="card-right">
+        <div class="form-heading">Welcome back</div>
+        <div class="form-sub">Sign in to your account to continue</div>
+        <div class="form-divider"></div>
+
+        @{
+            var errors = ViewData.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .Where(m => !string.IsNullOrEmpty(m))
+                .ToList();
+        }
+        @if (errors.Any())
+        {
+            <div class="validation-summary">
+                <i class="ph-warning-circle"></i>
+                <span>@string.Join(" ", errors)</span>
+            </div>
+        }
+
+        <form method="post" id="loginForm">
+            <div class="field-group">
+                <label class="field-label" for="emailField">Email Address</label>
+                <div class="field-wrap">
+                    <i class="ph-envelope field-icon"></i>
+                    <input asp-for="Email" type="email" id="emailField"
+                           class="field-input" placeholder="you@example.com" required autocomplete="email" />
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="passwordField">Password</label>
+                <div class="field-wrap">
+                    <i class="ph-lock field-icon"></i>
+                    <input asp-for="Password" type="password" id="passwordField"
+                           class="field-input" placeholder="••••••••" required autocomplete="current-password" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn">
+                <span>Sign In</span>
+                <i class="ph-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+    (function () {
+        var form = document.getElementById('loginForm');
+        var btn  = document.getElementById('loginBtn');
+        if (form && btn) {
+            form.addEventListener('submit', function () {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-loader"></span><span>Signing in...</span>';
+            });
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════
-   ADMIN PANEL — Professional Dark Dashboard
+   ADMIN PANEL — Professional Dashboard (Dark + Light)
    ═══════════════════════════════════════════════════════ */
 
+/* ── Dark theme (default) ── */
 :root {
     --admin-bg:        #0f1117;
     --admin-surface:   #1a1d27;
@@ -19,7 +20,108 @@
     --admin-sidebar-w: 260px;
     --admin-topbar-h:  64px;
     --transition:      0.25s cubic-bezier(0.4,0,0.2,1);
+    --admin-shadow:    0 4px 20px rgba(0,0,0,0.4);
 }
+
+/* ── Light theme ── */
+body.admin-body[data-theme="light"] {
+    --admin-bg:        #f1f5f9;
+    --admin-surface:   #ffffff;
+    --admin-surface2:  #f1f5f9;
+    --admin-border:    rgba(0,0,0,0.09);
+    --admin-text:      #0f172a;
+    --admin-muted:     #64748b;
+    --admin-primary-glow: rgba(188,24,35,0.10);
+    --admin-shadow:    0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* ── Light theme overrides for hardcoded rgba values ── */
+body.admin-body[data-theme="light"] .admin-nav-item:hover {
+    background: rgba(0,0,0,0.05);
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-nav-item.active {
+    background: rgba(188,24,35,0.10);
+    color: var(--admin-primary);
+    border-color: rgba(188,24,35,0.25);
+}
+body.admin-body[data-theme="light"] .admin-nav-item.active i {
+    color: var(--admin-primary);
+}
+body.admin-body[data-theme="light"] .admin-dropdown-item:hover {
+    background: rgba(0,0,0,0.05);
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-table tbody tr:hover td {
+    background: rgba(0,0,0,0.03);
+}
+body.admin-body[data-theme="light"] .admin-table thead tr {
+    background: rgba(0,0,0,0.03);
+}
+body.admin-body[data-theme="light"] .admin-table td {
+    border-bottom-color: rgba(0,0,0,0.06);
+}
+body.admin-body[data-theme="light"] .admin-user-chip:hover {
+    background: rgba(0,0,0,0.05);
+}
+body.admin-body[data-theme="light"] .admin-topbar-btn:hover {
+    background: rgba(0,0,0,0.06);
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-sidebar {
+    background: #ffffff;
+    border-right-color: rgba(0,0,0,0.09);
+}
+body.admin-body[data-theme="light"] .admin-sidebar-brand {
+    border-bottom-color: rgba(0,0,0,0.09);
+}
+body.admin-body[data-theme="light"] .admin-sidebar-footer {
+    border-top-color: rgba(0,0,0,0.09);
+}
+body.admin-body[data-theme="light"] .admin-user-dropdown {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.09);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+}
+body.admin-body[data-theme="light"] .admin-user-dropdown-header {
+    border-bottom-color: rgba(0,0,0,0.09);
+}
+body.admin-body[data-theme="light"] .admin-stat-card {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+body.admin-body[data-theme="light"] .admin-stat-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+body.admin-body[data-theme="light"] .admin-stat-value {
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-card-title {
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-table-title {
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-table td {
+    color: #0f172a;
+}
+body.admin-body[data-theme="light"] .admin-pie-leg-val {
+    color: #0f172a;
+}
+
+/* ── Theme toggle button ── */
+.admin-theme-btn {
+    width: 36px; height: 36px;
+    background: var(--admin-surface2);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--admin-muted);
+    font-size: 1rem;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+.admin-theme-btn:hover { background: rgba(188,24,35,0.12); color: var(--admin-primary); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -1,0 +1,18 @@
+﻿@page
+@model Retailio.Pages.Product.IndexModel
+@{
+    ViewData["Title"] = "Manage Products & Services";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/product/index.css" asp-append-version="true" />
+}
+
+
+<div class="dashboard-panel">
+    <component type="typeof(Retailio.backend.Components.Product.ProductForm)" render-mode="ServerPrerendered" param-UserName="@Model.UserName" param-UserEmail="@Model.UserEmail" />
+</div>
+
+@section Scripts {
+    @* Additional scripts if needed *@
+}

@@ -1,0 +1,499 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Web
+@rendermode RenderMode.InteractiveServer
+
+<link href="/css/settings/currency.css" rel="stylesheet" />
+<link href="/css/settings/index.css" rel="stylesheet" />
+
+<div class="management-container @(showForm ? "modal-active" : "")">
+    <div class="card card-no-padding">
+        <div class="page-header">
+            <div class="page-header-left">
+                <i class="ph-currency-circle-dollar page-header-icon"></i>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <h2 class="page-header-title">System Currencies</h2>
+                    <p class="text-muted font-sm" style="margin: 0;">Manage global currencies and exchange rates</p>
+                </div>
+            </div>
+            <div class="page-header-actions">
+                <a href="/settings" class="btn-back-hub">
+                    <i class="ph-arrow-left"></i> Back to Settings
+                </a>
+            </div>
+        </div>
+
+        @* Quick Search & Add Row *@
+        <div class="quick-action-row" style="padding: 1rem 1.5rem; background: var(--bg-light); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; max-width: 600px;">
+                <i class="ph-magnifying-glass" style="font-size: 1.25rem; color: var(--primary);"></i>
+                <input type="text" list="currency-options" @bind="searchQuery" @bind:event="oninput" class="search-field force-primary-border" placeholder="Search country or currency code..." @onkeydown="@(e => { if (e.Key == "Enter") QuickAddCurrency(); })" style="flex: 1; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--card-bg); color: var(--text);" />
+                <datalist id="currency-options">
+                    @foreach (var gc in globalCurrencies)
+                    {
+                        <option value="@($"{gc.name} ({gc.code})")">@gc.country</option>
+                    }
+                </datalist>
+                <button type="button" class="btn-primary" @onclick="QuickAddCurrency" disabled="@isProcessing" style="white-space: nowrap;">
+                    <i class="ph-check-circle"></i> Select & Add
+                </button>
+            </div>
+            <button type="button" class="btn-primary" @onclick="ShowAddForm" disabled="@isProcessing">
+                <i class="ph-plus-circle"></i> Add Custom
+            </button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="styled-table" style="table-layout: fixed; margin-bottom: 0;">
+                    <thead>
+                        <tr style="background: var(--bg-light); border-bottom: 2px solid var(--border);">
+                            <th style="padding-left: 1.5rem; width: 14.28%;">Name</th>
+                            <th style="width: 14.28%;">ISO Code</th>
+                            <th style="width: 14.28%;">Symbol</th>
+                            <th style="width: 14.28%;">Rate</th>
+                            <th style="width: 14.28%;">Status</th>
+                            <th class="text-right" style="padding-right: 1.5rem; width: 14.28%;">Actions</th>
+                            <th style="text-align: right; padding-right: 1.5rem; width: 28%;">Is Active</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var curr in currencyList)
+                        {
+                            <tr class="@(curr.is_active ? "active-currency-row" : "")" style="transition: all 0.2s;">
+                                <td style="padding-left: 1.5rem;" class="font-bold">@curr.name</td>
+                                <td>
+                                    <span class="badge badge-light" style="background: var(--bg-light); color: var(--text); padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--border);">@curr.code</span>
+                                </td>
+                                <td style="color: #BC1823; font-weight: 700; font-size: 1.1rem;">@curr.symbol</td>
+                                <td class="text-muted">@curr.exchange_rate.ToString("F2")</td>
+                                <td>
+                                    @if (curr.status == "Active")
+                                    {
+                                        <span class="status-badge status-active">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-inactive" style="background: #f1f5f9; color: #64748b;">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-right" style="padding-right: 1.5rem;">
+                                    <div class="actions-container actions-right">
+                                        <button class="btn-icon-sm btn-edit" @onclick="() => EditCurrency(curr)" title="Edit">
+                                            <i class="ph-pencil"></i>
+                                        </button>
+                                        <button class="btn-icon-sm btn-delete" @onclick="() => DeleteCurrency(curr.id)" title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td style="text-align: right; padding-right: 1.5rem;">
+                                    @if (curr.is_active)
+                                    {
+                                        <span class="status-badge" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; font-weight: 700; padding: 0.5rem 1rem; border-radius: 8px;">
+                                            <i class="ph-check-circle"></i> Active Base
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <button class="status-badge" @onclick="() => SetActiveCurrency(curr.id)" 
+                                                style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border: none; color: #ffffff; cursor: pointer; font-weight: 700; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                                            <i class="ph-star"></i> Select as Base
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (!currencyList.Any())
+                        {
+                            <tr>
+                                <td colspan="7" style="padding: 3rem; text-align: center; color: #64748b;">
+                                    <i class="ph-currency-circle-dollar" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.2;"></i>
+                                    <p style="font-weight: 600; font-size: 1rem;">No currencies found. Search and select above to add.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            @if (currencyList.Any())
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing <b>@((currentPage - 1) * pageSize + 1)</b> to <b>@(Math.Min(currentPage * pageSize, totalCount))</b> of <b>@totalCount</b> entries
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                            <i class="ph-caret-left"></i>
+                        </button>
+                        
+                        @for (int i = 1; i <= TotalPages; i++)
+                        {
+                            var pageNumber = i;
+                            @if (i == 1 || i == TotalPages || (i >= currentPage - 2 && i <= currentPage + 2))
+                            {
+                                <button class="btn-pagination @(currentPage == pageNumber ? "active" : "")" @onclick="() => GoToPage(pageNumber)">
+                                    @pageNumber
+                                </button>
+                            }
+                            else if (i == currentPage - 3 || i == currentPage + 3)
+                            {
+                                <span class="pagination-ellipsis">...</span>
+                            }
+                        }
+
+                        <button class="btn-pagination" @onclick="NextPage" disabled="@(currentPage == TotalPages)">
+                            <i class="ph-caret-right"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+
+@if (showForm)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-currency-circle-dollar @(editingCurrency == null ? "form-icon-primary" : "")"></i>
+                    @(editingCurrency == null ? "Custom Currency" : "Edit Currency")
+                </div>
+                <button type="button" class="form-panel-close" @onclick="HideForm"><i class="ph-x"></i></button>
+            </div>
+            
+            <div class="form-panel-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <EditForm Model="currencyModel" OnValidSubmit="SaveCurrency">
+                    <DataAnnotationsValidator />
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Currency Name</label>
+                        <InputText @bind-Value="currencyModel.name" class="form-control" placeholder="e.g. US Dollar" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">ISO Code</label>
+                        <InputText @bind-Value="currencyModel.code" class="form-control" placeholder="e.g. USD" />
+                        <ValidationMessage For="@(() => currencyModel.code)" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Symbol</label>
+                        <InputText @bind-Value="currencyModel.symbol" class="form-control" placeholder="e.g. $" />
+                        <ValidationMessage For="@(() => currencyModel.symbol)" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Exchange Rate (to Base)</label>
+                        <InputNumber @bind-Value="currencyModel.exchange_rate" class="form-control" step="0.01" />
+                    </div>
+                </EditForm>
+            </div>
+
+            <div class="form-panel-footer">
+                @if (editingCurrency != null)
+                {
+                    <button type="button" @onclick="() => DeleteCurrency(editingCurrency.id)" class="btn-delete" style="margin-right: auto;" disabled="@isProcessing">
+                        <i class="ph-trash"></i> Delete
+                    </button>
+                }
+                <button type="button" class="btn-cancel" @onclick="HideForm" disabled="@isProcessing">Cancel</button>
+                <button type="button" class="btn-save" @onclick="SaveCurrency" disabled="@isProcessing">
+                    @if (isProcessing)
+                    {
+                        <i class="ph-spinner ph-spin"></i> @("Saving...")
+                    }
+                    else
+                    {
+                        <i class="ph-check"></i> @(editingCurrency == null ? "Save Currency" : "Update Currency")
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private List<Currency> currencyList = new();
+    private Currency currencyModel = new();
+    private bool showForm = false;
+    private Currency? editingCurrency = null;
+    private string searchQuery = "";
+    private bool isProcessing = false;
+
+    // Pagination state
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    private class GlobalCurrency { public string country; public string name; public string code; public string symbol; }
+    private List<GlobalCurrency> globalCurrencies = new()
+    {
+        new() { country = "United States", name = "US Dollar", code = "USD", symbol = "$" },
+        new() { country = "European Union", name = "Euro", code = "EUR", symbol = "€" },
+        new() { country = "United Kingdom", name = "British Pound", code = "GBP", symbol = "£" },
+        new() { country = "Saudi Arabia", name = "Saudi Riyal", code = "SAR", symbol = "SR" },
+        new() { country = "United Arab Emirates", name = "UAE Dirham", code = "AED", symbol = "DH" },
+        new() { country = "Pakistan", name = "Pakistani Rupee", code = "PKR", symbol = "Rs" },
+        new() { country = "India", name = "Indian Rupee", code = "INR", symbol = "₹" },
+        new() { country = "China", name = "Chinese Yuan", code = "CNY", symbol = "¥" },
+        new() { country = "Japan", name = "Japanese Yen", code = "JPY", symbol = "¥" },
+        new() { country = "Turkey", name = "Turkish Lira", code = "TRY", symbol = "₺" },
+        new() { country = "Canada", name = "Canadian Dollar", code = "CAD", symbol = "$" },
+        new() { country = "Australia", name = "Australian Dollar", code = "AUD", symbol = "$" },
+        new() { country = "Kuwait", name = "Kuwaiti Dinar", code = "KWD", symbol = "KD" },
+        new() { country = "Oman", name = "Omani Rial", code = "OMR", symbol = "RO" },
+        new() { country = "Qatar", name = "Qatari Rial", code = "QAR", symbol = "QR" },
+        new() { country = "Bahrain", name = "Bahraini Dinar", code = "BHD", symbol = "BD" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CurrencyService.GetSymbolAsync();
+        await LoadCurrencies();
+    }
+
+    private async Task LoadCurrencies()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            totalCount = await context.currencies.CountAsync();
+            
+            // Stable ordering by name only, so rows don't jump when toggling active status
+            currencyList = await context.currencies
+                .OrderBy(c => c.name)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+                
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading currencies: {ex.Message}");
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        currentPage = page;
+        await LoadCurrencies();
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await LoadCurrencies();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadCurrencies();
+        }
+    }
+
+    private void ShowAddForm()
+    {
+        currencyModel = new Currency { exchange_rate = 1.0m };
+        editingCurrency = null;
+        showForm = true;
+    }
+
+    private async Task QuickAddCurrency()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery) || isProcessing) return;
+        isProcessing = true;
+        
+        // Robust extraction...
+        string code = "";
+        var openBracket = searchQuery.LastIndexOf('(');
+        var closeBracket = searchQuery.LastIndexOf(')');
+        
+        if (openBracket != -1 && closeBracket > openBracket)
+        {
+            code = searchQuery.Substring(openBracket + 1, closeBracket - openBracket - 1).Trim();
+        }
+        else
+        {
+            code = searchQuery.Trim();
+        }
+
+        var queryTrim = searchQuery.Trim();
+        var match = globalCurrencies.FirstOrDefault(c => 
+            string.Equals(c.code, code, StringComparison.OrdinalIgnoreCase) || 
+            string.Equals(c.name, queryTrim, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(queryTrim, $"{c.name} ({c.code})", StringComparison.OrdinalIgnoreCase));
+
+        try
+        {
+            if (match != null)
+            {
+                using var context = DbFactory.CreateDbContext();
+                var existing = await context.currencies.FirstOrDefaultAsync(c => c.code == match.code);
+                
+                if (existing == null)
+                {
+                    // FAST: Reset all other active flags in one query
+                    await context.Database.ExecuteSqlRawAsync("UPDATE currencies SET is_active = 0");
+
+                    var newCurrency = new Currency 
+                    { 
+                        name = match.name, 
+                        code = match.code, 
+                        symbol = match.symbol, 
+                        exchange_rate = 1.0m,
+                        status = "Active",
+                        is_active = true 
+                    };
+                    
+                    context.currencies.Add(newCurrency);
+                    await context.SaveChangesAsync();
+                }
+                else
+                {
+                    // FAST: Reset current base and set the new one
+                    await context.Database.ExecuteSqlRawAsync("UPDATE currencies SET is_active = 0");
+                    existing.is_active = true;
+                    existing.status = "Active";
+                    context.currencies.Update(existing);
+                    await context.SaveChangesAsync();
+                }
+                
+                await LoadCurrencies();
+                await JS.InvokeVoidAsync("showToast", "Success", $"Added & activated {match.name} as base currency!", "success");
+                searchQuery = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"QuickAdd Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SetActiveCurrency(int id)
+    {
+        if (isProcessing) return;
+        isProcessing = true;
+        try 
+        {
+            using var context = DbFactory.CreateDbContext();
+            // FAST: Reset all in one SQL command
+            await context.Database.ExecuteSqlRawAsync("UPDATE currencies SET is_active = 0");
+            
+            var curr = await context.currencies.FindAsync(id);
+            if (curr != null)
+            {
+                curr.is_active = true;
+                curr.status = "Active";
+                context.currencies.Update(curr);
+                await context.SaveChangesAsync();
+                await JS.InvokeVoidAsync("showToast", "Success", $"Activated {curr.name} as base currency!", "success");
+            }
+            await LoadCurrencies();
+            await CurrencyService.GetSymbolAsync(); // Refresh global symbol cache
+        }
+        finally 
+        {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void EditCurrency(Currency curr)
+    {
+        editingCurrency = curr;
+        currencyModel = new Currency
+        {
+            id = curr.id,
+            name = curr.name,
+            code = curr.code,
+            symbol = curr.symbol,
+            exchange_rate = curr.exchange_rate,
+            status = curr.status
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveCurrency()
+    {
+        if (isProcessing) return;
+        isProcessing = true;
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            if (editingCurrency == null)
+            {
+                currencyModel.status = "Active"; // Default to Active for new custom ones
+                currencyModel.is_active = false; // Default to normal currency
+                context.currencies.Add(currencyModel);
+            }
+            else
+            {
+                context.currencies.Update(currencyModel);
+            }
+            await context.SaveChangesAsync();
+            var msg = editingCurrency == null ? "Currency created successfully!" : "Currency updated successfully!";
+            await JS.InvokeVoidAsync("showToast", "Success", msg, "success");
+            await LoadCurrencies();
+            HideForm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Save Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteCurrency(int id)
+    {
+        if (isProcessing) return;
+        if (!await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this currency?")) return;
+
+        isProcessing = true;
+        try {
+            using var context = DbFactory.CreateDbContext();
+            var curr = await context.currencies.FindAsync(id);
+            if (curr != null)
+            {
+                context.currencies.Remove(curr);
+                await context.SaveChangesAsync();
+                await JS.InvokeVoidAsync("showToast", "Success", "Currency deleted successfully!", "success");
+                await LoadCurrencies();
+                if (showForm) HideForm();
+            }
+        } finally {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

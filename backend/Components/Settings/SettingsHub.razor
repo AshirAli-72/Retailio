@@ -1,0 +1,50 @@
+﻿@using Retailio.Models
+@using Retailio.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+
+<div class="settings-hub">
+    @* Professional Dashboard Hub *@
+    <div class="settings-tabs animate-in">
+        <a href="/settings/user" class="tab-btn">
+            <div class="tab-btn-content">
+                <i class="ph-users-three"></i>
+                <div class="tab-btn-text">
+                    <span class="tab-title">User Management</span>
+                    <span class="tab-desc">Manage system accounts & access</span>
+                </div>
+            </div>
+        </a>
+        <a href="/settings/currency" class="tab-btn">
+            <div class="tab-btn-content">
+                <i class="ph-currency-dollar"></i>
+                <div class="tab-btn-text">
+                    <span class="tab-title">Currency Settings</span>
+                    <span class="tab-desc">Set exchange rates & symbols</span>
+                </div>
+            </div>
+        </a>
+        <a href="/settings/roles" class="tab-btn">
+            <div class="tab-btn-content">
+                <i class="ph-shield-check"></i>
+                <div class="tab-btn-text">
+                    <span class="tab-title">Roles & Permissions</span>
+                    <span class="tab-desc">Control access per user role</span>
+                </div>
+            </div>
+        </a>
+        <a href="/settings/about" class="tab-btn">
+            <div class="tab-btn-content">
+                <i class="ph-storefront"></i>
+                <div class="tab-btn-text">
+                    <span class="tab-title">About Store</span>
+                    <span class="tab-desc">Configure store information</span>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@code {
+}

@@ -1,0 +1,449 @@
+﻿@page
+@model Retailio.Pages.Admin.AdminPanelModel
+@{
+    Layout = null;
+    ViewData["Title"]    = "Admin Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    var sym         = CurrencyService.GetSymbol();
+
+    // Session values are pre-populated by the PageModel (Context is unavailable when Layout=null)
+    var adminUser   = Model.AdminUser;
+    var adminEmail  = Model.AdminEmail;
+    var initial     = adminUser.Length > 0 ? adminUser[0].ToString().ToUpper() : "A";
+    var currentPath = Model.CurrentPath;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Admin Panel</title>
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
+    <link rel="preload" href="~/lib/phosphor/icons.css" as="style"
+          onload="this.onload=null;this.rel='stylesheet'" asp-append-version="true" />
+    <noscript><link rel="stylesheet" href="~/lib/phosphor/icons.css" asp-append-version="true" /></noscript>
+    <script src="~/lib/chartjs/chart.js" defer></script>
+    <link rel="stylesheet" href="~/css/admin/admin.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+
+<div id="admin-sidebar-overlay"></div>
+
+<div class="admin-shell">
+
+    <!-- ═══ SIDEBAR ═══════════════════════════════════════ -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-brand">
+            <div class="admin-brand-icon"><i class="ph-shield-check-bold"></i></div>
+            <div class="admin-brand-text">
+                <div class="admin-brand-title">Admin Panel</div>
+                <div class="admin-brand-sub">Retailio</div>
+            </div>
+        </div>
+
+        <div class="admin-nav">
+            <div class="admin-sidebar-section">Main</div>
+
+            <a href="/Admin/AdminPanel" class="admin-nav-item @(currentPath.StartsWith("/Admin/AdminPanel") || currentPath == "/Admin" ? "active" : "")">
+                <i class="ph-squares-four"></i>
+                <span>Dashboard</span>
+            </a>
+
+        </div>
+
+        <div class="admin-sidebar-footer">
+            <form asp-page="/Account/Logout" asp-area="" method="post" style="margin:0;">
+                <button type="submit" class="admin-nav-item" style="color:#ef4444;">
+                    <i class="ph-sign-out"></i>
+                    <span>Logout</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══════════════════════════════════════════ -->
+    <div class="admin-main">
+
+        <!-- Top Bar -->
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <button class="admin-mobile-toggle" id="adminSidebarToggle">
+                    <i class="ph-list"></i>
+                </button>
+                <div>
+                    <div class="admin-page-title">@ViewData["PageTitle"]</div>
+                    <div class="admin-breadcrumb">
+                        <i class="ph-house" style="font-size:0.75rem;"></i>
+                        Admin &rsaquo; @ViewData["PageTitle"]
+                    </div>
+                </div>
+            </div>
+            <div class="admin-topbar-right">
+                <button class="admin-theme-btn" id="adminThemeToggle" title="Toggle light/dark mode">
+                    <i class="ph-sun" id="themeIcon"></i>
+                </button>
+                <div class="admin-user-chip" id="adminUserChip">
+                    <div class="admin-user-avatar">@initial</div>
+                    <div class="admin-user-info">
+                        <div class="admin-user-name">@adminUser</div>
+                        <div class="admin-user-role">Admin</div>
+                    </div>
+                    <i class="ph-caret-down" style="font-size:0.75rem;color:var(--admin-muted);margin-left:4px;"></i>
+
+                    <div class="admin-user-dropdown" id="adminUserDropdown">
+                        <div class="admin-user-dropdown-header">
+                            <div class="name">@adminUser</div>
+                            <div class="email">@adminEmail</div>
+                        </div>
+                        <form asp-page="/Account/Logout" asp-area="" method="post" style="margin:0;">
+                            <button type="submit" class="admin-dropdown-item danger">
+                                <i class="ph-sign-out"></i> Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="admin-body-content">
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="admin-alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--admin-danger); margin-bottom: 1.5rem;">
+                    <i class="ph-warning-bold"></i>
+                    <span><strong>Database/Runtime Error:</strong> @Model.ErrorMessage</span>
+                </div>
+            }
+
+            @* ── Low stock alert ── *@
+            @if (Model.LowStockCount > 0)
+            {
+                <div class="admin-alert">
+                    <i class="ph-warning-bold"></i>
+                    <span><strong>@Model.LowStockCount product(s)</strong> are running low on stock. &nbsp;
+                        <a href="/inventory" style="color:inherit;text-decoration:underline;">View Inventory</a>
+                    </span>
+                </div>
+            }
+
+            @* ══════════ STAT CARDS ══════════ *@
+            <div class="admin-stats-grid">
+
+                <!-- Total Sales -->
+                <div class="admin-stat-card" style="--card-accent:#8b5cf6;--card-icon-bg:rgba(139,92,246,0.15);">
+                    <div class="admin-stat-top">
+                        <div class="admin-stat-icon"><i class="ph-receipt"></i></div>
+                        <span class="admin-stat-trend neutral"><i class="ph-minus"></i> Invoices</span>
+                    </div>
+                    <div class="admin-stat-label">Total Sales</div>
+                    <div class="admin-stat-value">@Model.SaleCount</div>
+                    <div class="admin-stat-sub">@Model.ReturnCount return(s) processed</div>
+                </div>
+
+                <!-- Monthly Revenue -->
+                <div class="admin-stat-card" style="--card-accent:#10b981;--card-icon-bg:rgba(16,185,129,0.15);">
+                    <div class="admin-stat-top">
+                        <div class="admin-stat-icon"><i class="ph-currency-circle-dollar"></i></div>
+                        <span class="admin-stat-trend"><i class="ph-trend-up"></i> Revenue</span>
+                    </div>
+                    <div class="admin-stat-label">Monthly Revenue</div>
+                    <div class="admin-stat-value">@sym@Model.MonthlyRevenue.ToString("N0")</div>
+                    <div class="admin-stat-sub">This month's net sales</div>
+                </div>
+
+                <!-- Products -->
+                <div class="admin-stat-card" style="--card-accent:#f59e0b;--card-icon-bg:rgba(245,158,11,0.15);">
+                    <div class="admin-stat-top">
+                        <div class="admin-stat-icon"><i class="ph-package"></i></div>
+                        <span class="admin-stat-trend neutral @(Model.LowStockCount > 0 ? "down" : "")">
+                            @(Model.LowStockCount > 0 ? $"⚠ {Model.LowStockCount} low" : "In stock")
+                        </span>
+                    </div>
+                    <div class="admin-stat-label">Products</div>
+                    <div class="admin-stat-value">@Model.TotalProducts</div>
+                    <div class="admin-stat-sub">@Model.LowStockCount item(s) need restocking</div>
+                </div>
+
+                <!-- Customers -->
+                <div class="admin-stat-card" style="--card-accent:#0ea5e9;--card-icon-bg:rgba(14,165,233,0.15);">
+                    <div class="admin-stat-top">
+                        <div class="admin-stat-icon"><i class="ph-users"></i></div>
+                        <span class="admin-stat-trend"><i class="ph-trend-up"></i> @Model.ActiveCustomers active</span>
+                    </div>
+                    <div class="admin-stat-label">Customers</div>
+                    <div class="admin-stat-value">@Model.TotalCustomers</div>
+                    <div class="admin-stat-sub">@Model.ActiveCustomers active of @Model.TotalCustomers total</div>
+                </div>
+
+            </div>
+
+            @* ══════════ CHARTS ROW ══════════ *@
+            <div class="admin-charts-row">
+
+                <!-- Revenue line chart — last 7 days -->
+                <div class="admin-chart-card">
+                    <div class="admin-card-header">
+                        <div>
+                            <div class="admin-card-title">Revenue Trend</div>
+                            <div class="admin-card-subtitle">Sales invoices — last 7 days</div>
+                        </div>
+                    </div>
+                    <div class="admin-chart-wrap">
+                        <canvas id="adminTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Pie: Sales vs Returns vs Credits -->
+                <div class="admin-chart-card">
+                    <div class="admin-card-header">
+                        <div>
+                            <div class="admin-card-title">Transaction Breakdown</div>
+                            <div class="admin-card-subtitle">Sales · Returns · Credits</div>
+                        </div>
+                    </div>
+                    <div class="admin-pie-wrap" style="margin-top:0.5rem;">
+                        <canvas id="adminPieChart"></canvas>
+                    </div>
+                    <div class="admin-pie-legend">
+                        <div class="admin-pie-leg-row">
+                            <div class="admin-pie-leg-label">
+                                <span class="admin-pie-dot" style="background:#10b981;"></span> Sales
+                            </div>
+                            <span class="admin-pie-leg-val">@Model.SaleCount</span>
+                        </div>
+                        <div class="admin-pie-leg-row">
+                            <div class="admin-pie-leg-label">
+                                <span class="admin-pie-dot" style="background:#ef4444;"></span> Returns
+                            </div>
+                            <span class="admin-pie-leg-val">@Model.ReturnCount</span>
+                        </div>
+                        <div class="admin-pie-leg-row">
+                            <div class="admin-pie-leg-label">
+                                <span class="admin-pie-dot" style="background:#f59e0b;"></span> Credits
+                            </div>
+                            <span class="admin-pie-leg-val">@sym@Model.TotalCredits.ToString("N0")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ══════════ RECENT TRANSACTIONS ══════════ *@
+            <div class="admin-table-card">
+                <div class="admin-table-header">
+                    <div class="admin-table-title"><i class="ph-clock-counter-clockwise"></i> Recent Transactions</div>
+                    <a href="/sale" class="admin-view-all">View All &rarr;</a>
+                </div>
+                @if (Model.RecentTransactions.Any())
+                {
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" style="min-width:640px;">
+                            <thead>
+                                <tr>
+                                    <th>Invoice</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model.RecentTransactions)
+                                {
+                                    <tr>
+                                        <td><span class="admin-mono">@t.InvNo</span></td>
+                                        <td>@(t.CustomerName ?? "Walk-in")</td>
+                                        <td style="color:var(--admin-muted);">@t.Date</td>
+                                        <td style="font-weight:700;">@sym@t.Amount.ToString("N2")</td>
+                                        <td>
+                                            @{
+                                                var mClass = (t.Method?.ToLower() ?? "") switch {
+                                                    "cash"     => "cash",
+                                                    "card"     => "card",
+                                                    "credit"   => "credit",
+                                                    "transfer" => "transfer",
+                                                    _          => "cash"
+                                                };
+                                            }
+                                            <span class="admin-badge @mClass">@t.Method</span>
+                                        </td>
+                                        <td>
+                                            <span class="admin-badge @(t.Status == "Paid" ? "paid" : "pending")">@t.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div style="padding:2rem;text-align:center;color:var(--admin-muted);">No transactions yet.</div>
+                }
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // Mobile sidebar toggle
+    (function () {
+        const sidebar  = document.getElementById('adminSidebar');
+        const toggle   = document.getElementById('adminSidebarToggle');
+        const overlay  = document.getElementById('admin-sidebar-overlay');
+
+        function open()  { sidebar.classList.add('open'); overlay.style.display = 'block'; }
+        function close() { sidebar.classList.remove('open'); overlay.style.display = 'none'; }
+
+        if (toggle)  toggle.addEventListener('click', open);
+        if (overlay) overlay.addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    })();
+
+    // Theme toggle
+    (function () {
+        var body = document.body;
+        var btn  = document.getElementById('adminThemeToggle');
+        var icon = document.getElementById('themeIcon');
+
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                body.setAttribute('data-theme', 'light');
+                icon.className = 'ph-moon';
+                btn.title = 'Switch to dark mode';
+            } else {
+                body.removeAttribute('data-theme');
+                icon.className = 'ph-sun';
+                btn.title = 'Switch to light mode';
+            }
+        }
+
+        var saved = localStorage.getItem('adminTheme') || 'dark';
+        applyTheme(saved);
+
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var next = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                localStorage.setItem('adminTheme', next);
+                applyTheme(next);
+            });
+        }
+    })();
+
+    // User dropdown
+    (function () {
+        const chip     = document.getElementById('adminUserChip');
+        const dropdown = document.getElementById('adminUserDropdown');
+        if (!chip || !dropdown) return;
+
+        chip.addEventListener('click', e => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        document.addEventListener('click', () => dropdown.classList.remove('show'));
+    })();
+</script>
+
+@* ══════════ CHARTS JS ══════════ *@
+<script>
+(function () {
+    function initAdminCharts() {
+        if (typeof Chart === 'undefined') { setTimeout(initAdminCharts, 100); return; }
+
+        // ── Trend Line Chart ────────────────────────────────
+        const tEl = document.getElementById('adminTrendChart');
+        if (tEl) {
+            const existing = Chart.getChart(tEl);
+            if (existing) existing.destroy();
+
+            const ctx  = tEl.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 260);
+            grad.addColorStop(0, 'rgba(99,102,241,0.25)');
+            grad.addColorStop(1, 'rgba(99,102,241,0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels:   @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TrendLabels)),
+                    datasets: [{
+                        label: 'Invoices',
+                        data:  @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TrendData)),
+                        backgroundColor: grad,
+                        borderColor: '#6366f1',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.95)',
+                            padding: 10, cornerRadius: 8,
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid:  { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                            ticks: { color: '#94a3b8', font: { size: 11 } }
+                        },
+                        x: {
+                            grid:  { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 11 } }
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+        }
+
+        // ── Pie Chart ───────────────────────────────────────
+        const pEl = document.getElementById('adminPieChart');
+        if (pEl) {
+            const existing = Chart.getChart(pEl);
+            if (existing) existing.destroy();
+
+            new Chart(pEl.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sales', 'Returns', 'Credits'],
+                    datasets: [{
+                        data: [@Model.SaleCount, @Model.ReturnCount, @Model.TotalCredits.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                        borderColor: 'transparent',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.95)',
+                            padding: 10, cornerRadius: 8
+                        }
+                    },
+                    animation: { animateScale: true, animateRotate: true, duration: 900 }
+                }
+            });
+        }
+    }
+
+    initAdminCharts();
+})();
+</script>
+</body>
+</html>
