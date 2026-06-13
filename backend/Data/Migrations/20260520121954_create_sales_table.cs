@@ -24,8 +24,9 @@ namespace Retailio.Migrations
                     net_payable = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     paid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     due = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    payment_method = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    status = table.Column<int>(type: "int", nullable: true),
+                    payment_method = table.Column<int>(type: "int", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -36,8 +37,7 @@ namespace Retailio.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "sales");
+            migrationBuilder.DropTable(name: "sales");
         }
     }
 }

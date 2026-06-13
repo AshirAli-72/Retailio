@@ -65,6 +65,11 @@ namespace Retailio.Pages
         public List<RecentSaleItem> RecentSales { get; set; } = new();
         public string? ErrorMessage { get; set; }
 
+        // Subscription status
+        public bool IsSubscriptionExpired { get; set; }
+        public int? SubscriptionDaysLeft { get; set; }
+        public string? SubscriptionPlan { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
@@ -77,6 +82,41 @@ namespace Retailio.Pages
             Response.Headers["Expires"] = "0";
 
             await _currencyService.GetSymbolAsync();
+
+            // ── Subscription status check ─────────────────────────
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (userId.HasValue && userId.Value > 0)
+                {
+                    using var subCtx = _dbFactory.CreateDbContext();
+                    var sub = await subCtx.subscriptions.AsNoTracking()
+                        .Where(s => s.user_id == userId.Value)
+                        .OrderByDescending(s => s.id)
+                        .FirstOrDefaultAsync();
+                    if (sub != null)
+                    {
+                        SubscriptionPlan = sub.plan;
+                        if (sub.status == (int?)EntityStatus.Inactive)
+                        {
+                            IsSubscriptionExpired = true;
+                            SubscriptionDaysLeft = 0;
+                        }
+                        else if (!string.IsNullOrEmpty(sub.expires_at) &&
+                                 DateTime.TryParse(sub.expires_at, out var expDate))
+                        {
+                            var daysLeft = (expDate.Date - DateTime.Today).Days;
+                            SubscriptionDaysLeft = Math.Max(0, daysLeft);
+                            if (daysLeft < 0)
+                            {
+                                IsSubscriptionExpired = true;
+                                SubscriptionDaysLeft = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error checking subscription"); }
 
 
             using var context = _dbFactory.CreateDbContext();

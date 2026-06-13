@@ -22,11 +22,16 @@ namespace Retailio.Pages.Customer
         public int TotalCount { get; set; }
 
         public IList<customers> Customers { get; set; } = default!;
+        public string? UserName { get; set; }
+        public int? UserId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
+
+            UserName = HttpContext.Session.GetString("UserName");
+            UserId = HttpContext.Session.GetInt32("UserId");
 
             IQueryable<customers> query = _context.customers.AsNoTracking();
             TotalCount = await query.CountAsync();

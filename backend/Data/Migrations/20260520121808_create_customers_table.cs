@@ -20,7 +20,8 @@ namespace Retailio.Migrations
                     address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     credit_limit = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    status = table.Column<int>(type: "int", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {

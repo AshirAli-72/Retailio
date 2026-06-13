@@ -31,5 +31,11 @@ namespace Retailio.Models
 
         [Column("status")]
         public int? status { get; set; } = (int)EntityStatus.Active;
+
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

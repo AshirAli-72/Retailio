@@ -1,4 +1,4 @@
-﻿@using Retailio.Models
+@using Retailio.Models
 @using Retailio.Data
 @using Microsoft.EntityFrameworkCore
 @using System.Text.Json
@@ -117,6 +117,13 @@
                 </span>
                 <span class="rp-check-label">Reports</span>
             </label>
+            <label class="rp-check-item">
+                <input type="checkbox" @bind="currentPermissions.Recovery" />
+                <span class="rp-check-box @(currentPermissions.Recovery ? "checked" : "")">
+                    @if (currentPermissions.Recovery) { <i class="ph-check-bold"></i> }
+                </span>
+                <span class="rp-check-label">Recovery</span>
+            </label>
         </div>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--primary);">
@@ -206,6 +213,8 @@
 
 
 @code {
+    [Parameter] public int? AdminUserId { get; set; }
+
     private string selectedRole = "";
     private bool isSaving = false;
     private bool isSubmitting = false;
@@ -285,7 +294,7 @@
             var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
             if (role != null)
             {
-                var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id);
+                var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id && p.user_id == AdminUserId);
                 if (perms != null)
                 {
                     currentPermissions = perms;
@@ -301,6 +310,7 @@
                     currentPermissions.Reports = true;
                     currentPermissions.Settings = true;
                     currentPermissions.Inventory = true;
+                    currentPermissions.Recovery = true;
                 }
             }
         }
@@ -339,11 +349,11 @@
                 }
             }
 
-            var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id);
+            var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id && p.user_id == AdminUserId);
             bool isNew = false;
             if (perms == null)
             {
-                perms = new RolePermission { RoleId = role.Id };
+                perms = new RolePermission { RoleId = role.Id, user_id = AdminUserId };
                 isNew = true;
             }
 
@@ -356,6 +366,7 @@
             perms.Reports = currentPermissions.Reports;
             perms.Settings = currentPermissions.Settings;
             perms.Inventory = currentPermissions.Inventory;
+            perms.Recovery = currentPermissions.Recovery;
 
             if (isNew)
             {

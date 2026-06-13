@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @model Retailio.Pages.HomeModel
 @{
     Layout = null;
@@ -148,17 +148,19 @@
         </div>
         <div class="pricing-grid">
             <div class="pricing-card">
-                <h3 class="pricing-plan">Starter</h3>
+                <span class="pricing-badge" style="background:rgba(16,185,129,0.15);color:#10b981;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:0.25rem 0.75rem;">14-Day Free Trial</span>
+                <h3 class="pricing-plan">Free Trial</h3>
                 <div class="pricing-price">
-                    <span class="currency">$</span><span class="amount">0</span><span class="period">/month</span>
+                    <span class="currency">$</span><span class="amount">0</span><span class="period">/14 days</span>
                 </div>
                 <ul class="pricing-features">
-                    <li><i class="fas fa-check"></i> Up to 5 employees</li>
-                    <li><i class="fas fa-check"></i> Basic inventory tracking</li>
-                    <li><i class="fas fa-check"></i> Standard reports</li>
-                    <li><i class="fas fa-check"></i> Email support</li>
+                    <li><i class="fas fa-check"></i> 5 Customers</li>
+                    <li><i class="fas fa-check"></i> 3 Employees</li>
+                    <li><i class="fas fa-check"></i> 10 Products</li>
+                    <li><i class="fas fa-check"></i> Basic Reports</li>
+                    <li><i class="fas fa-check"></i> Sales &amp; Invoicing</li>
                 </ul>
-                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+                <a href="/Account/Register" class="btn-primary btn-block">Start Free Trial</a>
             </div>
             <div class="pricing-card pricing-featured">
                 <div class="pricing-badge">Most Popular</div>
@@ -173,7 +175,7 @@
                     <li><i class="fas fa-check"></i> Priority support</li>
                     <li><i class="fas fa-check"></i> Multi-currency</li>
                 </ul>
-                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+                <a href="/Account/Register" class="btn-primary btn-block">Get Started</a>
             </div>
             <div class="pricing-card">
                 <h3 class="pricing-plan">Enterprise</h3>
@@ -187,7 +189,7 @@
                     <li><i class="fas fa-check"></i> 24/7 phone support</li>
                     <li><i class="fas fa-check"></i> SLA guarantee</li>
                 </ul>
-                <a href="/Account/Login" class="btn-primary btn-block">Get Started</a>
+                <a href="/Account/Register" class="btn-primary btn-block">Get Started</a>
             </div>
         </div>
     </div>

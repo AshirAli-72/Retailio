@@ -14,5 +14,11 @@ namespace Retailio.Models
         [Column("category_title")]
         [MaxLength(200)]
         public string category_title { get; set; } = string.Empty;
+
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

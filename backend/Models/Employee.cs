@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Retailio.Services;
 
@@ -17,9 +17,6 @@ namespace Retailio.Models
         [Required(ErrorMessage = "Full Name is required")]
         [Column("full_name")]
         public string? full_name { get; set; }
-
-        [Column("emp_code")]
-        public string? emp_code { get; set; }
 
         [Column("cnic")]
         public string? cnic { get; set; }
@@ -44,5 +41,17 @@ namespace Retailio.Models
 
         [Column("status")]
         public int? status { get; set; } = (int)EntityStatus.Active;
+
+        /// <summary>Hashed login password — mirrors users.password</summary>
+        [Column("password")]
+        public string? password { get; set; }
+
+        /// <summary>FK to roles — mirrors users.role_id</summary>
+        [Column("role_id")]
+        public int? role_id { get; set; }
+
+        /// <summary>FK to users — the system account created for this employee</summary>
+        [Column("user_id")]
+        public int? user_id { get; set; }
     }
 }

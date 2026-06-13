@@ -1,4 +1,4 @@
-﻿@using Retailio.Models
+@using Retailio.Models
 @using Retailio.Data
 @using Microsoft.EntityFrameworkCore
 @using System.IO
@@ -146,19 +146,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Employee Code</label>
-                        <div style="position: relative;">
-                            <InputText @bind-Value="employeeModel.emp_code" class="form-control" placeholder="Auto-generated" readonly />
-                            @if (isLoadingCode)
-                            {
-                                <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">
-                                    <i class="ph-spinner ph-spin" style="color: var(--primary);"></i>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="form-group">
                         <label class="form-label">CNIC / ID Number</label>
                         <InputText @bind-Value="employeeModel.cnic" class="form-control" placeholder="e.g. 42101-XXXXXXX-X" />
                         <ValidationMessage For="@(() => employeeModel.cnic)" />
@@ -273,12 +260,14 @@
 
 
 @code {
+    [Parameter] public string? UserName { get; set; }
+    [Parameter] public int? UserId { get; set; }
+
     private List<Employee> employeeList = new();
     private Employee employeeModel = new();
     private bool showForm = false;
     private Employee? editingEmployee = null;
     private bool isSubmitting = false;
-    private bool isLoadingCode = false;
     private string? errorMessage;
     private IBrowserFile? selectedFile;
     private string? imgUrl;
@@ -367,30 +356,12 @@
         loginPassword = null;
         loginRoleId = rolesList.FirstOrDefault()?.Id ?? 0;
         showForm = true;
-        isLoadingCode = true;
         
         employeeModel = new Employee 
         { 
             date = DateTime.Now.ToString("d-M-yyyy"),
-            status = (int?)EntityStatus.Active,
-            emp_code = "Generating..."
+            status = (int?)EntityStatus.Active
         };
-        
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            employeeModel.emp_code = await GenerateEmployeeCode();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error generating code: " + ex.Message;
-        }
-        finally
-        {
-            isLoadingCode = false;
-            await InvokeAsync(StateHasChanged);
-        }
     }
 
     private void EditEmployee(Employee item)
@@ -398,17 +369,19 @@
         editingEmployee = item;
         employeeModel = new Employee
         {
-            id = item.id,
-            full_name = item.full_name,
-            emp_code = item.emp_code,
-            cnic = item.cnic,
-            email = item.email,
-            mobile_no = item.mobile_no,
-            address = item.address,
+            id         = item.id,
+            full_name  = item.full_name,
+            cnic       = item.cnic,
+            email      = item.email,
+            mobile_no  = item.mobile_no,
+            address    = item.address,
             image_path = item.image_path,
-            salary = item.salary,
-            date = item.date,
-            status = item.status
+            salary     = item.salary,
+            date       = item.date,
+            status     = item.status,
+            password   = item.password,
+            role_id    = item.role_id,
+            user_id    = item.user_id
         };
         errorMessage = null;
         selectedFile = null;
@@ -424,8 +397,8 @@
         }
         else
         {
-            loginPassword = null;
-            loginRoleId = rolesList.FirstOrDefault()?.Id ?? 0;
+            loginPassword = item.password;
+            loginRoleId = item.role_id ?? (rolesList.FirstOrDefault()?.Id ?? 0);
         }
 
         showForm = true;
@@ -451,7 +424,6 @@
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             imgUrl = $"data:{selectedFile.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -485,58 +457,29 @@
             }
 
             using var context = DbFactory.CreateDbContext();
+
             if (editingEmployee == null)
             {
-                context.employees.Add(employeeModel);
-                await context.SaveChangesAsync();
+                // ── New employee: save ONLY in employee table ───────────
+                employeeModel.password = !string.IsNullOrWhiteSpace(loginPassword)
+                    ? PaymentHelper.HashPassword(loginPassword)
+                    : string.Empty;
+                employeeModel.user_id = UserId;
+                employeeModel.role_id = loginRoleId > 0 ? loginRoleId : null;
 
-                // Create user record — use full_name as username
-                var newUser = new users
-                {
-                    username = employeeModel.full_name,
-                    email = employeeModel.email,
-                    password = !string.IsNullOrWhiteSpace(loginPassword)
-                        ? PaymentHelper.HashPassword(loginPassword)
-                        : string.Empty,
-                    role_id = loginRoleId > 0 ? loginRoleId : (rolesList.FirstOrDefault()?.Id ?? 2),
-                    status = employeeModel.status
-                };
-                context.users.Add(newUser);
+                context.employees.Add(employeeModel);
                 await context.SaveChangesAsync();
             }
             else
             {
-                context.employees.Update(employeeModel);
-                await context.SaveChangesAsync();
+                // ── Edit employee: update only in employee table ─────────
+                if (!string.IsNullOrWhiteSpace(loginPassword) && loginPassword != employeeModel.password)
+                {
+                    employeeModel.password = PaymentHelper.HashPassword(loginPassword);
+                }
+                employeeModel.role_id = loginRoleId > 0 ? loginRoleId : null;
 
-                // Update linked user record
-                var linkedUser = await context.users.FirstOrDefaultAsync(u => u.email == editingEmployee.email);
-                if (linkedUser != null)
-                {
-                    linkedUser.username = employeeModel.full_name;
-                    linkedUser.email = employeeModel.email;
-                    linkedUser.role_id = loginRoleId > 0 ? loginRoleId : linkedUser.role_id;
-                    linkedUser.status = employeeModel.status;
-                    // Only re-hash if password was changed (not the stored hash)
-                    if (!string.IsNullOrWhiteSpace(loginPassword) && loginPassword != linkedUser.password)
-                        linkedUser.password = PaymentHelper.HashPassword(loginPassword);
-                    context.users.Update(linkedUser);
-                }
-                else
-                {
-                    // No existing user — create one
-                    var newUser = new users
-                    {
-                        username = employeeModel.full_name,
-                        email = employeeModel.email,
-                        password = !string.IsNullOrWhiteSpace(loginPassword)
-                            ? PaymentHelper.HashPassword(loginPassword)
-                            : string.Empty,
-                        role_id = loginRoleId > 0 ? loginRoleId : (rolesList.FirstOrDefault()?.Id ?? 2),
-                        status = employeeModel.status
-                    };
-                    context.users.Add(newUser);
-                }
+                context.employees.Update(employeeModel);
                 await context.SaveChangesAsync();
             }
 
@@ -555,23 +498,6 @@
         {
             isSubmitting = false;
         }
-    }
-
-    private async Task<string> GenerateEmployeeCode()
-    {
-        using var context = DbFactory.CreateDbContext();
-        var lastCode = await context.employees
-            .OrderByDescending(e => e.emp_code)
-            .Select(e => e.emp_code)
-            .FirstOrDefaultAsync();
-
-        if (string.IsNullOrEmpty(lastCode)) return "1000001";
-
-        if (long.TryParse(lastCode, out long codeValue))
-        {
-            return (codeValue + 1).ToString();
-        }
-        return "1000001";
     }
 
     private async Task DeleteEmployee(int id)

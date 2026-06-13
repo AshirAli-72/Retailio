@@ -40,7 +40,13 @@ namespace Retailio.Models
         [Column("recovery")]
         public bool Recovery { get; set; }
 
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
         [ForeignKey("RoleId")]
         public virtual Role? Role { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

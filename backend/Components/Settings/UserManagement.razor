@@ -239,8 +239,10 @@
     private async Task LoadUsers()
     {
         using var context = DbFactory.CreateDbContext();
-        totalCount = await context.users.CountAsync();
-        userList = await context.users
+        // Exclude SuperAdmin (role_id=1) — never show system account in POS user management
+        var query = context.users.Where(u => u.role_id != 1);
+        totalCount = await query.CountAsync();
+        userList = await query
             .Include(u => u.Role)
             .OrderByDescending(u => u.id)
             .Skip((currentPage - 1) * pageSize)

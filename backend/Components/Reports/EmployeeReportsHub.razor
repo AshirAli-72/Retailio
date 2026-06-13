@@ -1,4 +1,4 @@
-﻿@using Retailio.Models
+@using Retailio.Models
 @using Retailio.Data
 @using Microsoft.EntityFrameworkCore
 @using Retailio.Services
@@ -218,7 +218,6 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Code</th>
                                     <th>Mobile No</th>
                                     <th>CNIC</th>
                                     <th>Salary</th>
@@ -231,7 +230,6 @@
                                 {
                                     <tr>
                                         <td class="font-bold">@e.full_name</td>
-                                        <td><span class="badge-bill">@e.emp_code</span></td>
                                         <td>@e.mobile_no</td>
                                         <td>@e.cnic</td>
                                         <td>@e.salary.ToString("N0")</td>
@@ -314,7 +312,7 @@
             if (config != null) storeInfo = config;
 
             // Insights
-            earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.full_name, Code = e.emp_code, Salary = e.salary }).ToList();
+            earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.full_name, Code = e.mobile_no ?? "", Salary = e.salary }).ToList();
 
             var statuses = allEmployees.GroupBy(e => PaymentHelper.GetEntityStatusName(e.status))
                 .Select(g => new { Label = g.Key, Count = g.Count() })
@@ -350,8 +348,7 @@
         filteredEmployees = allEmployees.Where(e => 
             ((e.full_name?.ToLower().Contains(term) ?? false) || 
              (e.mobile_no?.ToLower().Contains(term) ?? false) || 
-             (e.cnic?.ToLower().Contains(term) ?? false) ||
-             (e.emp_code?.ToLower().Contains(term) ?? false)) &&
+             (e.cnic?.ToLower().Contains(term) ?? false)) &&
             (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
         ).ToList();
     }

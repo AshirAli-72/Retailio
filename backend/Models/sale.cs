@@ -31,5 +31,11 @@ namespace Retailio.Models
 
         [ForeignKey(nameof(sale_id))]
         public SaleHeader? SaleHeader { get; set; }
+
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

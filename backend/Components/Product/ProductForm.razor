@@ -316,6 +316,7 @@
     
     [Parameter] public string? UserName { get; set; }
     [Parameter] public string? UserEmail { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     // Pagination state
     private int currentPage = 1;
@@ -533,6 +534,10 @@
 
             if (string.IsNullOrWhiteSpace(productModel.barcode)) productModel.barcode = await GenerateUniqueBarcode();
 
+            // Get Current User ID early for all creates
+            using var context = DbFactory.CreateDbContext();
+            int? currentUserId = UserId;
+
             // Resolve category from text — create if new
             if (!string.IsNullOrWhiteSpace(categorySearchText))
             {
@@ -544,10 +549,9 @@
                 }
                 else
                 {
-                    using var catCtx = DbFactory.CreateDbContext();
-                    var newCat = new Category { category_title = categorySearchText.Trim() };
-                    catCtx.categories.Add(newCat);
-                    await catCtx.SaveChangesAsync();
+                    var newCat = new Category { category_title = categorySearchText.Trim(), user_id = currentUserId };
+                    context.categories.Add(newCat);
+                    await context.SaveChangesAsync();
                     productModel.category_id = newCat.id;
                     categoryList.Add(newCat);
                 }
@@ -564,10 +568,9 @@
                 }
                 else
                 {
-                    using var brCtx = DbFactory.CreateDbContext();
-                    var newBrand = new Brand { brand_title = brandSearchText.Trim() };
-                    brCtx.brands.Add(newBrand);
-                    await brCtx.SaveChangesAsync();
+                    var newBrand = new Brand { brand_title = brandSearchText.Trim(), user_id = currentUserId };
+                    context.brands.Add(newBrand);
+                    await context.SaveChangesAsync();
                     productModel.brand_id = newBrand.id;
                     brandList.Add(newBrand);
                 }
@@ -578,12 +581,6 @@
             stockModel.date_of_manafacture = productModel.manufacture_date;
             stockModel.date_of_expiry = productModel.expiry_date;
             CalculateTotalPurPrice();
-
-            using var context = DbFactory.CreateDbContext();
-            
-            // Get Current User ID
-            var user = await context.users.AsNoTracking().FirstOrDefaultAsync(u => u.username == UserName);
-            int? currentUserId = user?.id;
 
             // Identfiy current state for history before saving
             var oldStock = await context.stock_details.AsNoTracking()
@@ -598,6 +595,7 @@
 
             if (editingProduct == null)
             {
+                productModel.user_id = currentUserId;
                 context.products_services.Add(productModel);
                 await context.SaveChangesAsync();
             }
@@ -633,7 +631,8 @@
                     stock_alert = stockModel.stock_alert,
                     date_of_manafacture = stockModel.date_of_manafacture,
                     date_of_expiry = stockModel.date_of_expiry,
-                    total_pur_price = stockModel.total_pur_price
+                    total_pur_price = stockModel.total_pur_price,
+                    user_id = currentUserId
                 });
             }
             else

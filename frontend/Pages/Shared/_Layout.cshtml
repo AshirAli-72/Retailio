@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="view-transition" content="same-origin" />
-    <title>@ViewData["Title"] - Retailio</title>
+    <title>@ViewData["Title"]</title>
     <base href="~/" />
 
     <link rel="stylesheet" href="~/lib/inter-font/inter.css" asp-append-version="true" />
@@ -58,13 +58,14 @@
 
             if (!string.IsNullOrEmpty(userRole) && !isAdmin)
             {
-                string cacheKey = "Perms_" + userRole;
+                var sessionUserId = Context.Session.GetInt32("UserId");
+                string cacheKey = "Perms_" + userRole + "_" + (sessionUserId ?? 0);
                 if (!LayoutCache.TryGetValue(cacheKey, out perms))
                 {
                     try
                     {
                         using var context2 = DbFactory.CreateDbContext();
-                        perms = context2.roles_permissions.Include(p => p.Role).AsNoTracking().FirstOrDefault(p => p.Role != null && p.Role.RoleTitle == userRole);
+                        perms = context2.roles_permissions.Include(p => p.Role).AsNoTracking().FirstOrDefault(p => p.Role != null && p.Role.RoleTitle == userRole && p.user_id == sessionUserId);
                         if (perms != null) LayoutCache.Set(cacheKey, perms, TimeSpan.FromMinutes(30));
                     }
                     catch { }
@@ -72,12 +73,52 @@
             }
         }
 
+        <!-- Subscription check -->
+        @{
+            bool isSubscriptionExpired = false;
+            int? subscriptionDaysLeft = null;
+            string? subscriptionPlan = null;
+            try
+            {
+                var sessionUserId = Context.Session.GetInt32("UserId");
+                if (sessionUserId.HasValue && sessionUserId.Value > 0)
+                {
+                    using var subCtx = DbFactory.CreateDbContext();
+                    var sub = subCtx.subscriptions.AsNoTracking()
+                        .Where(s => s.user_id == sessionUserId.Value)
+                        .OrderByDescending(s => s.id)
+                        .FirstOrDefault();
+                    if (sub != null)
+                    {
+                        subscriptionPlan = sub.plan;
+                        if (sub.status == (int)EntityStatus.Inactive)
+                        {
+                            isSubscriptionExpired = true;
+                            subscriptionDaysLeft = 0;
+                        }
+                        else if (!string.IsNullOrEmpty(sub.expires_at) &&
+                                 DateTime.TryParse(sub.expires_at, out var expDate))
+                        {
+                            var daysLeft = (expDate.Date - DateTime.Today).Days;
+                            subscriptionDaysLeft = Math.Max(0, daysLeft);
+                            if (daysLeft < 0)
+                            {
+                                isSubscriptionExpired = true;
+                                subscriptionDaysLeft = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header sidebar-logo-container">
                 <div class="sidebar-logo-wrap">
                     <img src="@logoSrc" alt="Logo" class="sidebar-logo" />
-                    <span class="sidebar-logo-label">Retailio</span>
+                    <span class="sidebar-logo-label">POS</span>
                 </div>
 
                 <button id="sidebarClose" class="mobile-only mobile-close-btn">
@@ -126,10 +167,13 @@
                     </a>
                 }
 
-                <a href="/recovery" class="nav-item">
-                    <i class="ph-receipt nav-icon"></i>
-                    <span>Recovery</span>
-                </a>
+                @if (isAdmin || (perms?.Recovery ?? false))
+                {
+                    <a href="/recovery" class="nav-item">
+                        <i class="ph-receipt nav-icon"></i>
+                        <span>Recovery</span>
+                    </a>
+                }
 
                 @if (isAdmin || (perms?.Employees ?? false))
                 {
@@ -166,6 +210,17 @@
                     </button>
                 </div>
 
+                @* ── Subscription warning banner (inside top-bar) ── *@
+                @if (!isSubscriptionExpired && subscriptionDaysLeft.HasValue && subscriptionDaysLeft.Value <= 3)
+                {
+                    <div style="flex:1;display:flex;justify-content:center;pointer-events:none;">
+                        <div style="pointer-events:auto;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;color:#92400e;padding:0.4rem 1rem;border-radius:10px;font-size:0.82rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;box-shadow:0 2px 8px rgba(245,158,11,0.15);">
+                            <i class="ph-warning-circle" style="font-size:1.1rem;color:#d97706;"></i>
+                            <span>Your <strong>@(subscriptionPlan ?? "free_trial")</strong> plan expires in <strong>@subscriptionDaysLeft.Value day@(subscriptionDaysLeft.Value != 1 ? "s" : "")</strong>. Please upgrade to continue using the system.</span>
+                        </div>
+                    </div>
+                }
+
                 <div class="top-bar-right">
                     <div class="user-profile-wrapper" style="position: relative;">
                         <div class="user-avatar-initial" id="profileDropdownToggle" style="cursor: pointer;">
@@ -201,9 +256,35 @@
                 </div>
             </header>
 
-            @RenderBody()
+    @RenderBody()
         </main>
     </div>
+
+    @* ── Subscription Expired Blocking Overlay ── *@
+    @if (isSubscriptionExpired)
+    {
+        <div id="subscriptionExpiredOverlay" style="position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:20px;padding:3rem 2.5rem;max-width:460px;width:90%;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,0.4);">
+                <div style="width:72px;height:72px;background:rgba(239,68,68,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
+                    <i class="ph-warning-circle" style="font-size:2.5rem;color:#ef4444;"></i>
+                </div>
+                <h2 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin-bottom:0.5rem;">Subscription Expired</h2>
+                <p style="color:#64748b;font-size:0.95rem;line-height:1.6;margin-bottom:1.5rem;">
+                    Your <strong>@(subscriptionPlan ?? "free_trial")</strong> plan has expired. All operations (create, edit, sales, returns) are now disabled. Please upgrade your subscription to continue using the system.
+                </p>
+                <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+                    <a href="/Account/Register" style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#BC1823,#9c141d);color:#fff;padding:0.85rem 2rem;border-radius:12px;font-weight:700;text-decoration:none;font-size:0.95rem;box-shadow:0 6px 20px rgba(188,24,35,0.3);">
+                        <i class="ph-rocket-launch"></i> Upgrade Subscription
+                    </a>
+                    <form asp-page="/Account/Logout" asp-area="" method="post" style="margin:0;">
+                        <button type="submit" style="display:inline-flex;align-items:center;gap:0.5rem;background:transparent;border:2px solid #e2e8f0;color:#64748b;padding:0.85rem 2rem;border-radius:12px;font-weight:700;cursor:pointer;font-size:0.95rem;font-family:inherit;">
+                            <i class="ph-sign-out"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 
     <script src="_framework/blazor.server.js"></script>
     <script src="~/js/app-main.js" asp-append-version="true"></script>

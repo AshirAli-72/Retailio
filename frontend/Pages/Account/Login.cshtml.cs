@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Retailio.Data;
@@ -57,22 +57,44 @@ namespace Retailio.Pages.Account
 
                 if (user != null && PaymentHelper.VerifyPassword(inputPass, user.password))
                 {
-                    // Use the role title directly from the included Role navigation property
                     string roleTitle = user.Role?.RoleTitle ?? "Unknown";
 
                     HttpContext.Session.SetString("UserName",  user.username ?? user.email ?? "User");
                     HttpContext.Session.SetString("UserRole",  roleTitle);
                     HttpContext.Session.SetString("UserEmail", user.email ?? "");
-                    // Store numeric role_id for fast checks without string comparison
                     HttpContext.Session.SetInt32("UserRoleId", user.role_id);
+                    HttpContext.Session.SetInt32("UserId",     user.id);
 
                     TempData["Success"] = "Welcome back! Login successful.";
 
-                    // SuperAdmin (role=1) → Admin panel
-                    // Admin (role=2) and all others → POS dashboard
                     return PaymentHelper.HasAdminPanelAccess(roleTitle)
                         ? RedirectToPage("/Admin/AdminPanel")
                         : RedirectToPage("/Index");
+                }
+
+                // ── Check employee table for login ──────────────────────────
+                var employee = await _context.employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.email == inputEmail);
+
+                if (employee != null && !string.IsNullOrEmpty(employee.password)
+                    && PaymentHelper.VerifyPassword(inputPass, employee.password))
+                {
+                    var employeeRole = employee.role_id.HasValue
+                        ? await _context.roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == employee.role_id.Value)
+                        : null;
+                    string roleTitle = employeeRole?.RoleTitle ?? "Employee";
+
+                    // Employee login — user_id is the admin who created this employee
+                    HttpContext.Session.SetString("UserName",  employee.full_name ?? employee.email ?? "Employee");
+                    HttpContext.Session.SetString("UserRole",  roleTitle);
+                    HttpContext.Session.SetString("UserEmail", employee.email ?? "");
+                    HttpContext.Session.SetInt32("UserRoleId", employee.role_id ?? 0);
+                    HttpContext.Session.SetInt32("UserId",     employee.user_id ?? 0); // admin's user_id
+                    HttpContext.Session.SetInt32("EmployeeId", employee.id);
+
+                    TempData["Success"] = "Welcome back! Login successful.";
+                    return RedirectToPage("/Index");
                 }
 
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");

@@ -18,14 +18,16 @@ namespace Retailio.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     date = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     full_name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    emp_code = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true),
                     cnic = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     mobile_no = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     image_path = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     salary = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    password = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    role_id = table.Column<int>(type: "int", nullable: true),
+                    status = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -36,8 +38,7 @@ namespace Retailio.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "employee");
+            migrationBuilder.DropTable(name: "employee");
         }
     }
 }

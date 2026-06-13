@@ -31,5 +31,11 @@ namespace Retailio.Models
 
         [Column("file")]
         public string? file { get; set; }
+
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

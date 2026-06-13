@@ -6,4 +6,5 @@
 }
 
 <component type="typeof(Retailio.backend.Components.Sale.SaleEditor)" render-mode="ServerPrerendered"
-           param-UserName='@HttpContext.Session.GetString("UserName")' />
+           param-UserName='@HttpContext.Session.GetString("UserName")'
+           param-UserId='@HttpContext.Session.GetInt32("UserId")' />

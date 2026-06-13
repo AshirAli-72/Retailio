@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Retailio.Models
@@ -13,5 +13,9 @@ namespace Retailio.Models
         [Column("role_title")]
         [MaxLength(100)]
         public string RoleTitle { get; set; } = string.Empty;
+
+        // Inverse: users that belong to this role
+        [InverseProperty("Role")]
+        public ICollection<users>? RoleMembers { get; set; }
     }
 }

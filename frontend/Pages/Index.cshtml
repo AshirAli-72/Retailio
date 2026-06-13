@@ -1,4 +1,4 @@
-﻿@page "/dashboard"
+@page "/dashboard"
 @model Retailio.Pages.IndexModel
 @{
     ViewData["Title"] = "Dashboard";
@@ -221,6 +221,42 @@
 </style>
 
 <div class="dashboard-container">
+    @* ── Subscription Expiry Alert ── *@
+    @if (Model.IsSubscriptionExpired)
+    {
+        <div class="alert-box" style="background:rgba(239,68,68,0.08);border-left-color:#ef4444;">
+            <div class="alert-icon-box" style="background:#ef4444;">
+                <i class="ph-warning-circle" style="font-size:1.2rem;"></i>
+            </div>
+            <div style="flex:1;">
+                <div style="font-weight:700;color:#991b1b;font-size:0.9rem;margin-bottom:0.15rem;">Subscription Expired</div>
+                <p style="margin:0;color:#dc2626;font-size:0.82rem;">
+                    Your <strong>@(Model.SubscriptionPlan ?? "free_trial")</strong> plan has expired. All operations are disabled. Upgrade to continue.
+                </p>
+            </div>
+            <a href="/Account/Register" class="btn-primary btn-sm" style="background:#dc2626;border:none;font-size:0.8rem;">
+                Upgrade Now
+            </a>
+        </div>
+    }
+    else if (Model.SubscriptionDaysLeft.HasValue && Model.SubscriptionDaysLeft.Value <= 3)
+    {
+        <div class="alert-box" style="background:rgba(245,158,11,0.08);border-left-color:#f59e0b;">
+            <div class="alert-icon-box" style="background:#f59e0b;">
+                <i class="ph-timer" style="font-size:1.2rem;"></i>
+            </div>
+            <div style="flex:1;">
+                <div style="font-weight:700;color:#92400e;font-size:0.9rem;margin-bottom:0.15rem;">Subscription Expiring Soon</div>
+                <p style="margin:0;color:#d97706;font-size:0.82rem;">
+                    Your <strong>@(Model.SubscriptionPlan ?? "free_trial")</strong> plan expires in <strong>@Model.SubscriptionDaysLeft.Value day@(Model.SubscriptionDaysLeft.Value != 1 ? "s" : "")</strong>. Upgrade to avoid service interruption.
+                </p>
+            </div>
+            <a href="/Account/Register" class="btn-primary btn-sm" style="background:#f59e0b;color:#000;border:none;font-size:0.8rem;">
+                Upgrade Plan
+            </a>
+        </div>
+    }
+
     @if (Model.LowStockCount > 0)
     {
         <div class="alert-box">
@@ -254,7 +290,7 @@
                 <div class="stat-icon-modern"><i class="ph-users"></i></div>
                 <span class="badge badge-success" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.7rem;">Active</span>
             </div>
-            <div class="stat-label-modern">Customers</div>
+            <div class="stat-label-modern">Users</div>
             <div class="stat-value-modern">@Model.TotalCustomers</div>
         </div>
 

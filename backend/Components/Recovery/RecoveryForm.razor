@@ -238,6 +238,9 @@
 }
 
 @code {
+    [Parameter] public string? UserName { get; set; }
+    [Parameter] public int? UserId { get; set; }
+
     private List<RecoveryDisplayItem> recoveryList = new();
     private List<customers> customerList = new();
     private Recovery recoveryModel = new();
@@ -477,6 +480,9 @@
             recoveryModel.total_credit = customerTotalCredit;
 
             recoveryModel.remaining = customerTotalCredit - recoveryModel.paid;
+
+            recoveryModel.user_id = UserId;
+
             context.recoveries.Add(recoveryModel);
 
             await context.SaveChangesAsync();

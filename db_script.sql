@@ -52,7 +52,10 @@ CREATE TABLE [employee] (
     [address] nvarchar(max) NOT NULL,
     [image_path] nvarchar(max) NULL,
     [salary] decimal(18,2) NOT NULL,
-    [status] nvarchar(max) NULL,
+    [status] int NULL,
+    [password] nvarchar(max) NULL,
+    [role_id] int NULL,
+    [user_id] int NULL,
     CONSTRAINT [PK_employee] PRIMARY KEY ([id])
 );
 GO
@@ -299,27 +302,16 @@ GO
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'role_title') AND [object_id] = OBJECT_ID(N'[roles]'))
     SET IDENTITY_INSERT [roles] ON;
 INSERT INTO [roles] ([id], [role_title])
-VALUES (1, N'SuperAdmin'),
-       (2, N'Admin');
+VALUES (1, N'SuperAdmin');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'role_title') AND [object_id] = OBJECT_ID(N'[roles]'))
     SET IDENTITY_INSERT [roles] OFF;
-GO
-
-
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings', N'recovery') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
-    SET IDENTITY_INSERT [roles_permissions] ON;
-INSERT INTO [roles_permissions] ([id], [customer_report], [customers], [daily_summary], [dashboard], [employee_report], [employees], [inventory], [invoice_report], [invoices], [product_report], [products], [Reports], [returns_report], [role_id], [sale_report], [sales], [settings], [recovery])
-VALUES (1, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), 2, CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit), CAST(1 AS bit));
-IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'customer_report', N'customers', N'daily_summary', N'dashboard', N'employee_report', N'employees', N'inventory', N'invoice_report', N'invoices', N'product_report', N'products', N'Reports', N'returns_report', N'role_id', N'sale_report', N'sales', N'settings', N'recovery') AND [object_id] = OBJECT_ID(N'[roles_permissions]'))
-    SET IDENTITY_INSERT [roles_permissions] OFF;
 GO
 
 
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
     SET IDENTITY_INSERT [users] ON;
 INSERT INTO [users] ([id], [email], [password], [role_id], [status], [username])
-VALUES (1, N'superadmin@pos.com', N'admin123', 1, N'Active', N'superadmin'),
-       (2, N'admin@pos.com', N'admin123', 2, N'Active', N'admin');
+VALUES (1, N'superadmin@gmail.com', N'186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae', 1, 1, N'superadmin');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'id', N'email', N'password', N'role_id', N'status', N'username') AND [object_id] = OBJECT_ID(N'[users]'))
     SET IDENTITY_INSERT [users] OFF;
 GO
@@ -331,3 +323,43 @@ GO
 
 CREATE INDEX [IX_users_role_id] ON [users] ([role_id]);
 GO
+
+
+-- ══════════════════════════════════════════════════════════════
+-- businesses table  (migration: 20260613100000_create_business_table)
+-- ══════════════════════════════════════════════════════════════
+CREATE TABLE [businesses] (
+    [id]            int          NOT NULL IDENTITY,
+    [user_id]       int          NOT NULL,
+    [business_name] nvarchar(200) NULL,
+    [business_type] nvarchar(100) NULL,
+    CONSTRAINT [PK_businesses] PRIMARY KEY ([id]),
+    CONSTRAINT [FK_businesses_users_user_id]
+        FOREIGN KEY ([user_id]) REFERENCES [users] ([id]) ON DELETE CASCADE
+);
+GO
+
+CREATE INDEX [IX_businesses_user_id] ON [businesses] ([user_id]);
+GO
+
+
+-- ══════════════════════════════════════════════════════════════
+-- subscriptions table  (migration: 20260613110000_create_subscription_table)
+-- status: 1 = Active, 2 = Inactive  (mirrors EntityStatus enum)
+-- ══════════════════════════════════════════════════════════════
+CREATE TABLE [subscriptions] (
+    [id]         int           NOT NULL IDENTITY,
+    [user_id]    int           NOT NULL,
+    [plan]       nvarchar(50)  NULL,        -- free_trial | basic | professional | enterprise
+    [started_at] nvarchar(10)  NOT NULL,    -- yyyy-MM-dd e.g. 2026-06-13
+    [expires_at] nvarchar(10)  NULL,        -- yyyy-MM-dd e.g. 2026-06-27
+    [status]     int           NULL,        -- 1 = Active, 2 = Inactive
+    CONSTRAINT [PK_subscriptions] PRIMARY KEY ([id]),
+    CONSTRAINT [FK_subscriptions_users_user_id]
+        FOREIGN KEY ([user_id]) REFERENCES [users] ([id]) ON DELETE CASCADE
+);
+GO
+
+CREATE INDEX [IX_subscriptions_user_id] ON [subscriptions] ([user_id]);
+GO
+

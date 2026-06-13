@@ -24,7 +24,8 @@ namespace Retailio.Migrations
                     stock_alert = table.Column<int>(type: "int", nullable: false),
                     date_of_manafacture = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     date_of_expiry = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    total_pur_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    total_pur_price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    user_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -35,8 +36,7 @@ namespace Retailio.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "stock_details");
+            migrationBuilder.DropTable(name: "stock_details");
         }
     }
 }

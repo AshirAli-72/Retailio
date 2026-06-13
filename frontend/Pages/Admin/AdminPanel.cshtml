@@ -38,7 +38,7 @@
             <div class="admin-brand-icon"><i class="ph-shield-check-bold"></i></div>
             <div class="admin-brand-text">
                 <div class="admin-brand-title">Admin Panel</div>
-                <div class="admin-brand-sub">Retailio</div>
+                <div class="admin-brand-sub">Admin</div>
             </div>
         </div>
 
@@ -165,15 +165,15 @@
                     <div class="admin-stat-sub">@Model.LowStockCount item(s) need restocking</div>
                 </div>
 
-                <!-- Customers -->
+                <!-- Users -->
                 <div class="admin-stat-card" style="--card-accent:#0ea5e9;--card-icon-bg:rgba(14,165,233,0.15);">
                     <div class="admin-stat-top">
-                        <div class="admin-stat-icon"><i class="ph-users"></i></div>
-                        <span class="admin-stat-trend"><i class="ph-trend-up"></i> @Model.ActiveCustomers active</span>
+                        <div class="admin-stat-icon"><i class="ph-users-three"></i></div>
+                        <span class="admin-stat-trend"><i class="ph-trend-up"></i> @Model.TotalUsers registered</span>
                     </div>
-                    <div class="admin-stat-label">Customers</div>
-                    <div class="admin-stat-value">@Model.TotalCustomers</div>
-                    <div class="admin-stat-sub">@Model.ActiveCustomers active of @Model.TotalCustomers total</div>
+                    <div class="admin-stat-label">Users</div>
+                    <div class="admin-stat-value">@Model.TotalUsers</div>
+                    <div class="admin-stat-sub">Registered system users</div>
                 </div>
 
             </div>

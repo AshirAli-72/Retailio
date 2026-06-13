@@ -683,7 +683,7 @@
                         <img src="/store-logo/@_receiptSnapshot.LogoFileName" alt="Logo" class="inv-logo" />
                     }
                     <div class="inv-brand-text">
-                        <h1 class="inv-store-name">@(_receiptSnapshot.StoreName ?? "Retailio")</h1>
+                        <h1 class="inv-store-name">@(_receiptSnapshot.StoreName ?? "Store")</h1>
                         @if (!string.IsNullOrWhiteSpace(_receiptSnapshot.Address))
                         {
                             <p class="inv-store-line">@_receiptSnapshot.Address</p>
@@ -1096,6 +1096,7 @@
         }
     }
     [Parameter] public string? UserName { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     // ── Init ──────────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
@@ -1405,12 +1406,7 @@
 
     private int? ResolveCurrentUserId(ApplicationDbContext context)
     {
-        if (string.IsNullOrWhiteSpace(UserName))
-            return null;
-
-        var user = context.users.AsNoTracking()
-            .FirstOrDefault(u => u.username == UserName || u.email == UserName);
-        return user?.id;
+        return UserId;
     }
 
     private void AddToSale(ProductDisplay p, bool isReturnWithoutReceipt = false)
@@ -1751,7 +1747,8 @@
             paid = additionalPayment,
             due = 0,
             status = (int?)PaymentStatus.Paid,
-            payment_method = (int?)PaymentMethod.Credit
+            payment_method = (int?)PaymentMethod.Credit,
+            user_id = ResolveCurrentUserId(context)
         };
         context.SalesHeader.Add(paymentHeader);
         await context.SaveChangesAsync();
@@ -1766,7 +1763,8 @@
             amount = additionalPayment,
             payment_method = (int?)PaymentMethod.Credit,
             status = (int?)PaymentStatus.Paid,
-            file = filePath
+            file = filePath,
+            user_id = ResolveCurrentUserId(context)
         });
 
         if (!string.IsNullOrEmpty(filePath))
@@ -1822,6 +1820,9 @@
         if (string.IsNullOrEmpty(newCustomer.name)) return;
 
         using var context = DbFactory.CreateDbContext();
+
+        newCustomer.user_id = UserId;
+
         context.customers.Add(newCustomer);
         await context.SaveChangesAsync();
 
@@ -1930,7 +1931,8 @@
                     paid = isCredit ? (tenderedAmount ?? 0) : (tenderedAmount ?? Math.Abs(currentTotal)),
                     due = isCredit ? (Math.Abs(currentTotal) - (tenderedAmount ?? 0)) : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
                     status = isCredit ? ((Math.Abs(currentTotal) - (tenderedAmount ?? 0)) > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid) : (int?)PaymentStatus.Paid,
-                    payment_method = (int?)paymentMethod
+                    payment_method = (int?)paymentMethod,
+                    user_id = currentUserId
                 };
                 context.SalesHeader.Add(saleHeader);
 
@@ -1962,7 +1964,8 @@
                             remaining = 0,
                             payment_method = (int?)PaymentMethod.Credit,
                             status = creditTotal > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid,
-                            file = creditFilePath
+                            file = creditFilePath,
+                            user_id = currentUserId
                         };
                         context.credits.Add(newCredit);
                     }
@@ -1985,7 +1988,8 @@
                         qty = item.qty,
                         unit_price = item.price,
                         total_price = item.total_price,
-                        status = saleHeader.status ?? (int?)PaymentStatus.Paid
+                        status = saleHeader.status ?? (int?)PaymentStatus.Paid,
+                        user_id = currentUserId
                     };
                     context.sales.Add(sale);
                     saleRecords.Add((sale, saleItems.IndexOf(item)));
@@ -2008,7 +2012,8 @@
                         unit_price = item.price,
                         total_price = Math.Abs(item.total_price),
                         payment_method = (int?)paymentMethod,
-                        status = (int?)PaymentStatus.Returned
+                        status = (int?)PaymentStatus.Returned,
+                        user_id = currentUserId
                     });
                 }
 
@@ -2061,7 +2066,8 @@
                         amount = lineAmount,
                         payment_method = (int?)PaymentMethod.Credit,
                         status = (int?)PaymentStatus.Pending,
-                        file = creditFilePath
+                        file = creditFilePath,
+                        user_id = currentUserId
                     });
                 }
             }
@@ -2186,7 +2192,7 @@
             Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
             Customer = selectedCustomer?.name ?? "Walking Customer",
             Payment = PaymentHelper.GetPaymentMethodName(paymentMethod),
-            StoreName = currentStore?.ShopName ?? "Retailio",
+            StoreName = currentStore?.ShopName,
             Address = currentStore?.Address ?? "Gilgit, Pakistan",
             Phone = currentStore?.Phone1 ?? "+92 345 6781267",
             LogoFileName = !string.IsNullOrEmpty(currentStore?.LogoPath)

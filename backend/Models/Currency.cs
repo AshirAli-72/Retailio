@@ -27,5 +27,11 @@ namespace Retailio.Models
 
         [Column("is_active")]
         public bool is_active { get; set; }
+
+        [Column("user_id")]
+        public int? user_id { get; set; }
+
+        [ForeignKey("user_id")]
+        public virtual users? User { get; set; }
     }
 }

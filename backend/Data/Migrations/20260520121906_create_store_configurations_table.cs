@@ -26,7 +26,8 @@ namespace Retailio.Migrations
                     phone_1 = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     phone_2 = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     logo_path = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    comments = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    comments = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -37,8 +38,7 @@ namespace Retailio.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "store_configurations");
+            migrationBuilder.DropTable(name: "store_configurations");
         }
     }
 }

@@ -29,6 +29,8 @@ namespace Retailio.Data
         public DbSet<Credit> credits { get; set; }
         public DbSet<CreditDetail> credits_details { get; set; }
         public DbSet<Recovery> recoveries { get; set; }
+        public DbSet<Business> businesses { get; set; }
+        public DbSet<Subscription> subscriptions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -126,34 +128,40 @@ namespace Retailio.Data
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.Property(e => e.salary).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.password).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.role_id).HasColumnType("int");
+                entity.Property(e => e.user_id).HasColumnType("int");
+            });
+
+            modelBuilder.Entity<Business>(entity =>
+            {
+                entity.HasKey(e => e.id);
+                entity.Property(e => e.id).ValueGeneratedOnAdd().UseIdentityColumn();
+                entity.Property(e => e.business_name).HasColumnType("nvarchar(200)");
+                entity.Property(e => e.business_type).HasColumnType("nvarchar(100)");
+                entity.ToTable("businesses");
+            });
+
+            modelBuilder.Entity<Subscription>(entity =>
+            {
+                entity.HasKey(e => e.id);
+                entity.Property(e => e.id).ValueGeneratedOnAdd().UseIdentityColumn();
+                entity.Property(e => e.plan).HasColumnType("nvarchar(50)");
+                entity.Property(e => e.started_at).HasColumnType("nvarchar(10)");
+                entity.Property(e => e.expires_at).HasColumnType("nvarchar(10)");
+                entity.Property(e => e.status).HasColumnType("int");
+                entity.ToTable("subscriptions");
             });
 
             // ── Seed: Roles ──────────────────────────────────────────────────
-            // SuperAdmin (1) = admin panel only, Admin (2) = POS dashboard
+            // Only SuperAdmin is seeded. All other roles are created per-user
+            // when users register or employees are added through the UI.
             modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, RoleTitle = "SuperAdmin" },
-                new Role { Id = 2, RoleTitle = "Admin"      }
+                new Role { Id = 1, RoleTitle = "SuperAdmin" }
             );
 
-            // ── Seed: Permissions — Admin role only (SuperAdmin skips POS perms) ──
-            modelBuilder.Entity<RolePermission>().HasData(
-                new RolePermission
-                {
-                    Id        = 1,
-                    RoleId    = 2,
-                    Dashboard = true,
-                    Customers = true,
-                    Products  = true,
-                    Sales     = true,
-                    Employees = true,
-                    Reports   = true,
-                    Settings  = true,
-                    Inventory = true,
-                    Recovery  = true
-                }
-            );
-
-            // ── Seed: Users — no emp_id, no employee records ─────────────────
+            // ── Seed: SuperAdmin user only ────────────────────────────────────
+            // All other users register through the UI and get their own role_id.
             modelBuilder.Entity<users>().HasData(
                 new users
                 {
@@ -162,15 +170,6 @@ namespace Retailio.Data
                     password = "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae", // superadmin
                     email    = "superadmin@gmail.com",
                     role_id  = 1,
-                    status   = (int)EntityStatus.Active
-                },
-                new users
-                {
-                    id       = 2,
-                    username = "admin",
-                    password = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123
-                    email    = "admin@gmail.com",
-                    role_id  = 2,
                     status   = (int)EntityStatus.Active
                 }
             );

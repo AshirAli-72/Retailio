@@ -25,10 +25,11 @@ namespace Retailio.Migrations
                     item_type = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     size = table.Column<int>(type: "int", nullable: true),
                     pic = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    status = table.Column<int>(type: "int", nullable: true),
                     remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     category_id = table.Column<int>(type: "int", nullable: true),
-                    brand_id = table.Column<int>(type: "int", nullable: true)
+                    brand_id = table.Column<int>(type: "int", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -39,8 +40,7 @@ namespace Retailio.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "products_services");
+            migrationBuilder.DropTable(name: "products_services");
         }
     }
 }

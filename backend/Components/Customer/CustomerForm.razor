@@ -223,6 +223,9 @@
 
 
 @code {
+    [Parameter] public string? UserName { get; set; }
+    [Parameter] public int? UserId { get; set; }
+
     private List<customers> customerList = new();
     private customers customerModel = new();
     private bool showForm = false;
@@ -338,6 +341,7 @@
 
             if (editingCustomer == null)
             {
+                customerModel.user_id = UserId;
                 context.customers.Add(customerModel);
             }
             else

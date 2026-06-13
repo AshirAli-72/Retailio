@@ -89,7 +89,8 @@ namespace Retailio.Pages.Admin
                 using var ctx = _dbFactory.CreateDbContext();
 
                 // ── Counts ─────────────────────────────────────
-                TotalUsers     = await ctx.users.AsNoTracking().CountAsync();
+                // Exclude SuperAdmin (role_id=1) — count only real app users
+                TotalUsers     = await ctx.users.AsNoTracking().CountAsync(u => u.role_id != 1);
                 TotalCustomers = await ctx.customers.AsNoTracking().CountAsync();
                 ActiveCustomers= await ctx.customers.AsNoTracking().CountAsync(c => c.status == (int?)EntityStatus.Active);
                 TotalProducts  = await ctx.products_services.AsNoTracking().CountAsync();

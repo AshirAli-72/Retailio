@@ -183,6 +183,8 @@
 
 
 @code {
+    [Parameter] public int? UserId { get; set; }
+
     private StoreConfiguration storeConfig = new();
     private bool isSaving = false;
     private string? errorMessage;
@@ -214,7 +216,8 @@
                     Phone1 = config.Phone1,
                     Phone2 = config.Phone2,
                     LogoPath = config.LogoPath,
-                    Comments = config.Comments
+                    Comments = config.Comments,
+                    user_id = config.user_id
                 };
             }
         }
@@ -315,7 +318,8 @@
                 existing.Phone2 = storeConfig.Phone2;
                 existing.LogoPath = storeConfig.LogoPath;
                 existing.Comments = storeConfig.Comments;
-                
+                existing.user_id = UserId;
+
                 // Mark as modified to ensure EF Core tracks the changes
                 context.Entry(existing).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             }
@@ -334,7 +338,8 @@
                     Phone1 = storeConfig.Phone1,
                     Phone2 = storeConfig.Phone2,
                     LogoPath = storeConfig.LogoPath,
-                    Comments = storeConfig.Comments
+                    Comments = storeConfig.Comments,
+                    user_id = UserId
                 };
                 context.store_configurations.Add(newConfig);
             }

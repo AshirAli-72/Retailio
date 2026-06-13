@@ -15,10 +15,16 @@ namespace Retailio.Pages.Recovery
             _context = context;
         }
 
+        public string? UserName { get; set; }
+        public int? UserId { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
+
+            UserName = HttpContext.Session.GetString("UserName");
+            UserId = HttpContext.Session.GetInt32("UserId");
 
             return Page();
         }

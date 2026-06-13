@@ -444,11 +444,6 @@ namespace Retailio.Migrations
                         {
                             Id = 1,
                             RoleTitle = "SuperAdmin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            RoleTitle = "Admin"
                         });
                 });
 
@@ -506,22 +501,6 @@ namespace Retailio.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("roles_permissions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Customers = true,
-                            Dashboard = true,
-                            Employees = true,
-                            Inventory = true,
-                            Products = true,
-                            Recovery = true,
-                            Reports = true,
-                            RoleId = 2,
-                            Sales = true,
-                            Settings = true
-                        });
                 });
 
             modelBuilder.Entity("Retailio.Models.Sale", b =>
@@ -874,20 +853,11 @@ namespace Retailio.Migrations
                         new
                         {
                             id = 1,
-                            email = "superadmin@pos.com",
-                            password = "admin123",
+                            email = "superadmin@gmail.com",
+                            password = "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae",
                             role_id = 1,
                             status = 1,
                             username = "superadmin"
-                        },
-                        new
-                        {
-                            id = 2,
-                            email = "admin@pos.com",
-                            password = "admin123",
-                            role_id = 2,
-                            status = 1,
-                            username = "admin"
                         });
                 });
 

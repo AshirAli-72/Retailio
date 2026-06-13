@@ -27,6 +27,7 @@ namespace Retailio.Pages.Product
         public IList<ProductService> Products { get; set; } = default!;
         public string? UserName { get; set; }
         public string? UserEmail { get; set; }
+        public int? UserId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -35,6 +36,7 @@ namespace Retailio.Pages.Product
 
             UserName = HttpContext.Session.GetString("UserName");
             UserEmail = HttpContext.Session.GetString("UserEmail");
+            UserId = HttpContext.Session.GetInt32("UserId");
 
             await _currencyService.GetSymbolAsync();
 
