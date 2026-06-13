@@ -3154,17 +3154,17 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\netcore\\E-Invoice_system\\Retailio.csproj",
+      "projectUniqueName": "D:\\netcore\\Retailio\\Retailio.csproj",
       "projectName": "Retailio",
-      "projectPath": "d:\\netcore\\E-Invoice_system\\Retailio.csproj",
+      "projectPath": "D:\\netcore\\Retailio\\Retailio.csproj",
       "packagesPath": "C:\\Users\\SATA Technologies\\.nuget\\packages\\",
-      "outputPath": "d:\\netcore\\E-Invoice_system\\obj\\",
+      "outputPath": "D:\\netcore\\Retailio\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "d:\\netcore\\E-Invoice_system\\NuGet.Config",
+        "D:\\netcore\\Retailio\\NuGet.Config",
         "C:\\Users\\SATA Technologies\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"

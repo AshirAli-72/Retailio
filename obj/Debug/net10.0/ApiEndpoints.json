@@ -1,6 +1,6 @@
 [
   {
-    "ContainingType": "E_Invoice_system.Controllers.StatsController",
+    "ContainingType": "Retailio.Controllers.StatsController",
     "Method": "GetStats",
     "RelativePath": "api/Stats",
     "HttpMethod": "GET",

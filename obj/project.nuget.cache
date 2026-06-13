@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "iIsWkU2TeYQ=",
+  "dgSpecHash": "Zltel5FOZn0=",
   "success": true,
-  "projectFilePath": "d:\\netcore\\E-Invoice_system\\Retailio.csproj",
+  "projectFilePath": "D:\\netcore\\Retailio\\Retailio.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\SATA Technologies\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\SATA Technologies\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
