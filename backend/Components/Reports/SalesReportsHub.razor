@@ -436,7 +436,7 @@
                 if (employeeId.HasValue)
                 {
                     var employeeSaleProductIds = await context.stock_history.AsNoTracking()
-                        .Where(sh => sh.user_id != null && employeeUserIds.Contains(sh.user_id.Value) && sh.remarks == "Sale")
+                        .Where(sh => sh.business_id != null && employeeUserIds.Contains(sh.business_id.Value) && sh.remarks == "Sale")
                         .Select(sh => new { sh.product_id, sh.date })
                         .Distinct()
                         .ToListAsync();
@@ -527,7 +527,7 @@
                 if (employeeId.HasValue)
                 {
                     var employeeReturnProductIds = await context.stock_history.AsNoTracking()
-                        .Where(sh => sh.user_id != null && employeeUserIds.Contains(sh.user_id.Value) && sh.remarks == "Return")
+                        .Where(sh => sh.business_id != null && employeeUserIds.Contains(sh.business_id.Value) && sh.remarks == "Return")
                         .Select(sh => new { sh.product_id, sh.date })
                         .Distinct()
                         .ToListAsync();

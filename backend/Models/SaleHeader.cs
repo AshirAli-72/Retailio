@@ -41,10 +41,10 @@ namespace Retailio.Models
         [Column("payment_method")]
         public int? payment_method { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
 
         public ICollection<Sale> SaleDetails { get; set; } = new List<Sale>();

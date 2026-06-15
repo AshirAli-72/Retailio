@@ -155,6 +155,7 @@ D:\netcore\Retailio\obj\Debug\net10.0\compressed\l8xnyglgyc-{0}-u412y6h2ej-u412y
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\dxqnxgcdqb-{0}-cb76fuhwru-cb76fuhwru.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\5iiq12fypg-{0}-gv0qh59evq-gv0qh59evq.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\rkp2dpidew-{0}-34eowwfueb-34eowwfueb.gz
+D:\netcore\Retailio\obj\Debug\net10.0\compressed\3qm5c8swzz-{0}-4922098sxw-4922098sxw.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\q2tvo0krz8-{0}-cinq3sjzhw-cinq3sjzhw.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\k9y85jvpuf-{0}-s6hasrxsml-s6hasrxsml.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\y3gty3m27h-{0}-e6qf2v6ae5-e6qf2v6ae5.gz
@@ -254,5 +255,4 @@ D:\netcore\Retailio\obj\Debug\net10.0\refint\Retailio.dll
 D:\netcore\Retailio\obj\Debug\net10.0\Retailio.pdb
 D:\netcore\Retailio\obj\Debug\net10.0\Retailio.genruntimeconfig.cache
 D:\netcore\Retailio\obj\Debug\net10.0\ref\Retailio.dll
-D:\netcore\Retailio\obj\Debug\net10.0\compressed\3qm5c8swzz-{0}-4922098sxw-4922098sxw.gz
 D:\netcore\Retailio\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

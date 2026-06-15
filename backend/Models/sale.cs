@@ -32,10 +32,10 @@ namespace Retailio.Models
         [ForeignKey(nameof(sale_id))]
         public SaleHeader? SaleHeader { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
     }
 }

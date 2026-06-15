@@ -62,7 +62,7 @@
                             </td>
                             <td class="text-muted" style="font-size:0.85rem;">@user.email</td>
                             <td>
-                                <span class="role-badge">@user.Role?.RoleTitle</span>
+                                <span class="role-badge">Role @user.role_id</span>
                             </td>
                             <td>
                                 <span class="status-badge @(user.status == (int?)EntityStatus.Active ? "status-active" : "status-inactive")">
@@ -243,7 +243,6 @@
         var query = context.users.Where(u => u.role_id != 1);
         totalCount = await query.CountAsync();
         userList = await query
-            .Include(u => u.Role)
             .OrderByDescending(u => u.id)
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)

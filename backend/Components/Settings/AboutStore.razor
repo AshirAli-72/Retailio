@@ -218,7 +218,7 @@
                     Phone2 = config.Phone2,
                     LogoPath = config.LogoPath,
                     Comments = config.Comments,
-                    user_id = config.user_id
+                    business_id = config.business_id
                 };
             }
         }
@@ -319,7 +319,7 @@
                 existing.Phone2 = storeConfig.Phone2;
                 existing.LogoPath = storeConfig.LogoPath;
                 existing.Comments = storeConfig.Comments;
-                existing.user_id = UserId;
+                existing.business_id = UserId;
 
                 // Mark as modified to ensure EF Core tracks the changes
                 context.Entry(existing).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
@@ -340,7 +340,7 @@
                     Phone2 = storeConfig.Phone2,
                     LogoPath = storeConfig.LogoPath,
                     Comments = storeConfig.Comments,
-                    user_id = UserId
+                    business_id = UserId
                 };
                 context.store_configurations.Add(newConfig);
             }

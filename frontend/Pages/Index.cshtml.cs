@@ -92,7 +92,7 @@ namespace Retailio.Pages
                 {
                     using var subCtx = _dbFactory.CreateDbContext();
                     var sub = await subCtx.subscriptions.AsNoTracking()
-                        .Where(s => s.user_id == userId.Value)
+                        .Where(s => s.business_id == userId.Value)
                         .OrderByDescending(s => s.id)
                         .FirstOrDefaultAsync();
                     if (sub != null)

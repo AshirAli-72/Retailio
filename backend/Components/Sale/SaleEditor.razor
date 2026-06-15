@@ -1750,7 +1750,7 @@
             due = 0,
             status = (int?)PaymentStatus.Paid,
             payment_method = (int?)PaymentMethod.Credit,
-            user_id = ResolveCurrentUserId(context)
+            business_id = ResolveCurrentUserId(context)
         };
         context.SalesHeader.Add(paymentHeader);
         await context.SaveChangesAsync();
@@ -1766,7 +1766,7 @@
             payment_method = (int?)PaymentMethod.Credit,
             status = (int?)PaymentStatus.Paid,
             file = filePath,
-            user_id = ResolveCurrentUserId(context)
+            business_id = ResolveCurrentUserId(context)
         });
 
         if (!string.IsNullOrEmpty(filePath))
@@ -1823,7 +1823,7 @@
 
         using var context = DbFactory.CreateDbContext();
 
-        newCustomer.user_id = UserId;
+        newCustomer.business_id = UserId;
 
         context.customers.Add(newCustomer);
         await context.SaveChangesAsync();
@@ -1934,7 +1934,7 @@
                     due = isCredit ? (Math.Abs(currentTotal) - (tenderedAmount ?? 0)) : Math.Max(0, Math.Abs(currentTotal) - ((tenderedAmount ?? 0) > 0 ? (tenderedAmount ?? 0) : Math.Abs(currentTotal))),
                     status = isCredit ? ((Math.Abs(currentTotal) - (tenderedAmount ?? 0)) > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid) : (int?)PaymentStatus.Paid,
                     payment_method = (int?)paymentMethod,
-                    user_id = currentUserId
+                    business_id = currentUserId
                 };
                 context.SalesHeader.Add(saleHeader);
 
@@ -1967,7 +1967,7 @@
                             payment_method = (int?)PaymentMethod.Credit,
                             status = creditTotal > 0 ? (int?)PaymentStatus.Pending : (int?)PaymentStatus.Paid,
                             file = creditFilePath,
-                            user_id = currentUserId
+                            business_id = currentUserId
                         };
                         context.credits.Add(newCredit);
                     }
@@ -1991,7 +1991,7 @@
                         unit_price = item.price,
                         total_price = item.total_price,
                         status = saleHeader.status ?? (int?)PaymentStatus.Paid,
-                        user_id = currentUserId
+                        business_id = currentUserId
                     };
                     context.sales.Add(sale);
                     saleRecords.Add((sale, saleItems.IndexOf(item)));
@@ -2015,7 +2015,7 @@
                         total_price = Math.Abs(item.total_price),
                         payment_method = (int?)paymentMethod,
                         status = (int?)PaymentStatus.Returned,
-                        user_id = currentUserId
+                        business_id = currentUserId
                     });
                 }
 
@@ -2036,7 +2036,7 @@
                         context.stock_history.Add(new Models.stock_history
                         {
                             product_id = prod.id,
-                            user_id = currentUserId,
+                            business_id = currentUserId,
                             date = DateTime.Now.ToString("yyyy-MM-dd"),
                             old_quantity = oldStockQty,
                             new_quantity = stock.quantity,
@@ -2069,7 +2069,7 @@
                         payment_method = (int?)PaymentMethod.Credit,
                         status = (int?)PaymentStatus.Pending,
                         file = creditFilePath,
-                        user_id = currentUserId
+                        business_id = currentUserId
                     });
                 }
             }

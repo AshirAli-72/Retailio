@@ -168,8 +168,13 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Category</label>
-                    <input type="text" list="category-list" @bind="categorySearchText" @bind:event="oninput"
-                           class="form-control" placeholder="Search or type new category..." />
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" list="category-list" @bind="categorySearchText" @bind:event="oninput"
+                               class="form-control" placeholder="Search or type new category..." style="flex:1;" />
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddCategory" disabled="@string.IsNullOrWhiteSpace(categorySearchText)" title="Add category" style="white-space:nowrap; padding:0.375rem 0.75rem;">
+                            <i class="ph-plus"></i> Add
+                        </button>
+                    </div>
                     <datalist id="category-list">
                         @foreach (var cat in categoryList)
                         {
@@ -180,8 +185,13 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">Brand</label>
-                    <input type="text" list="brand-list" @bind="brandSearchText" @bind:event="oninput"
-                           class="form-control" placeholder="Search or type new brand..." />
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" list="brand-list" @bind="brandSearchText" @bind:event="oninput"
+                               class="form-control" placeholder="Search or type new brand..." style="flex:1;" />
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddBrand" disabled="@string.IsNullOrWhiteSpace(brandSearchText)" title="Add brand" style="white-space:nowrap; padding:0.375rem 0.75rem;">
+                            <i class="ph-plus"></i> Add
+                        </button>
+                    </div>
                     <datalist id="brand-list">
                         @foreach (var br in brandList)
                         {
@@ -331,6 +341,48 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadProducts();
+    }
+
+    private async Task AddCategory()
+    {
+        if (string.IsNullOrWhiteSpace(categorySearchText)) return;
+        using var context = DbFactory.CreateDbContext();
+        var existing = categoryList.FirstOrDefault(c =>
+            c.category_title.Equals(categorySearchText.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            productModel.category_id = existing.id;
+            categorySearchText = existing.category_title;
+            await JSRuntime.InvokeVoidAsync("showToast", "Info", "Category already exists.", "info");
+            return;
+        }
+        var newCat = new Category { category_title = categorySearchText.Trim(), business_id = UserId };
+        context.categories.Add(newCat);
+        await context.SaveChangesAsync();
+        productModel.category_id = newCat.id;
+        categoryList.Add(newCat);
+        await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Category \"{newCat.category_title}\" added!", "success");
+    }
+
+    private async Task AddBrand()
+    {
+        if (string.IsNullOrWhiteSpace(brandSearchText)) return;
+        using var context = DbFactory.CreateDbContext();
+        var existing = brandList.FirstOrDefault(b =>
+            b.brand_title.Equals(brandSearchText.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            productModel.brand_id = existing.id;
+            brandSearchText = existing.brand_title;
+            await JSRuntime.InvokeVoidAsync("showToast", "Info", "Brand already exists.", "info");
+            return;
+        }
+        var newBrand = new Brand { brand_title = brandSearchText.Trim(), business_id = UserId };
+        context.brands.Add(newBrand);
+        await context.SaveChangesAsync();
+        productModel.brand_id = newBrand.id;
+        brandList.Add(newBrand);
+        await JSRuntime.InvokeVoidAsync("showToast", "Success", $"Brand \"{newBrand.brand_title}\" added!", "success");
     }
 
     private async Task LoadProducts()
@@ -549,7 +601,7 @@
                 }
                 else
                 {
-                    var newCat = new Category { category_title = categorySearchText.Trim(), user_id = currentUserId };
+                    var newCat = new Category { category_title = categorySearchText.Trim(), business_id = currentUserId };
                     context.categories.Add(newCat);
                     await context.SaveChangesAsync();
                     productModel.category_id = newCat.id;
@@ -568,7 +620,7 @@
                 }
                 else
                 {
-                    var newBrand = new Brand { brand_title = brandSearchText.Trim(), user_id = currentUserId };
+                    var newBrand = new Brand { brand_title = brandSearchText.Trim(), business_id = currentUserId };
                     context.brands.Add(newBrand);
                     await context.SaveChangesAsync();
                     productModel.brand_id = newBrand.id;
@@ -595,7 +647,7 @@
 
             if (editingProduct == null)
             {
-                productModel.user_id = currentUserId;
+                productModel.business_id = currentUserId;
                 context.products_services.Add(productModel);
                 await context.SaveChangesAsync();
             }
@@ -632,7 +684,7 @@
                     date_of_manafacture = stockModel.date_of_manafacture,
                     date_of_expiry = stockModel.date_of_expiry,
                     total_pur_price = stockModel.total_pur_price,
-                    user_id = currentUserId
+                    business_id = currentUserId
                 });
             }
             else

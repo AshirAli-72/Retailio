@@ -51,13 +51,12 @@ namespace Retailio.Pages.Account
                 var inputPass  = Password.Trim();
 
                 var user = await _context.users
-                    .Include(u => u.Role)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.email == inputEmail);
 
                 if (user != null && PaymentHelper.VerifyPassword(inputPass, user.password))
                 {
-                    string roleTitle = user.Role?.RoleTitle ?? "Unknown";
+                    string roleTitle = user.id == 1 ? "SuperAdmin" : "Owner";
 
                     HttpContext.Session.SetString("UserName",  user.username ?? user.email ?? "User");
                     HttpContext.Session.SetString("UserRole",  roleTitle);
@@ -85,12 +84,12 @@ namespace Retailio.Pages.Account
                         : null;
                     string roleTitle = employeeRole?.RoleTitle ?? "Employee";
 
-                    // Employee login — user_id is the admin who created this employee
+                    // Employee login — business_id is the admin who created this employee
                     HttpContext.Session.SetString("UserName",  employee.full_name ?? employee.email ?? "Employee");
                     HttpContext.Session.SetString("UserRole",  roleTitle);
                     HttpContext.Session.SetString("UserEmail", employee.email ?? "");
                     HttpContext.Session.SetInt32("UserRoleId", employee.role_id ?? 0);
-                    HttpContext.Session.SetInt32("UserId",     employee.user_id ?? 0); // admin's user_id
+                    HttpContext.Session.SetInt32("UserId",     employee.business_id ?? 0); // admin's business_id
                     HttpContext.Session.SetInt32("EmployeeId", employee.id);
 
                     TempData["Success"] = "Welcome back! Login successful.";

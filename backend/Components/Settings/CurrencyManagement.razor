@@ -362,7 +362,7 @@
                         exchange_rate = 1.0m,
                         status = "Active",
                         is_active = true,
-                        user_id = UserId
+                        business_id = UserId
                     };
                     
                     context.currencies.Add(newCurrency);
@@ -454,7 +454,7 @@
             {
                 currencyModel.status = "Active";
                 currencyModel.is_active = false;
-                currencyModel.user_id = UserId;
+                currencyModel.business_id = UserId;
                 context.currencies.Add(currencyModel);
             }
             else

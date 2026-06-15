@@ -15,10 +15,10 @@ namespace Retailio.Models
         [MaxLength(200)]
         public string category_title { get; set; } = string.Empty;
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
     }
 }

@@ -51,7 +51,7 @@ namespace Retailio.Models
         public int? role_id { get; set; }
 
         /// <summary>FK to users — the system account created for this employee</summary>
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
     }
 }

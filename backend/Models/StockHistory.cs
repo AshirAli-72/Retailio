@@ -34,8 +34,8 @@ namespace Retailio.Models
         [Column("remarks")]
         public string? remarks { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
         [Column("product_id")]
         public int product_id { get; set; }

@@ -53,24 +53,51 @@
             }
             catch { }
 
-            // ── Permissions (cached 30 min per role) ───────────────
-            bool isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                        || Retailio.Services.PaymentHelper.HasAdminPanelAccess(userRole);
-            RolePermission? perms = null;
+            // ── Permissions ──────────────────────────────────────
+            bool isOwnerOrSuperAdmin = userRole.Equals("Owner", StringComparison.OrdinalIgnoreCase)
+                                    || Retailio.Services.PaymentHelper.HasAdminPanelAccess(userRole);
+            bool isEmployee = Context.Session.GetInt32("EmployeeId").HasValue;
+            bool isAdmin = isOwnerOrSuperAdmin || userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+            HashSet<string>? userPerms = null;
 
-            if (!string.IsNullOrEmpty(userRole) && !isAdmin)
+            if (isOwnerOrSuperAdmin)
             {
+                // users table users — full access, no permission data needed
+                userPerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "dashboard", "customers", "products", "inventory",
+                    "sales", "recovery", "employees", "reports", "settings"
+                };
+            }
+            else if (isEmployee && !string.IsNullOrEmpty(userRole))
+            {
+                // Employee — check permissions from DB
                 var sessionUserId = Context.Session.GetInt32("UserId");
                 string cacheKey = "Perms_" + userRole + "_" + (sessionUserId ?? 0);
-                if (!LayoutCache.TryGetValue(cacheKey, out perms))
+                if (!LayoutCache.TryGetValue(cacheKey, out userPerms))
                 {
                     try
                     {
                         using var context2 = DbFactory.CreateDbContext();
-                        perms = context2.roles_permissions.Include(p => p.Role).AsNoTracking().FirstOrDefault(p => p.Role != null && p.Role.RoleTitle == userRole && p.user_id == sessionUserId);
-                        if (perms != null) LayoutCache.Set(cacheKey, perms, TimeSpan.FromMinutes(30));
+                        var role = context2.roles.FirstOrDefault(r => r.RoleTitle == userRole);
+                        if (role != null)
+                        {
+                            var slugs = context2.roles_has_permissions
+                                .Where(rp => rp.RoleId == role.Id)
+                                .Join(context2.permissions,
+                                    rp => rp.PermissionId,
+                                    p => p.Id,
+                                    (rp, p) => p.Slugs ?? "")
+                                .ToList();
+                            userPerms = new HashSet<string>(slugs, StringComparer.OrdinalIgnoreCase);
+                        }
+                        else
+                        {
+                            userPerms = new HashSet<string>();
+                        }
+                        if (userPerms != null) LayoutCache.Set(cacheKey, userPerms, TimeSpan.FromMinutes(30));
                     }
-                    catch { }
+                    catch { userPerms = new HashSet<string>(); }
                 }
             }
         }
@@ -87,7 +114,7 @@
                 {
                     using var subCtx = DbFactory.CreateDbContext();
                     var sub = subCtx.subscriptions.AsNoTracking()
-                        .Where(s => s.user_id == sessionUserId.Value)
+                        .Where(s => s.business_id == sessionUserId.Value)
                         .OrderByDescending(s => s.id)
                         .FirstOrDefault();
                     if (sub != null)
@@ -129,7 +156,7 @@
             </div>
 
             <nav class="sidebar-nav" style="margin-top: 1rem;">
-                @if (isAdmin || (perms?.Dashboard ?? false))
+                @if (isAdmin || (userPerms?.Contains("dashboard") ?? false))
                 {
                     <a href="/dashboard" class="nav-item">
                         <i class="ph-house nav-icon"></i>
@@ -137,7 +164,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Customers ?? false))
+                @if (isAdmin || (userPerms?.Contains("customers") ?? false))
                 {
                     <a href="/customer" class="nav-item">
                         <i class="ph-users nav-icon"></i>
@@ -145,7 +172,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Products ?? false))
+                @if (isAdmin || (userPerms?.Contains("products") ?? false))
                 {
                     <a href="/product" class="nav-item">
                         <i class="ph-package nav-icon"></i>
@@ -153,7 +180,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Inventory ?? false))
+                @if (isAdmin || (userPerms?.Contains("inventory") ?? false))
                 {
                     <a href="/inventory" class="nav-item">
                         <i class="ph-archive nav-icon"></i>
@@ -161,7 +188,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Sales ?? false))
+                @if (isAdmin || (userPerms?.Contains("sales") ?? false))
                 {
                     <a href="/sale" class="nav-item">
                         <i class="ph-shopping-cart nav-icon"></i>
@@ -169,7 +196,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Recovery ?? false))
+                @if (isAdmin || (userPerms?.Contains("recovery") ?? false))
                 {
                     <a href="/recovery" class="nav-item">
                         <i class="ph-receipt nav-icon"></i>
@@ -177,7 +204,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Employees ?? false))
+                @if (isAdmin || (userPerms?.Contains("employees") ?? false))
                 {
                     <a href="/employee" class="nav-item">
                         <i class="ph-users-three nav-icon"></i>
@@ -185,7 +212,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Reports ?? false))
+                @if (isAdmin || (userPerms?.Contains("reports") ?? false))
                 {
                     <a href="/reports" class="nav-item">
                         <i class="ph-chart-bar nav-icon"></i>
@@ -193,7 +220,7 @@
                     </a>
                 }
 
-                @if (isAdmin || (perms?.Settings ?? false))
+                @if (isAdmin || (userPerms?.Contains("settings") ?? false))
                 {
                     <a href="/settings" class="nav-item">
                         <i class="ph-gear nav-icon"></i>

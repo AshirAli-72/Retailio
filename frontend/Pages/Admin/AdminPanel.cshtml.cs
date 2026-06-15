@@ -152,12 +152,11 @@ namespace Retailio.Pages.Admin
 
                 // ── All Users ──────────────────────────────────
                 AllUsers = await ctx.users.AsNoTracking()
-                    .Include(u => u.Role)
                     .Select(u => new UserRow
                     {
                         Username = u.username,
                         Email    = u.email,
-                        Role     = u.Role != null ? u.Role.RoleTitle : "—",
+                        Role     = u.role_id.ToString(),
                         Status   = u.status == (int?)EntityStatus.Active ? "Active" : "Inactive"
                     })
                     .ToListAsync();

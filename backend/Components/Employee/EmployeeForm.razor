@@ -295,8 +295,7 @@
         {
             using var context = DbFactory.CreateDbContext();
             rolesList = await context.roles
-                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin"
-                    && context.roles_permissions.Any(p => p.RoleId == r.Id && p.user_id == UserId))
+                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin")
                 .OrderBy(r => r.Id)
                 .ToListAsync();
         }
@@ -382,7 +381,7 @@
             status     = item.status,
             password   = item.password,
             role_id    = item.role_id,
-            user_id    = item.user_id
+            business_id    = item.business_id
         };
         errorMessage = null;
         selectedFile = null;
@@ -465,7 +464,7 @@
                 employeeModel.password = !string.IsNullOrWhiteSpace(loginPassword)
                     ? PaymentHelper.HashPassword(loginPassword)
                     : string.Empty;
-                employeeModel.user_id = UserId;
+                employeeModel.business_id = UserId;
                 employeeModel.role_id = loginRoleId > 0 ? loginRoleId : null;
 
                 context.employees.Add(employeeModel);

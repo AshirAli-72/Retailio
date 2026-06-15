@@ -25,8 +25,5 @@ namespace Retailio.Models
 
         [Column("status")]
         public int? status { get; set; } = (int)EntityStatus.Active;
-
-        [ForeignKey("role_id")]
-        public virtual Role? Role { get; set; }
     }
 }

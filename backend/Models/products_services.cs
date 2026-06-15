@@ -50,10 +50,10 @@ namespace Retailio.Models
         [Column("brand_id")]
         public int? brand_id { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
 
         [NotMapped]

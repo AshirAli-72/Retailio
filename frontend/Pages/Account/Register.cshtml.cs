@@ -98,27 +98,19 @@ namespace Retailio.Pages.Account
             // ── Create user, business, subscription ──────────
             try
             {
-                // ── 1. Create Admin role first (user_id NULL temporarily) ───
-                var userRole = new Role { RoleTitle = "Admin" };
-                _context.roles.Add(userRole);
-                await _context.SaveChangesAsync(); // get userRole.Id
-
-                // ── 2. Create user with the new role_id ──────────────────────
+                // ── 1. Create user (no role table entry) ─────────────────────
                 var newUser = new users
                 {
                     username = usernameTrimmed,
                     email    = emailTrimmed,
                     password = PaymentHelper.HashPassword(Password.Trim()),
-                    role_id  = userRole.Id,
+                    role_id  = 1,
                     status   = (int)EntityStatus.Active
                 };
                 _context.users.Add(newUser);
                 await _context.SaveChangesAsync(); // get newUser.id
 
-                // Admin accounts get full POS access via role title — no roles_permissions row.
-                // roles_permissions is only for employee role restrictions.
-
-                // ── 3. Business info ─────────────────────────────────────────
+                // ── 2. Business info ─────────────────────────────────────────
                 var business = new Business
                 {
                     user_id       = newUser.id,
@@ -127,25 +119,29 @@ namespace Retailio.Pages.Account
                 };
                 _context.businesses.Add(business);
 
-                // ── 4. Subscription record ───────────────────────────────────
+                // ── 3. Subscription record ───────────────────────────────────
                 var subscription = new Subscription
                 {
-                    user_id    = newUser.id,
-                    plan       = SelectedPlan,
-                    started_at = startedAt,
-                    expires_at = expiresAt,
-                    status     = (int)EntityStatus.Active
+                    business_id = newUser.id,
+                    plan        = SelectedPlan,
+                    started_at  = startedAt,
+                    expires_at  = expiresAt,
+                    status      = (int)EntityStatus.Active
                 };
                 _context.subscriptions.Add(subscription);
 
                 await _context.SaveChangesAsync();
 
-                // ── Set success message based on plan ─────────
-                TempData["Success"] = SelectedPlan == "free_trial"
-                    ? "Account created! Your 14-day free trial has started. Sign in to continue."
-                    : $"Account created with the {SelectedPlan} plan! Sign in to get started.";
+                // ── Auto-login ─────────────────────────────────
+                HttpContext.Session.SetString("UserName",  newUser.username ?? newUser.email ?? "User");
+                HttpContext.Session.SetString("UserRole",  "Owner");
+                HttpContext.Session.SetString("UserEmail", newUser.email ?? "");
+                HttpContext.Session.SetInt32("UserRoleId", newUser.role_id);
+                HttpContext.Session.SetInt32("UserId",     newUser.id);
 
-                return RedirectToPage("/Account/Login");
+                TempData["Success"] = "Welcome to Retailio! Your account is ready.";
+
+                return RedirectToPage("/Index");
             }
             catch (Exception ex)
             {

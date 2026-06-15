@@ -28,10 +28,10 @@ namespace Retailio.Models
         [Column("is_active")]
         public bool is_active { get; set; }
 
-        [Column("user_id")]
-        public int? user_id { get; set; }
+        [Column("business_id")]
+        public int? business_id { get; set; }
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
     }
 }

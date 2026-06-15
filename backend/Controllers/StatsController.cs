@@ -23,9 +23,9 @@ namespace Retailio.Controllers
             {
                 using var context = _dbFactory.CreateDbContext();
 
-                // Count all active customers
-                var activeUsers = await context.customers
-                    .Where(c => c.status == (int?)EntityStatus.Active)
+                // Count all registered users (exclude SuperAdmin role_id=1)
+                var activeUsers = await context.users
+                    .Where(u => u.role_id != 1)
                     .CountAsync();
 
                 // Sum of all net_payable from sales headers (total revenue generated)

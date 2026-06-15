@@ -220,7 +220,6 @@
     private bool isSubmitting = false;
     private string? errorMessage;
 
-    // Roles list from database
     private List<Role> rolesList = new();
     private bool showAddRoleModal = false;
     
@@ -240,10 +239,9 @@
     }
     
     private Role? editingRole = null;
-    private bool isDeleteConfirmMode = false; // Flag to show delete confirmation in modal
+    private bool isDeleteConfirmMode = false;
 
-    // Permission model
-    private RolePermission currentPermissions = new();
+    private PermissionViewModel currentPermissions = new();
 
     private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
 
@@ -258,14 +256,11 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            // Employee roles only — Admin accounts have full access without roles_permissions rows
             rolesList = await context.roles
-                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin"
-                    && context.roles_permissions.Any(p => p.RoleId == r.Id && p.user_id == AdminUserId))
+                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin")
                 .OrderBy(r => r.Id)
                 .ToListAsync();
 
-            // Set default selected role if not already set to a valid role
             if (string.IsNullOrEmpty(selectedRole) || !rolesList.Any(r => r.RoleTitle == selectedRole))
             {
                 selectedRole = rolesList.FirstOrDefault()?.RoleTitle ?? "";
@@ -286,8 +281,7 @@
     private async Task LoadPermissions()
     {
         errorMessage = null;
-        errorMessage = null;
-        currentPermissions = new RolePermission(); // Reset to empty defaults
+        currentPermissions = new PermissionViewModel();
 
         try
         {
@@ -295,23 +289,28 @@
             var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
             if (role != null)
             {
-                var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id && p.user_id == AdminUserId);
-                if (perms != null)
+                var permissionSlugs = await context.roles_has_permissions
+                    .Where(rp => rp.RoleId == role.Id)
+                    .Join(context.permissions,
+                        rp => rp.PermissionId,
+                        p => p.Id,
+                        (rp, p) => p.Slugs)
+                    .ToListAsync();
+
+                foreach (var slug in permissionSlugs)
                 {
-                    currentPermissions = perms;
-                }
-                else if (selectedRole == "Admin")
-                {
-                    // Admin gets all by default if no record exists
-                    currentPermissions.Dashboard = true;
-                    currentPermissions.Customers = true;
-                    currentPermissions.Products = true;
-                    currentPermissions.Sales = true;
-                    currentPermissions.Employees = true;
-                    currentPermissions.Reports = true;
-                    currentPermissions.Settings = true;
-                    currentPermissions.Inventory = true;
-                    currentPermissions.Recovery = true;
+                    switch (slug)
+                    {
+                        case "dashboard":  currentPermissions.Dashboard = true; break;
+                        case "customers":  currentPermissions.Customers = true; break;
+                        case "products":   currentPermissions.Products = true; break;
+                        case "sales":      currentPermissions.Sales = true; break;
+                        case "settings":   currentPermissions.Settings = true; break;
+                        case "inventory":  currentPermissions.Inventory = true; break;
+                        case "employees":  currentPermissions.Employees = true; break;
+                        case "reports":    currentPermissions.Reports = true; break;
+                        case "recovery":   currentPermissions.Recovery = true; break;
+                    }
                 }
             }
         }
@@ -326,7 +325,6 @@
     private async Task SavePermissions()
     {
         isSaving = true;
-        errorMessage = null;
         errorMessage = null;
         await InvokeAsync(StateHasChanged);
 
@@ -346,32 +344,36 @@
                 return;
             }
 
-            var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id && p.user_id == AdminUserId);
-            bool isNew = false;
-            if (perms == null)
-            {
-                perms = new RolePermission { RoleId = role.Id, user_id = AdminUserId };
-                isNew = true;
-            }
+            var existingLinks = await context.roles_has_permissions
+                .Where(rp => rp.RoleId == role.Id)
+                .ToListAsync();
+            context.roles_has_permissions.RemoveRange(existingLinks);
 
-            // Explicitly copy values from currentPermissions (which is bound to UI)
-            perms.Dashboard = currentPermissions.Dashboard;
-            perms.Customers = currentPermissions.Customers;
-            perms.Products = currentPermissions.Products;
-            perms.Sales = currentPermissions.Sales;
-            perms.Employees = currentPermissions.Employees;
-            perms.Reports = currentPermissions.Reports;
-            perms.Settings = currentPermissions.Settings;
-            perms.Inventory = currentPermissions.Inventory;
-            perms.Recovery = currentPermissions.Recovery;
+            var allPerms = await context.permissions.ToListAsync();
+            var slugPropMap = new Dictionary<string, bool>
+            {
+                ["dashboard"] = currentPermissions.Dashboard,
+                ["customers"] = currentPermissions.Customers,
+                ["products"] = currentPermissions.Products,
+                ["sales"] = currentPermissions.Sales,
+                ["settings"] = currentPermissions.Settings,
+                ["inventory"] = currentPermissions.Inventory,
+                ["employees"] = currentPermissions.Employees,
+                ["reports"] = currentPermissions.Reports,
+                ["recovery"] = currentPermissions.Recovery,
+            };
 
-            if (isNew)
+            foreach (var perm in allPerms)
             {
-                context.roles_permissions.Add(perms);
-            }
-            else
-            {
-                context.roles_permissions.Update(perms);
+                if (slugPropMap.TryGetValue(perm.Slugs ?? "", out var enabled) && enabled)
+                {
+                    context.roles_has_permissions.Add(new RolesHasPermission
+                    {
+                        RoleId = role.Id,
+                        PermissionId = perm.Id,
+                        business_id = AdminUserId
+                    });
+                }
             }
 
             await context.SaveChangesAsync();
@@ -379,7 +381,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = "Error saving: " + ex.InnerException?.Message ?? ex.Message;
+            errorMessage = "Error saving: " + (ex.InnerException?.Message ?? ex.Message);
             await JS.InvokeVoidAsync("showToast", "Error", errorMessage, "error");
         }
         finally
@@ -402,13 +404,10 @@
         currentPermissions.Inventory = val;
     }
 
-
-    // Role Management Methods
     private void OpenAddRoleModal()
     {
-        // Pre-populate with currently selected role from the main dropdown
         editingRole = rolesList.FirstOrDefault(r => r.RoleTitle == selectedRole);
-        roleManagementInput = selectedRole; // Always pre-fill with selected role
+        roleManagementInput = selectedRole;
         isDeleteConfirmMode = false;
         showAddRoleModal = true;
     }
@@ -441,8 +440,6 @@
         StateHasChanged();
     }
 
-    // Removed OnManageRoleSelected as we use a single field now
-
     private async Task SaveNewRole()
     {
         if (string.IsNullOrWhiteSpace(roleManagementInput))
@@ -457,7 +454,6 @@
         {
             using var context = DbFactory.CreateDbContext();
             
-            // Check if role already exists
             if (await context.roles.AnyAsync(r => r.RoleTitle.ToLower() == roleManagementInput.ToLower()))
             {
                 errorMessage = $"'{roleManagementInput}' already exists!";
@@ -491,7 +487,6 @@
             return;
         }
 
-        // Protect the SuperAdmin role from being renamed
         if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
         {
             errorMessage = "The SuperAdmin role cannot be modified.";
@@ -517,7 +512,6 @@
         {
             using var context = DbFactory.CreateDbContext();
 
-            // Check if another role with same name exists
             if (await context.roles.AnyAsync(r => r.Id != editingRole.Id && r.RoleTitle.ToLower() == newName.ToLower()))
             {
                 errorMessage = $"' {newName}' already exists!";
@@ -533,12 +527,11 @@
                 dbRole.RoleTitle = newTitle;
                 await context.SaveChangesAsync();
                 
-                // Update local state
                 selectedRole = newTitle;
             }
 
             await LoadRoles();
-            await LoadPermissions(); // Reload perms for the new name
+            await LoadPermissions();
             CloseAddRoleModal();
             await JS.InvokeVoidAsync("showToast", "Success", $"Role renamed to '{newName}' successfully!", "success");
         }
@@ -560,14 +553,12 @@
             return;
         }
 
-        // Protect the SuperAdmin role from deletion
         if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
         {
             errorMessage = "The SuperAdmin role cannot be deleted.";
             return;
         }
 
-        // If not already in confirm mode, show confirmation
         if (!isDeleteConfirmMode)
         {
             isDeleteConfirmMode = true;
@@ -575,12 +566,17 @@
             return;
         }
 
-        // Proceed with deletion after confirmation
         isSubmitting = true;
         errorMessage = null; 
         try
         {
             using var context = DbFactory.CreateDbContext();
+            
+            var roleLinks = await context.roles_has_permissions
+                .Where(rp => rp.RoleId == editingRole.Id)
+                .ToListAsync();
+            context.roles_has_permissions.RemoveRange(roleLinks);
+
             var dbRole = await context.roles.FindAsync(editingRole.Id);
             if (dbRole != null)
             {

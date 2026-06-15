@@ -11,8 +11,8 @@ namespace Retailio.Models
         [Column("id")]
         public int id { get; set; }
 
-        [Column("user_id")]
-        public int user_id { get; set; }
+        [Column("business_id")]
+        public int business_id { get; set; }
 
         /// <summary>free_trial | basic | professional | enterprise</summary>
         [Column("plan")]
@@ -30,7 +30,7 @@ namespace Retailio.Models
         [Column("status")]
         public int? status { get; set; } = (int)EntityStatus.Active;
 
-        [ForeignKey("user_id")]
+        [ForeignKey("business_id")]
         public virtual users? User { get; set; }
     }
 }

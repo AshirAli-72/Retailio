@@ -14,8 +14,8 @@ namespace Retailio.Models
         [MaxLength(100)]
         public string RoleTitle { get; set; } = string.Empty;
 
-        // Inverse: users that belong to this role
-        [InverseProperty("Role")]
-        public ICollection<users>? RoleMembers { get; set; }
+        [Column("business_id")]
+        public int business_id { get; set; }
+
     }
 }
