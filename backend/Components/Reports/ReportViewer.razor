@@ -7,38 +7,40 @@
 
 @if (currentView == "center")
 {
-    <ReportsCenter OnViewHub="ShowHub" />
+    <ReportsCenter UserId="UserId" OnViewHub="ShowHub" />
 }
 else if (currentView == "sales")
 {
-    <SalesReportsHub OnBack="GoToCenter" />
+    <SalesReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else if (currentView == "inventory")
 {
-    <InventoryReportsHub OnBack="GoToCenter" />
+    <InventoryReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else if (currentView == "customers")
 {
-    <CustomerReportsHub OnBack="GoToCenter" />
+    <CustomerReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else if (currentView == "products")
 {
-    <ProductReportsHub OnBack="GoToCenter" />
+    <ProductReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else if (currentView == "employees")
 {
-    <EmployeeReportsHub OnBack="GoToCenter" />
+    <EmployeeReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else if (currentView == "credits")
 {
-    <CreditReportsHub OnBack="GoToCenter" />
+    <CreditReportsHub UserId="UserId" OnBack="GoToCenter" />
 }
 else
 {
-    <ReportsCenter OnViewHub="ShowHub" />
+    <ReportsCenter UserId="UserId" OnViewHub="ShowHub" />
 }
 
 @code {
+    [Parameter] public int? UserId { get; set; }
+
     private string currentView = "center";
 
     private void ShowHub(string hubType)

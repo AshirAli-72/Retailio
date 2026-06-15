@@ -278,6 +278,7 @@
 
 @code {
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private DateTime fromDate = DateTime.Now.AddDays(-30);
     private DateTime toDate = DateTime.Now;
@@ -308,12 +309,12 @@
     private async Task LoadMetadata()
     {
         using var context = DbFactory.CreateDbContext();
-        categoriesList = await context.categories.AsNoTracking().ToListAsync();
-        allProductsList = await context.products_services.AsNoTracking().OrderBy(x => x.prod_name).ToListAsync();
-        var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+        categoriesList = await context.categories.AsNoTracking().ForTenant(UserId).ToListAsync();
+        allProductsList = await context.products_services.AsNoTracking().ForTenant(UserId).OrderBy(x => x.prod_name).ToListAsync();
+        var currency = await context.currencies.ForTenant(UserId).FirstOrDefaultAsync(c => c.is_active);
         if (currency != null) currencySymbol = currency.symbol ?? "Rs";
 
-        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
 
@@ -338,7 +339,7 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var query = context.products_services.AsNoTracking();
+            var query = context.products_services.AsNoTracking().ForTenant(UserId);
 
             if (selectedStatus == "Active") query = query.Where(x => x.status == (int?)EntityStatus.Active);
             else if (selectedStatus == "Inactive") query = query.Where(x => x.status == (int?)EntityStatus.Inactive);

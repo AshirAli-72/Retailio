@@ -47,7 +47,9 @@ namespace Retailio.Pages.Inventory
 
             PageNumber = pageNumber;
 
-            IQueryable<ProductService> query = _context.products_services.AsNoTracking();
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            IQueryable<ProductService> query = _context.products_services.AsNoTracking().ForTenant(userId);
 
             TotalCount = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
@@ -58,8 +60,8 @@ namespace Retailio.Pages.Inventory
                 .Take(PageSize)
                 .ToListAsync();
 
-            var categories = await _context.categories.AsNoTracking().ToListAsync();
-            var brands = await _context.brands.AsNoTracking().ToListAsync();
+            var categories = await _context.categories.AsNoTracking().ForTenant(userId).ToListAsync();
+            var brands = await _context.brands.AsNoTracking().ForTenant(userId).ToListAsync();
 
             Products = products.Select(p => new InventoryItem
             {

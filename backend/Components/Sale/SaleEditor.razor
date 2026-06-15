@@ -837,7 +837,7 @@
     {
         // Load only active customers for dropdown
         using var context = DbFactory.CreateDbContext();
-        recoveryCustomerList = await context.customers.Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
+        recoveryCustomerList = await context.customers.ForTenant(UserId).Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
         
         // Set default customer if already selected and active
         var defaultCustomer = selectedCustomer ?? creditSelectedCustomer;
@@ -846,7 +846,7 @@
             recoverySelectedCustomer = defaultCustomer;
             recoverySelectedCustomerId = defaultCustomer.id.ToString();
             // First try to load a Pending credit, if not, load any
-            recoveryCustomerCredit = await context.credits
+            recoveryCustomerCredit = await context.credits.ForTenant(UserId)
                 .Where(c => c.customer_id == defaultCustomer.id)
                 .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending ? 1 : 0)
                 .ThenByDescending(c => c.id)
@@ -892,7 +892,7 @@
             
             using var context = DbFactory.CreateDbContext();
             // First try to load a Pending credit, if not, load any
-            recoveryCustomerCredit = await context.credits
+            recoveryCustomerCredit = await context.credits.ForTenant(UserId)
                 .Where(c => c.customer_id == customerId)
                 .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending ? 1 : 0)
                 .ThenByDescending(c => c.id)
@@ -993,10 +993,10 @@
             using var refreshCtx = DbFactory.CreateDbContext();
             if (selectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id);
+                loadedCredit = await refreshCtx.credits.ForTenant(UserId).OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == selectedCustomer.id);
                 if (loadedCredit != null)
                 {
-                    creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+                    creditRecoveries = await refreshCtx.recoveries.ForTenant(UserId).Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
                 }
                 else
                 {
@@ -1005,10 +1005,10 @@
             }
             if (creditSelectedCustomer != null)
             {
-                loadedCredit = await refreshCtx.credits.OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id);
+                loadedCredit = await refreshCtx.credits.ForTenant(UserId).OrderByDescending(c => c.id).FirstOrDefaultAsync(c => c.customer_id == creditSelectedCustomer.id);
                 if (loadedCredit != null)
                 {
-                    creditRecoveries = await refreshCtx.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+                    creditRecoveries = await refreshCtx.recoveries.ForTenant(UserId).Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
                 }
                 else
                 {
@@ -1139,9 +1139,10 @@
 
             var prodsData = await context.products_services
                 .AsNoTracking()
+                .ForTenant(UserId)
                 .Where(p => p.status == (int?)EntityStatus.Active)
                 .GroupJoin(
-                    context.stock_details.AsNoTracking(),
+                    context.stock_details.AsNoTracking().ForTenant(UserId),
                     p => p.barcode,
                     s => s.item_barcode,
                     (p, s) => new { p, stock = s.OrderByDescending(x => x.id).FirstOrDefault() }
@@ -1163,11 +1164,12 @@
 
             allCustomersList = await context.customers
                 .AsNoTracking()
+                .ForTenant(UserId)
                 .OrderBy(c => c.name)
                 .Take(100)
                 .ToListAsync();
 
-            currentStore = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+            currentStore = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
 
             allProducts = prodsData.Select(p =>
             {
@@ -1306,7 +1308,7 @@
             {
                 if (headerById.payment_method == (int)PaymentMethod.Credit)
                 {
-                    loadedCredit = await context.credits
+                    loadedCredit = await context.credits.ForTenant(UserId)
                         .Where(c => c.customer_id == headerById.customer_id && c.status != (int)PaymentStatus.Paid)
                         .FirstOrDefaultAsync();
                     await LoadSaleHeaderForReturn(context, headerById); // Always load for return when scanning receipt!
@@ -1318,7 +1320,7 @@
             }
         }
 
-        var header = await context.SalesHeader
+        var header = await context.SalesHeader.ForTenant(UserId)
             .FirstOrDefaultAsync(s => s.inv_no == invNo);
 
         if (header == null)
@@ -1332,7 +1334,7 @@
 
     private async Task LoadSaleHeaderForView(ApplicationDbContext context, SaleHeader header)
     {
-        var details = await context.sales.Where(d => d.sale_id == header.id).ToListAsync();
+        var details = await context.sales.ForTenant(UserId).Where(d => d.sale_id == header.id).ToListAsync();
         if (!details.Any())
         {
             ShowAlert("No items found for this sale.");
@@ -1340,7 +1342,7 @@
         }
 
         var itemIds = details.Select(d => d.item_id).Distinct().ToList();
-        var products = await context.products_services
+        var products = await context.products_services.ForTenant(UserId)
             .Where(p => itemIds.Contains(p.id))
             .ToDictionaryAsync(p => p.id, p => p.prod_name ?? "Item #" + p.id);
 
@@ -1365,7 +1367,7 @@
 
     private async Task LoadSaleHeaderForReturn(ApplicationDbContext context, SaleHeader header)
     {
-        var details = await context.sales.Where(d => d.sale_id == header.id).ToListAsync();
+        var details = await context.sales.ForTenant(UserId).Where(d => d.sale_id == header.id).ToListAsync();
         if (!details.Any())
         {
             ShowAlert("No items found for this sale.");
@@ -1373,7 +1375,7 @@
         }
 
         var itemIds = details.Select(d => d.item_id).Distinct().ToList();
-        var products = await context.products_services
+        var products = await context.products_services.ForTenant(UserId)
             .Where(p => itemIds.Contains(p.id))
             .ToDictionaryAsync(p => p.id, p => p.prod_name ?? "Item #" + p.id);
 
@@ -1500,7 +1502,7 @@
         {
             var q = customerSearchQuery.ToLower();
             using var context = DbFactory.CreateDbContext();
-            filteredCustomersList = await context.customers.AsNoTracking()
+            filteredCustomersList = await context.customers.AsNoTracking().ForTenant(UserId)
                 .Where(c => c.name.ToLower().Contains(q) ||
                            (c.contact != null && c.contact.ToLower().Contains(q)))
                 .Take(50).ToListAsync();
@@ -1516,10 +1518,10 @@
         
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
-        loadedCredit = await context.credits.FirstOrDefaultAsync(cr => cr.customer_id == c.id);
+        loadedCredit = await context.credits.ForTenant(UserId).FirstOrDefaultAsync(cr => cr.customer_id == c.id);
         if (loadedCredit != null)
         {
-            creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+            creditRecoveries = await context.recoveries.ForTenant(UserId).Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
         }
         else
         {
@@ -1576,14 +1578,14 @@
 
         if (prefix == "SALE_")
         {
-            var invs = await context.SalesHeader
+            var invs = await context.SalesHeader.ForTenant(UserId)
                 .Where(s => s.inv_no != null && s.inv_no.ToUpper().StartsWith("SALE_"))
                 .Select(s => s.inv_no).ToListAsync();
             foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "SALE_"));
         }
         else // RETURN_
         {
-            var invs = await context.returns
+            var invs = await context.returns.ForTenant(UserId)
                 .Where(r => r.inv_no != null && r.inv_no.ToUpper().StartsWith("RETURN_"))
                 .Select(r => r.inv_no).ToListAsync();
             foreach (var inv in invs) sequences.Add(ParseInvSequence(inv, "RETURN_"));
@@ -1651,7 +1653,7 @@
         {
             var q = creditCustomerSearch.ToLower();
             using var context = DbFactory.CreateDbContext();
-            filteredCreditCustomers = await context.customers.AsNoTracking()
+            filteredCreditCustomers = await context.customers.AsNoTracking().ForTenant(UserId)
                 .Where(c => c.status == (int?)EntityStatus.Active && 
                            (c.name.ToLower().Contains(q) ||
                            (c.contact != null && c.contact.ToLower().Contains(q))))
@@ -1682,10 +1684,10 @@
         
         // Load customer's credit to show used limit and credit limit
         using var context = DbFactory.CreateDbContext();
-        loadedCredit = await context.credits.OrderByDescending(cr => cr.id).FirstOrDefaultAsync(cr => cr.customer_id == c.id);
+        loadedCredit = await context.credits.ForTenant(UserId).OrderByDescending(cr => cr.id).FirstOrDefaultAsync(cr => cr.customer_id == c.id);
         if (loadedCredit != null)
         {
-            creditRecoveries = await context.recoveries.Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
+            creditRecoveries = await context.recoveries.ForTenant(UserId).Where(r => r.credit_id == loadedCredit.id).OrderByDescending(r => r.id).ToListAsync();
         }
         else
         {
@@ -1872,7 +1874,7 @@
 
             if (paymentMethod == PaymentMethod.Credit && creditCust!.credit_limit.HasValue)
             {
-                var existing = await context.credits
+                var existing = await context.credits.ForTenant(UserId)
                     .Where(c => c.customer_id == creditCust.id && c.status != (int)PaymentStatus.Paid)
                     .FirstOrDefaultAsync();
                 var outstanding = existing?.total_credit ?? 0;
@@ -1893,7 +1895,7 @@
                 .Distinct()
                 .ToList();
 
-            var productsInSale = await context.products_services
+            var productsInSale = await context.products_services.ForTenant(UserId)
                 .Where(p => productNames.Contains(p.prod_name))
                 .ToListAsync();
 
@@ -1902,7 +1904,7 @@
                 .Where(b => b != null)
                 .ToList();
 
-            var stocksToUpdate = await context.stock_details
+            var stocksToUpdate = await context.stock_details.ForTenant(UserId)
                 .Where(s => barcodesInSale.Contains(s.item_barcode))
                 .ToListAsync();
 
@@ -1938,7 +1940,7 @@
 
                 if (isCredit)
                 {
-                    newCredit = await context.credits
+                    newCredit = await context.credits.ForTenant(UserId)
                         .Where(c => c.customer_id == creditCust!.id && c.status != (int)PaymentStatus.Paid)
                         .FirstOrDefaultAsync();
 
@@ -2083,7 +2085,7 @@
                 if (originalSaleIds.Any() && returnFromCredit)
                 {
                     // Get all sale details for the original sale to find their sale_id (SaleHeader ID)
-                    var originalSaleDetails = await context.sales
+                    var originalSaleDetails = await context.sales.ForTenant(UserId)
                         .Where(sd => originalSaleIds.Contains(sd.id))
                         .ToListAsync();
                     var saleHeaderIds = originalSaleDetails
@@ -2092,7 +2094,7 @@
                         .ToList();
 
                     // Find associated CreditDetail records using sale_id (SaleHeader ID)
-                    var creditLines = await context.credits_details
+                    var creditLines = await context.credits_details.ForTenant(UserId)
                         .Where(c => saleHeaderIds.Contains(c.sale_id))
                         .ToListAsync();
 
@@ -2115,7 +2117,7 @@
 
                     if (creditIds.Any())
                     {
-                        var credits = await context.credits
+                        var credits = await context.credits.ForTenant(UserId)
                             .Where(c => creditIds.Contains(c.id))
                             .ToListAsync();
 

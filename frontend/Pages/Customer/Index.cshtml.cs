@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Retailio.Data;
 using Retailio.Models;
+using Retailio.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Retailio.Pages.Customer
@@ -33,7 +34,7 @@ namespace Retailio.Pages.Customer
             UserName = HttpContext.Session.GetString("UserName");
             UserId = HttpContext.Session.GetInt32("UserId");
 
-            IQueryable<customers> query = _context.customers.AsNoTracking();
+            IQueryable<customers> query = _context.customers.AsNoTracking().ForTenant(UserId);
             TotalCount = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
             

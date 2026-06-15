@@ -248,9 +248,9 @@
     private async Task LoadCustomers()
     {
         using var context = DbFactory.CreateDbContext();
-        totalCount = await context.customers.CountAsync();
+        totalCount = await context.customers.ForTenant(UserId).CountAsync();
         
-        customerList = await context.customers
+        customerList = await context.customers.ForTenant(UserId)
             .OrderByDescending(c => c.id)
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)

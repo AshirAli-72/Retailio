@@ -1,5 +1,6 @@
 ﻿@using Retailio.Models
 @using Retailio.Data
+@using Retailio.Services
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
@@ -222,6 +223,8 @@
 
 
 @code {
+    [Parameter] public int? UserId { get; set; }
+
     private List<Currency> currencyList = new();
     private Currency currencyModel = new();
     private bool showForm = false;
@@ -267,10 +270,9 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            totalCount = await context.currencies.CountAsync();
+            totalCount = await context.currencies.ForTenant(UserId).CountAsync();
             
-            // Stable ordering by name only, so rows don't jump when toggling active status
-            currencyList = await context.currencies
+            currencyList = await context.currencies.ForTenant(UserId)
                 .OrderBy(c => c.name)
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
@@ -345,7 +347,7 @@
             if (match != null)
             {
                 using var context = DbFactory.CreateDbContext();
-                var existing = await context.currencies.FirstOrDefaultAsync(c => c.code == match.code);
+                var existing = await context.currencies.ForTenant(UserId).FirstOrDefaultAsync(c => c.code == match.code);
                 
                 if (existing == null)
                 {
@@ -359,7 +361,8 @@
                         symbol = match.symbol, 
                         exchange_rate = 1.0m,
                         status = "Active",
-                        is_active = true 
+                        is_active = true,
+                        user_id = UserId
                     };
                     
                     context.currencies.Add(newCurrency);
@@ -449,8 +452,9 @@
             using var context = DbFactory.CreateDbContext();
             if (editingCurrency == null)
             {
-                currencyModel.status = "Active"; // Default to Active for new custom ones
-                currencyModel.is_active = false; // Default to normal currency
+                currencyModel.status = "Active";
+                currencyModel.is_active = false;
+                currencyModel.user_id = UserId;
                 context.currencies.Add(currencyModel);
             }
             else

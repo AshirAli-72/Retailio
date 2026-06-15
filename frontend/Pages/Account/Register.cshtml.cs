@@ -115,25 +115,10 @@ namespace Retailio.Pages.Account
                 _context.users.Add(newUser);
                 await _context.SaveChangesAsync(); // get newUser.id
 
-                // ── 3. Create permissions for that role ──────────────────────
-                var permissions = new RolePermission
-                {
-                    RoleId    = userRole.Id,
-                    Dashboard = true,
-                    Customers = true,
-                    Products  = true,
-                    Sales     = true,
-                    Employees = true,
-                    Reports   = true,
-                    Settings  = true,
-                    Inventory = true,
-                    Recovery  = true,
-                    user_id   = newUser.id
-                };
-                _context.roles_permissions.Add(permissions);
-                await _context.SaveChangesAsync();
+                // Admin accounts get full POS access via role title — no roles_permissions row.
+                // roles_permissions is only for employee role restrictions.
 
-                // ── 5. Business info ─────────────────────────────────────────
+                // ── 3. Business info ─────────────────────────────────────────
                 var business = new Business
                 {
                     user_id       = newUser.id,
@@ -142,7 +127,7 @@ namespace Retailio.Pages.Account
                 };
                 _context.businesses.Add(business);
 
-                // ── 6. Subscription record ───────────────────────────────────
+                // ── 4. Subscription record ───────────────────────────────────
                 var subscription = new Subscription
                 {
                     user_id    = newUser.id,

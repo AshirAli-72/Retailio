@@ -280,14 +280,14 @@
     private async Task LoadRecoveries()
     {
         using var context = DbFactory.CreateDbContext();
-        totalCount = await context.recoveries.CountAsync();
+        totalCount = await context.recoveries.ForTenant(UserId).CountAsync();
 
-        recoveryList = await context.recoveries
+        recoveryList = await context.recoveries.ForTenant(UserId)
             .OrderByDescending(r => r.id)
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)
             .GroupJoin(
-                context.customers.AsNoTracking(),
+                context.customers.AsNoTracking().ForTenant(UserId),
                 r => r.customer_id,
                 c => c.id,
                 (r, cs) => new { r, cs }
@@ -314,7 +314,7 @@
     private async Task LoadCustomers()
     {
         using var context = DbFactory.CreateDbContext();
-        customerList = await context.customers.Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
+        customerList = await context.customers.ForTenant(UserId).Where(c => c.status == (int?)EntityStatus.Active).ToListAsync();
     }
 
     private async Task OnCustomerChanged(ChangeEventArgs e)
@@ -326,7 +326,7 @@
             selectedCustomer = customerList.FirstOrDefault(c => c.id == customerId);
             using var context = DbFactory.CreateDbContext();
             // Load all customer's credits
-            customerCredits = await context.credits
+            customerCredits = await context.credits.ForTenant(UserId)
                 .Where(c => c.customer_id == customerId)
                 .ToListAsync();
 
@@ -448,7 +448,7 @@
             using var context = DbFactory.CreateDbContext();
 
             // Get all customer's credits
-            var customerCreditsFromDb = await context.credits
+            var customerCreditsFromDb = await context.credits.ForTenant(UserId)
                 .Where(c => c.customer_id == recoveryModel.customer_id)
                 .OrderByDescending(c => c.status == (int?)PaymentStatus.Pending)
                 .ThenBy(c => c.id)
@@ -519,7 +519,7 @@
         if (recovery != null)
         {
             // Get all customer's credits from database (ordered to reverse the payment)
-            var customerCreditsFromDb = await context.credits
+            var customerCreditsFromDb = await context.credits.ForTenant(UserId)
                 .Where(c => c.customer_id == recovery.customer_id)
                 .OrderByDescending(c => c.id) // Newest first to reverse payment
                 .ToListAsync();

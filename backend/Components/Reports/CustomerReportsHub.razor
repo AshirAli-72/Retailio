@@ -264,6 +264,7 @@
 
 @code {
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private DateTime fromDate = DateTime.Now.AddDays(-30);
     private DateTime toDate = DateTime.Now;
@@ -286,8 +287,8 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        allCustomersForDropdown = await context.customers.AsNoTracking().OrderBy(x => x.name).ToListAsync();
-        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        allCustomersForDropdown = await context.customers.AsNoTracking().ForTenant(UserId).OrderBy(x => x.name).ToListAsync();
+        var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
 
@@ -299,14 +300,14 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            allCustomers = await context.customers.AsNoTracking().OrderByDescending(x => x.id).ToListAsync();
+            allCustomers = await context.customers.AsNoTracking().ForTenant(UserId).OrderByDescending(x => x.id).ToListAsync();
             
             filteredCustomers = allCustomers.Where(c => 
                 (selectedCustomerId == "All" || c.id.ToString() == selectedCustomerId) &&
                 (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(c.status) == selectedStatus)
             ).ToList();
 
-            var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+            var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
             if (config != null) storeInfo = config;
 
             // Generate Insights

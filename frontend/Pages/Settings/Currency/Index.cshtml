@@ -6,7 +6,7 @@
 
 
 <div class="dashboard-panel">
-    <component type="typeof(Retailio.backend.Components.Settings.CurrencyManagement)" render-mode="ServerPrerendered" />
+    <component type="typeof(Retailio.backend.Components.Settings.CurrencyManagement)" render-mode="ServerPrerendered" param-UserId='@HttpContext.Session.GetInt32("UserId")' />
 </div>
 
 @section Scripts {

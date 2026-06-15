@@ -1,5 +1,6 @@
 ﻿@using Retailio.Models
 @using Retailio.Data
+@using Retailio.Services
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
@@ -205,6 +206,7 @@
 
 @code {
     [Parameter] public EventCallback<string> OnViewHub { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private decimal todayRevenue = 0;
     private decimal monthlyRevenue = 0;
@@ -225,29 +227,24 @@
             using var context = DbFactory.CreateDbContext();
             
             // Currency
-            var currency = await context.currencies.AsNoTracking().FirstOrDefaultAsync(c => c.is_active);
+            var currency = await context.currencies.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync(c => c.is_active);
             if (currency != null) currencySymbol = currency.symbol ?? "$";
 
-            // Revenue
             var todayStr = DateTime.Now.ToString("yyyy-MM-dd");
             var monthPrefix = DateTime.Now.ToString("yyyy-MM");
 
-            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+            var allSalesHeaders = await context.SalesHeader.AsNoTracking().ForTenant(UserId).ToListAsync();
             todayRevenue = allSalesHeaders.Where(s => s.date == todayStr).Sum(s => s.net_payable);
             monthlyRevenue = allSalesHeaders.Where(s => s.date != null && s.date.StartsWith(monthPrefix)).Sum(s => s.net_payable);
 
-            // SKUs - Use StockDetail count as that's where the actual inventory resides
-            activeSkus = await context.products_services.CountAsync();
+            activeSkus = await context.products_services.ForTenant(UserId).CountAsync();
             if (activeSkus == 0) {
-                // Fallback to stock details if products table is used differently
-                activeSkus = await context.stock_details.CountAsync();
+                activeSkus = await context.stock_details.ForTenant(UserId).CountAsync();
             }
 
-            // Customers
-            customerCount = await context.customers.CountAsync();
+            customerCount = await context.customers.ForTenant(UserId).CountAsync();
 
-            // Low Stock - Use actual stock alert levels from each item
-            var allStock = await context.stock_details.AsNoTracking().ToListAsync();
+            var allStock = await context.stock_details.AsNoTracking().ForTenant(UserId).ToListAsync();
             lowStockAlerts = allStock.Count(s => s.quantity <= s.stock_alert);
         }
         catch (Exception ex)

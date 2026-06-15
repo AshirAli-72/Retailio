@@ -1,5 +1,6 @@
 ﻿@using Retailio.Models
 @using Retailio.Data
+@using Retailio.Services
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
@@ -199,7 +200,7 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var config = await context.store_configurations.FirstOrDefaultAsync();
+            var config = await context.store_configurations.ForTenant(UserId).FirstOrDefaultAsync();
             if (config != null)
             {
                 // Create a new instance and copy values to avoid tracking issues
@@ -303,7 +304,7 @@
         {
             using var context = DbFactory.CreateDbContext();
             
-            var existing = await context.store_configurations.FirstOrDefaultAsync();
+            var existing = await context.store_configurations.ForTenant(UserId).FirstOrDefaultAsync();
             if (existing != null)
             {
                 // Update existing - manually set each property (NOT Id)

@@ -4,4 +4,4 @@
     ViewData["Title"] = "Reports";
 }
 
-<component type="typeof(Retailio.backend.Components.Reports.ReportViewer)" render-mode="Server" />
+<component type="typeof(Retailio.backend.Components.Reports.ReportViewer)" render-mode="Server" param-UserId='@HttpContext.Session.GetInt32("UserId")' />

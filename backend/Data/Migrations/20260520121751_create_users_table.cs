@@ -20,7 +20,7 @@ namespace Retailio.Migrations
                     username = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     password = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     role_id = table.Column<int>(type: "int", nullable: false),
-                    status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    status = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {

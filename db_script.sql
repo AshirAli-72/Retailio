@@ -245,7 +245,7 @@ CREATE TABLE [users] (
     [username] nvarchar(max) NULL,
     [password] nvarchar(max) NULL,
     [role_id] int NOT NULL,
-    [status] nvarchar(max) NULL,
+    [status] int NULL,
     CONSTRAINT [PK_users] PRIMARY KEY ([id]),
     CONSTRAINT [FK_users_roles_role_id] FOREIGN KEY ([role_id]) REFERENCES [roles] ([id]) ON DELETE CASCADE
 );

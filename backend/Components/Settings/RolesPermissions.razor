@@ -258,9 +258,10 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            // SuperAdmin is a system-only role — exclude it so admin cannot manage it
+            // Employee roles only — Admin accounts have full access without roles_permissions rows
             rolesList = await context.roles
-                .Where(r => r.RoleTitle != "SuperAdmin")
+                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin"
+                    && context.roles_permissions.Any(p => p.RoleId == r.Id && p.user_id == AdminUserId))
                 .OrderBy(r => r.Id)
                 .ToListAsync();
 
@@ -331,22 +332,18 @@
 
         try
         {
+            if (selectedRole == "Admin")
+            {
+                errorMessage = "Admin accounts have full POS access. Permissions apply to employee roles only.";
+                return;
+            }
+
             using var context = DbFactory.CreateDbContext();
             var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
             if (role == null)
             {
-                // Special case: if it's "Admin" and it's missing from roles table, create it
-                if (selectedRole == "Admin")
-                {
-                    role = new Role { RoleTitle = "Admin" };
-                    context.roles.Add(role);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    errorMessage = "Role not found in the roles table.";
-                    return;
-                }
+                errorMessage = "Role not found in the roles table.";
+                return;
             }
 
             var perms = await context.roles_permissions.FirstOrDefaultAsync(p => p.RoleId == role.Id && p.user_id == AdminUserId);

@@ -29,6 +29,7 @@
         var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";
     }
     <div class="app-container">
+        @using Retailio.Services
         @using Microsoft.EntityFrameworkCore
         @using Retailio.Data
         @using Retailio.Models
@@ -37,12 +38,13 @@
         @inject IDbContextFactory<ApplicationDbContext> DbFactory
         @inject IMemoryCache LayoutCache
         @{
-            // ── Logo ────────────────────────────────────────────────────────
+            // ── Logo (scoped to logged-in admin tenant) ─────────────────────
             string logoSrc = "/images/sata-logo.png";
             try
             {
+                var layoutUserId = Context.Session.GetInt32("UserId");
                 using var _ctx = DbFactory.CreateDbContext();
-                var _store = _ctx.store_configurations.AsNoTracking().FirstOrDefault();
+                var _store = _ctx.store_configurations.AsNoTracking().ForTenant(layoutUserId).FirstOrDefault();
                 if (_store != null && !string.IsNullOrEmpty(_store.LogoPath))
                 {
                     try { logoSrc = "/store-logo/" + System.IO.Path.GetFileName(_store.LogoPath); }

@@ -295,7 +295,8 @@
         {
             using var context = DbFactory.CreateDbContext();
             rolesList = await context.roles
-                .Where(r => r.RoleTitle != "SuperAdmin")
+                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin"
+                    && context.roles_permissions.Any(p => p.RoleId == r.Id && p.user_id == UserId))
                 .OrderBy(r => r.Id)
                 .ToListAsync();
         }
@@ -305,9 +306,9 @@
     private async Task LoadEmployees()
     {
         using var context = DbFactory.CreateDbContext();
-        totalCount = await context.employees.CountAsync();
+        totalCount = await context.employees.ForTenant(UserId).CountAsync();
         
-        employeeList = await context.employees
+        employeeList = await context.employees.ForTenant(UserId)
             .OrderByDescending(e => e.id)
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize)

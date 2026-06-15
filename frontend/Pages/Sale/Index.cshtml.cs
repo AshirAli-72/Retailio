@@ -110,9 +110,11 @@ namespace Retailio.Pages.Sale
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
 
+            var userId = HttpContext.Session.GetInt32("UserId");
+
             try
             {
-                var salesQuery = _context.SalesHeader.AsNoTracking()
+                var salesQuery = _context.SalesHeader.AsNoTracking().ForTenant(userId)
                     .Where(s => s.payment_method != (int?)PaymentMethod.Credit
                         && (s.status == null || s.status != (int?)PaymentStatus.Pending));
 
@@ -130,12 +132,12 @@ namespace Retailio.Pages.Sale
                         id = s.id,
                         InvNo = s.inv_no ?? ("inv" + s.id.ToString("D3")),
                         Date = s.date,
-                        no_of_items = _context.sales.Count(d => d.sale_id == s.id),
-                        qty = _context.sales.Where(d => d.sale_id == s.id).Sum(d => d.qty),
-                        total_qty = _context.sales.Where(d => d.sale_id == s.id).Sum(d => d.qty),
+                        no_of_items = _context.sales.ForTenant(userId).Count(d => d.sale_id == s.id),
+                        qty = _context.sales.ForTenant(userId).Where(d => d.sale_id == s.id).Sum(d => d.qty),
+                        total_qty = _context.sales.ForTenant(userId).Where(d => d.sale_id == s.id).Sum(d => d.qty),
                         Price = s.gross_total,
                         TotalPrice = s.net_payable,
-                        CustomerName = _context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault() ?? "Walk in",
+                        CustomerName = _context.customers.ForTenant(userId).Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault() ?? "Walk in",
                         PaymentMethod = s.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(s.payment_method.Value) : null,
                         Status = s.status.HasValue ? PaymentHelper.GetStatusName(s.status.Value) : null,
                         IsReturned = false
@@ -144,7 +146,7 @@ namespace Retailio.Pages.Sale
 
                 Sales = salesList.ToList();
 
-                var returnsQuery = _context.returns.AsNoTracking();
+                var returnsQuery = _context.returns.AsNoTracking().ForTenant(userId);
                 ReturnTotalCount = await returnsQuery.CountAsync();
                 ReturnTotalPages = (int)Math.Ceiling(ReturnTotalCount / (double)ReturnPageSize);
                 if (ReturnPageNumber < 1) ReturnPageNumber = 1;
@@ -155,7 +157,7 @@ namespace Retailio.Pages.Sale
                     .Skip((ReturnPageNumber - 1) * ReturnPageSize)
                     .Take(ReturnPageSize)
                     .GroupJoin(
-                        _context.products_services.AsNoTracking(),
+                        _context.products_services.AsNoTracking().ForTenant(userId),
                         r => r.item_id,
                         p => p.id,
                         (r, prods) => new { r, prods }
@@ -175,7 +177,7 @@ namespace Retailio.Pages.Sale
                         })
                     .ToListAsync();
 
-                var creditTableQuery = _context.credits.AsNoTracking();
+                var creditTableQuery = _context.credits.AsNoTracking().ForTenant(userId);
                 CreditTotalCount = await creditTableQuery.CountAsync();
                 CreditTotalPages = (int)Math.Ceiling(CreditTotalCount / (double)CreditPageSize);
                 if (CreditPageNumber < 1) CreditPageNumber = 1;
@@ -187,7 +189,7 @@ namespace Retailio.Pages.Sale
                     .Skip((CreditPageNumber - 1) * CreditPageSize)
                     .Take(CreditPageSize)
                     .GroupJoin(
-                        _context.customers.AsNoTracking(),
+                        _context.customers.AsNoTracking().ForTenant(userId),
                         c => c.customer_id,
                         cust => cust.id,
                         (c, custs) => new { c, custs }

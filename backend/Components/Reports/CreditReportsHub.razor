@@ -286,6 +286,7 @@
 
 @code {
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private DateTime fromDate = DateTime.Now.AddDays(-30);
     private DateTime toDate = DateTime.Now;
@@ -334,12 +335,12 @@
     private async Task LoadInitialData()
     {
         using var context = DbFactory.CreateDbContext();
-        allCustomersForDropdown = await context.customers.AsNoTracking().OrderBy(c => c.name).ToListAsync();
+        allCustomersForDropdown = await context.customers.AsNoTracking().ForTenant(UserId).OrderBy(c => c.name).ToListAsync();
 
-        var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+        var currency = await context.currencies.ForTenant(UserId).FirstOrDefaultAsync(c => c.is_active);
         if (currency != null) currencySymbol = currency.symbol ?? "Rs";
 
-        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
 
@@ -389,11 +390,11 @@
             var toDateStr = toDate.ToString("yyyy-MM-dd");
 
             // Query credits table joined with customers and recoveries
-            var query = from c in context.credits.AsNoTracking()
-                        join cust in context.customers.AsNoTracking() 
+            var query = from c in context.credits.AsNoTracking().ForTenant(UserId)
+                        join cust in context.customers.AsNoTracking().ForTenant(UserId)
                             on c.customer_id equals cust.id into customerGroup
                         from cust in customerGroup.DefaultIfEmpty()
-                        join rec in context.recoveries.AsNoTracking()
+                        join rec in context.recoveries.AsNoTracking().ForTenant(UserId)
                             on c.id equals rec.credit_id into recGroup
                         from rec in recGroup.DefaultIfEmpty()
                         where string.Compare(c.date, fromDateStr) >= 0

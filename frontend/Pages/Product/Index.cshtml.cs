@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Retailio.Data;
 using Retailio.Models;
+using Retailio.Services;
 
 namespace Retailio.Pages.Product
 {
@@ -40,7 +41,7 @@ namespace Retailio.Pages.Product
 
             await _currencyService.GetSymbolAsync();
 
-            IQueryable<ProductService> query = _context.products_services.AsNoTracking();
+            IQueryable<ProductService> query = _context.products_services.AsNoTracking().ForTenant(UserId);
             TotalCount = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
             

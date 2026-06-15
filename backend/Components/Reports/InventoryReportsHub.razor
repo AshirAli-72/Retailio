@@ -1,5 +1,6 @@
 ﻿@using Retailio.Models
 @using Retailio.Data
+@using Retailio.Services
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
@@ -274,6 +275,7 @@
 
 @code {
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private DateTime fromDate = DateTime.Now.AddDays(-30);
     private DateTime toDate = DateTime.Now;
@@ -314,13 +316,13 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        categories = await context.categories.AsNoTracking().OrderBy(x => x.category_title).ToListAsync();
-        allProducts = await context.products_services.AsNoTracking().OrderBy(x => x.prod_name).ToListAsync();
+        categories = await context.categories.AsNoTracking().ForTenant(UserId).OrderBy(x => x.category_title).ToListAsync();
+        allProducts = await context.products_services.AsNoTracking().ForTenant(UserId).OrderBy(x => x.prod_name).ToListAsync();
         
-        var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+        var currency = await context.currencies.ForTenant(UserId).FirstOrDefaultAsync(c => c.is_active);
         if (currency != null) currencySymbol = currency.symbol ?? "Rs";
 
-        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
 
@@ -348,9 +350,9 @@
         {
             using var context = DbFactory.CreateDbContext();
             
-            var products = await context.products_services.AsNoTracking().ToListAsync();
-            var stocks = await context.stock_details.AsNoTracking().ToListAsync();
-            var cats = await context.categories.AsNoTracking().ToListAsync();
+            var products = await context.products_services.AsNoTracking().ForTenant(UserId).ToListAsync();
+            var stocks = await context.stock_details.AsNoTracking().ForTenant(UserId).ToListAsync();
+            var cats = await context.categories.AsNoTracking().ForTenant(UserId).ToListAsync();
 
             var query = (from s in stocks
                         join p in products on s.item_barcode equals p.barcode

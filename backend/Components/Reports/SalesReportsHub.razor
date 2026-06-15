@@ -296,6 +296,7 @@
 
 @code {
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public int? UserId { get; set; }
 
     private DateTime fromDate = DateTime.Now.AddDays(-30);
     private DateTime toDate = DateTime.Now;
@@ -345,13 +346,13 @@
     private async Task LoadMetadata()
     {
         using var context = DbFactory.CreateDbContext();
-        categories = await context.categories.AsNoTracking().ToListAsync();
-        employees = await context.employees.AsNoTracking().ToListAsync();
+        categories = await context.categories.AsNoTracking().ForTenant(UserId).ToListAsync();
+        employees = await context.employees.AsNoTracking().ForTenant(UserId).ToListAsync();
         
-        var currency = await context.currencies.FirstOrDefaultAsync(c => c.is_active);
+        var currency = await context.currencies.ForTenant(UserId).FirstOrDefaultAsync(c => c.is_active);
         if (currency != null) currencySymbol = currency.symbol ?? "Rs";
 
-        var config = await context.store_configurations.AsNoTracking().FirstOrDefaultAsync();
+        var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
 
@@ -425,7 +426,7 @@
             var matchingSaleIds = new List<int>();
             if (categoryId.HasValue || employeeId.HasValue)
             {
-                var query = context.sales.AsNoTracking();
+                var query = context.sales.AsNoTracking().ForTenant(UserId);
                 if (categoryId.HasValue)
                 {
                     query = query.Where(sd => context.products_services.Any(p => p.id == sd.item_id && p.category_id == categoryId.Value));
@@ -462,7 +463,7 @@
             if (loadSales)
             {
                 // Fetch all headers first; EF Core cannot translate delegate closures to SQL
-                var allSalesHeaders = await context.SalesHeader.AsNoTracking().ToListAsync();
+                var allSalesHeaders = await context.SalesHeader.AsNoTracking().ForTenant(UserId).ToListAsync();
 
                 // Apply all filters in memory
                 var filteredSales = allSalesHeaders.Where(s =>
@@ -504,7 +505,7 @@
             if (loadReturns)
             {
                 // Also filter returns in memory to avoid EF Core delegate translation errors
-                var filteredReturns = (await context.returns.AsNoTracking().ToListAsync())
+                var filteredReturns = (await context.returns.AsNoTracking().ForTenant(UserId).ToListAsync())
                     .Where(r =>
                     {
                         if (!TryParseDateRobust(r.date, out var d)) return false;
@@ -516,7 +517,7 @@
 
                 if (categoryId.HasValue)
                 {
-                    var productIdsInCat = await context.products_services.AsNoTracking()
+                    var productIdsInCat = await context.products_services.AsNoTracking().ForTenant(UserId)
                         .Where(p => p.category_id == categoryId.Value)
                         .Select(p => p.id)
                         .ToListAsync();

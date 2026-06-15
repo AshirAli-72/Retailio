@@ -83,10 +83,11 @@ namespace Retailio.Pages
 
             await _currencyService.GetSymbolAsync();
 
+            var userId = HttpContext.Session.GetInt32("UserId");
+
             // ── Subscription status check ─────────────────────────
             try
             {
-                var userId = HttpContext.Session.GetInt32("UserId");
                 if (userId.HasValue && userId.Value > 0)
                 {
                     using var subCtx = _dbFactory.CreateDbContext();
@@ -140,19 +141,19 @@ namespace Retailio.Pages
             var sw = Stopwatch.StartNew();
 
             // 2. Total Customers
-            try { stats.TotalCustomers = await context.customers.AsNoTracking().CountAsync(); }
+            try { stats.TotalCustomers = await context.customers.AsNoTracking().ForTenant(userId).CountAsync(); }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalCustomers"); }
 
             // 3. Total Products
-            try { stats.TotalProducts = await context.products_services.AsNoTracking().CountAsync(); }
+            try { stats.TotalProducts = await context.products_services.AsNoTracking().ForTenant(userId).CountAsync(); }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalProducts"); }
 
             // 4. Total Sales (net of returns)
             try 
             { 
-                var saleTotal = await context.SalesHeader.AsNoTracking()
+                var saleTotal = await context.SalesHeader.AsNoTracking().ForTenant(userId)
                     .SumAsync(s => (decimal?)s.net_payable) ?? 0;
-                var returnTotal = await context.returns.AsNoTracking()
+                var returnTotal = await context.returns.AsNoTracking().ForTenant(userId)
                     .SumAsync(r => (decimal?)r.total_price) ?? 0;
                 stats.TotalSales = saleTotal - returnTotal;
             }
@@ -166,6 +167,7 @@ namespace Retailio.Pages
 
                 var trendResultsFromDb = await context.SalesHeader
                     .AsNoTracking()
+                    .ForTenant(userId)
                     .Where(s => s.date != null && s.date.CompareTo(startDateStr) >= 0)
                     .GroupBy(s => s.date)
                     .Select(g => new { Date = g.Key, Count = g.Count() })
@@ -192,15 +194,15 @@ namespace Retailio.Pages
             // 8. Sale vs Return
             try
             {
-                stats.SaleCount = await context.SalesHeader.AsNoTracking().CountAsync();
-                stats.ReturnCount = await context.returns.AsNoTracking().CountAsync();
+                stats.SaleCount = await context.SalesHeader.AsNoTracking().ForTenant(userId).CountAsync();
+                stats.ReturnCount = await context.returns.AsNoTracking().ForTenant(userId).CountAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Sale/Return counts"); }
 
             // 9. Low Stock
             try
             {
-                stats.LowStockCount = await context.stock_details.AsNoTracking()
+                stats.LowStockCount = await context.stock_details.AsNoTracking().ForTenant(userId)
                     .CountAsync(s => s.quantity <= s.stock_alert);
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching LowStockCount"); }
@@ -208,17 +210,17 @@ namespace Retailio.Pages
             // 10. Total Employees
             try
             {
-                stats.TotalEmployees = await context.employees.AsNoTracking().CountAsync();
+                stats.TotalEmployees = await context.employees.AsNoTracking().ForTenant(userId).CountAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching TotalEmployees"); }
 
             // 11. Credit Stats
             try
             {
-                stats.CreditRemaining = await context.credits.AsNoTracking()
+                stats.CreditRemaining = await context.credits.AsNoTracking().ForTenant(userId)
                     .Where(c => c.status != (int?)PaymentStatus.Paid)
                     .SumAsync(c => (decimal?)c.remaining) ?? 0;
-                stats.TotalCreditAmount = await context.credits.AsNoTracking()
+                stats.TotalCreditAmount = await context.credits.AsNoTracking().ForTenant(userId)
                     .SumAsync(c => (decimal?)c.total_credit) ?? 0;
             }
             catch (Exception ex) { _logger.LogError(ex, "Dashboard: Error fetching Credit stats"); }
@@ -226,7 +228,7 @@ namespace Retailio.Pages
             // 12. Recovery (Dues Paid)
             try
             {
-                stats.TotalRefund = await context.recoveries.AsNoTracking().SumAsync(r => (decimal?)r.paid) ?? 0;
+                stats.TotalRefund = await context.recoveries.AsNoTracking().ForTenant(userId).SumAsync(r => (decimal?)r.paid) ?? 0;
             }
             catch (Exception ex)
             {
@@ -236,13 +238,13 @@ namespace Retailio.Pages
             // 13. Recent Sales
             try
             {
-                RecentSales = await context.SalesHeader.AsNoTracking()
+                RecentSales = await context.SalesHeader.AsNoTracking().ForTenant(userId)
                     .OrderByDescending(s => s.id)
                     .Take(10)
                     .Select(s => new RecentSaleItem
                     {
                         InvNo = s.inv_no ?? "",
-                        CustomerName = context.customers.Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault(),
+                        CustomerName = context.customers.ForTenant(userId).Where(c => c.id == s.customer_id).Select(c => c.name).FirstOrDefault(),
                         Date = s.date,
                         Amount = s.net_payable,
                         PaymentMethod = s.payment_method.HasValue ? PaymentHelper.GetPaymentMethodName(s.payment_method.Value) : null,

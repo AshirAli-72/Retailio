@@ -336,11 +336,11 @@
     private async Task LoadProducts()
     {
         using var context = DbFactory.CreateDbContext();
-        totalCount = await context.products_services.CountAsync();
+        totalCount = await context.products_services.ForTenant(UserId).CountAsync();
         
-        var prodsData = await context.products_services
+        var prodsData = await context.products_services.ForTenant(UserId)
             .GroupJoin(
-                context.stock_details.AsNoTracking(),
+                context.stock_details.AsNoTracking().ForTenant(UserId),
                 p => p.barcode,
                 s => s.item_barcode,
                 (p, s) => new { p, stock = s.OrderByDescending(x => x.id).FirstOrDefault() }
@@ -355,8 +355,8 @@
             return x.p;
         }).ToList();
             
-        categoryList = await context.categories.ToListAsync();
-        brandList = await context.brands.ToListAsync();
+        categoryList = await context.categories.ForTenant(UserId).ToListAsync();
+        brandList = await context.brands.ForTenant(UserId).ToListAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -676,7 +676,7 @@
     private async Task<string> GenerateUniqueBarcode()
     {
         using var context = DbFactory.CreateDbContext();
-        var barcodes = await context.products_services.AsNoTracking()
+        var barcodes = await context.products_services.AsNoTracking().ForTenant(UserId)
             .Where(p => p.barcode != null && p.barcode.StartsWith("P"))
             .Select(p => p.barcode).ToListAsync();
 
