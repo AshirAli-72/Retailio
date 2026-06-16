@@ -23,7 +23,7 @@ namespace Retailio.Data
         public DbSet<Role> roles { get; set; }
         public DbSet<Permission> permissions { get; set; }
         public DbSet<RolesHasPermission> roles_has_permissions { get; set; }
-        public DbSet<UserHasRoles> user_has_roles { get; set; }
+        public DbSet<UserHasRoles> employee_has_roles { get; set; }
         public DbSet<StoreConfiguration> store_configurations { get; set; }
         public DbSet<StockDetail> stock_details { get; set; }
         public DbSet<stock_history> stock_history { get; set; }
@@ -102,13 +102,7 @@ namespace Retailio.Data
                 entity.Property(e => e.remaining).HasColumnType("decimal(18,2)");
             });
 
-            modelBuilder.Entity<UserHasRoles>(entity =>
-            {
-                entity.HasOne(u => u.User)
-                    .WithMany()
-                    .HasForeignKey(u => u.UserId)
-                    .OnDelete(DeleteBehavior.NoAction);
-            });
+            // UserHasRoles uses convention-based config only (no FK constraints)
 
             modelBuilder.Entity<SaleHeader>(entity =>
             {

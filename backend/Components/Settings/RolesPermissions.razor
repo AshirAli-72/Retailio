@@ -138,8 +138,53 @@
                 }
             </button>
         </div>
+
+    <!-- SECTION 2: EMPLOYEE ROLE ASSIGNMENT -->
+    <div class="rp-section" style="margin-top: 2rem;">
+        <div class="rp-section-header">
+            <span class="rp-section-title">EMPLOYEE ROLE ASSIGNMENT:</span>
         </div>
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; padding: 1rem 0;">
+            <div class="form-group-custom" style="flex: 1; min-width: 200px;">
+                <label>Select Employee</label>
+                <select class="form-control-custom" value="@selectedEmployeeId" @onchange="OnEmployeeChanged">
+                    <option value="0">-- Choose Employee --</option>
+                    @foreach (var emp in employeeList)
+                    {
+                        <option value="@emp.id">@emp.full_name (@emp.email)</option>
+                    }
+                </select>
+            </div>
+        </div>
+        @if (selectedEmployeeId > 0)
+        {
+            <div class="rp-check-grid">
+                @foreach (var role in rolesList)
+                {
+                    bool isChecked = employeeAssignedRoles.Contains(role.RoleTitle);
+                    <label class="rp-check-item">
+                        <input type="checkbox" checked="@isChecked" @onchange="(e) => ToggleEmployeeRole(role.RoleTitle, (bool)(e.Value ?? false))" />
+                        <span class="rp-check-box @(isChecked ? "checked" : "")">
+                            @if (isChecked) { <i class="ph-check-bold"></i> }
+                        </span>
+                        <span class="rp-check-label">@role.RoleTitle</span>
+                    </label>
+                }
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button class="rp-btn-primary" @onclick="SaveEmployeeRoleAssignment" disabled="@isSavingEmployeeRole">
+                    @if (isSavingEmployeeRole) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
+                    else { <i class="ph-floppy-disk"></i><span>Save Role Assignments</span> }
+                </button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(employeeRoleMessage))
+        {
+            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--primary);">@employeeRoleMessage</div>
+        }
     </div>
+</div>
+</div>
 </div>
 
 <!-- Add Role Modal -->
@@ -245,10 +290,75 @@
 
     private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
 
+    private List<Employee> employeeList = new();
+    private int selectedEmployeeId;
+    private HashSet<string> employeeAssignedRoles = new();
+    private bool isSavingEmployeeRole;
+    private string? employeeRoleMessage;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadRoles();
         await LoadPermissions();
+        await LoadEmployees();
+    }
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            employeeList = await context.employees
+                .OrderBy(e => e.full_name)
+                .ToListAsync();
+        }
+        catch { }
+    }
+
+    private async Task OnEmployeeChanged(ChangeEventArgs e)
+    {
+        selectedEmployeeId = int.TryParse(e.Value?.ToString(), out var id) ? id : 0;
+        await LoadEmployeeRoles();
+        StateHasChanged();
+    }
+
+    private void ToggleEmployeeRole(string roleTitle, bool isChecked)
+    {
+        if (isChecked) employeeAssignedRoles.Add(roleTitle);
+        else employeeAssignedRoles.Remove(roleTitle);
+    }
+
+    private async Task LoadEmployeeRoles()
+    {
+        employeeAssignedRoles.Clear();
+        if (selectedEmployeeId <= 0) return;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var rpIds = await context.employee_has_roles
+                .Where(e => e.UserId == selectedEmployeeId)
+                .Select(e => e.RolesHasPermissionId)
+                .ToListAsync();
+
+            if (rpIds.Any())
+            {
+                var roleIds = await context.roles_has_permissions
+                    .Where(rp => rpIds.Contains(rp.Id))
+                    .Select(rp => rp.RoleId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var roleTitles = await context.roles
+                    .Where(r => roleIds.Contains(r.Id))
+                    .Select(r => r.RoleTitle)
+                    .ToListAsync();
+
+                foreach (var title in roleTitles)
+                    employeeAssignedRoles.Add(title);
+            }
+        }
+        catch { }
     }
 
     private async Task LoadRoles()
@@ -597,6 +707,66 @@
         finally
         {
             isSubmitting = false;
+        }
+    }
+
+    private async Task SaveEmployeeRoleAssignment()
+    {
+        if (selectedEmployeeId <= 0)
+        {
+            employeeRoleMessage = "Please select an employee first.";
+            return;
+        }
+
+        isSavingEmployeeRole = true;
+        employeeRoleMessage = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            // Remove existing role-permission assignments for this employee
+            var existing = await context.employee_has_roles
+                .Where(e => e.UserId == selectedEmployeeId)
+                .ToListAsync();
+            context.employee_has_roles.RemoveRange(existing);
+
+            // Assign all selected roles
+            foreach (var roleTitle in employeeAssignedRoles)
+            {
+                var role = await context.roles
+                    .FirstOrDefaultAsync(r => r.RoleTitle == roleTitle);
+                if (role != null)
+                {
+                    var rolePerms = await context.roles_has_permissions
+                        .Where(rp => rp.RoleId == role.Id)
+                        .ToListAsync();
+
+                    foreach (var rp in rolePerms)
+                    {
+                        context.employee_has_roles.Add(new UserHasRoles
+                        {
+                            UserId = selectedEmployeeId,
+                            RolesHasPermissionId = rp.Id,
+                            business_id = AdminUserId
+                        });
+                    }
+                }
+            }
+
+            await context.SaveChangesAsync();
+            var titles = string.Join(", ", employeeAssignedRoles);
+            employeeRoleMessage = $"Roles assigned: {titles}";
+        }
+        catch (Exception ex)
+        {
+            employeeRoleMessage = "Error: " + (ex.InnerException?.Message ?? ex.Message);
+        }
+        finally
+        {
+            isSavingEmployeeRole = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 }

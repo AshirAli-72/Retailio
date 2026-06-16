@@ -875,7 +875,7 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
-                        .HasColumnName("user_id");
+                        .HasColumnName("emp_id");
 
                     b.Property<int?>("business_id")
                         .HasColumnType("int")
@@ -883,13 +883,7 @@ namespace Retailio.backend.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RolesHasPermissionId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("business_id");
-
-                    b.ToTable("user_has_roles");
+                    b.ToTable("employee_has_roles");
                 });
 
             modelBuilder.Entity("Retailio.Models.customers", b =>
@@ -1219,31 +1213,6 @@ namespace Retailio.backend.Data.Migrations
                         .HasForeignKey("business_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Retailio.Models.UserHasRoles", b =>
-                {
-                    b.HasOne("Retailio.Models.RolesHasPermission", "RolesHasPermission")
-                        .WithMany()
-                        .HasForeignKey("RolesHasPermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Retailio.Models.users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Retailio.Models.Business", "Business")
-                        .WithMany()
-                        .HasForeignKey("business_id");
-
-                    b.Navigation("Business");
-
-                    b.Navigation("RolesHasPermission");
 
                     b.Navigation("User");
                 });

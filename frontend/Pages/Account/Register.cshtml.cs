@@ -89,16 +89,25 @@ namespace Retailio.Pages.Account
                 return Page();
             }
 
-            // ── Calculate trial/subscription dates ───────────
-            string startedAt  = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            string? expiresAt = SelectedPlan == "free_trial"
-                ? DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd")
-                : null;   // paid plans: no hard expiry until payment confirmed
+            // ── Paid plans: redirect to payment page ─────────
+            if (SelectedPlan != "free_trial")
+            {
+                HttpContext.Session.SetString("Reg_Username",        usernameTrimmed);
+                HttpContext.Session.SetString("Reg_Email",           emailTrimmed);
+                HttpContext.Session.SetString("Reg_Password",        Password.Trim());
+                HttpContext.Session.SetString("Reg_BusinessName",    BusinessName.Trim());
+                HttpContext.Session.SetString("Reg_BusinessType",    BusinessType.Trim());
+                HttpContext.Session.SetString("Reg_Plan",            SelectedPlan);
+                return RedirectToPage("/Account/Payment");
+            }
 
-            // ── Create user, business, subscription ──────────
+            // ── Free trial: create everything now ─────────────
             try
             {
-                // ── 1. Create user (no role table entry) ─────────────────────
+                string startedAt = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                string? expiresAt = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd");
+
+                // ── 1. Create user ───────────────────────────────────────────
                 var newUser = new users
                 {
                     username = usernameTrimmed,
@@ -108,7 +117,7 @@ namespace Retailio.Pages.Account
                     status   = (int)EntityStatus.Active
                 };
                 _context.users.Add(newUser);
-                await _context.SaveChangesAsync(); // get newUser.id
+                await _context.SaveChangesAsync();
 
                 // ── 2. Business info ─────────────────────────────────────────
                 var business = new Business
@@ -140,7 +149,6 @@ namespace Retailio.Pages.Account
                 HttpContext.Session.SetInt32("UserId",     newUser.id);
 
                 TempData["Success"] = "Welcome to Retailio! Your account is ready.";
-
                 return RedirectToPage("/Index");
             }
             catch (Exception ex)
