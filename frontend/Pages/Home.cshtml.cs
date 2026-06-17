@@ -46,7 +46,7 @@ namespace Retailio.Pages
                     StoreComments  = store.Comments;
                 }
 
-                TotalUsers = await ctx.users.AsNoTracking().CountAsync();
+                TotalUsers = await ctx.users.AsNoTracking().CountAsync(u => u.business_id != 0);
                 TotalSales = await ctx.SalesHeader.AsNoTracking().CountAsync();
             }
             catch

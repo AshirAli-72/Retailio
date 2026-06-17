@@ -16,10 +16,6 @@ namespace Retailio.Models
         [Column("slugs")]
         public string? Slugs { get; set; }
 
-        [Column("business_id")]
-        public int? business_id { get; set; }
 
-        [ForeignKey("business_id")]
-        public virtual Business? Business { get; set; }
     }
 }

@@ -16,10 +16,12 @@ namespace Retailio.backend.Data.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    business_id = table.Column<int>(type: "int", nullable: false),
+                    name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    contact = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    cnic = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    username = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     password = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    role_id = table.Column<int>(type: "int", nullable: false),
                     status = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -29,8 +31,8 @@ namespace Retailio.backend.Data.Migrations
 
             migrationBuilder.InsertData(
                 table: "users",
-                columns: new[] { "id", "email", "password", "role_id", "status", "username" },
-                values: new object[] { 1, "superadmin@gmail.com", "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae", 0, 1, "superadmin" });
+                columns: new[] { "id", "business_id", "email", "password", "status" },
+                values: new object[] { 1, 0, "superadmin@gmail.com", "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae", 1 });
         }
 
         /// <inheritdoc />

@@ -22,6 +22,8 @@ namespace Retailio.Pages.Account
         [BindProperty] public string ConfirmPassword { get; set; } = default!;
         [BindProperty] public string BusinessName    { get; set; } = default!;
         [BindProperty] public string BusinessType    { get; set; } = default!;
+        [BindProperty] public string Contact        { get; set; } = default!;
+        [BindProperty] public string Cnic           { get; set; } = default!;
         [BindProperty] public string SelectedPlan    { get; set; } = "free_trial";
 
         public IActionResult OnGet()
@@ -76,8 +78,8 @@ namespace Retailio.Pages.Account
                     return Page();
                 }
 
-                if (await _context.users.AnyAsync(u => u.username != null &&
-                        u.username.ToLower() == usernameTrimmed.ToLower()))
+                if (await _context.users.AnyAsync(u => u.name != null &&
+                        u.name.ToLower() == usernameTrimmed.ToLower()))
                 {
                     ModelState.AddModelError(string.Empty, "This username is already taken.");
                     return Page();
@@ -98,6 +100,8 @@ namespace Retailio.Pages.Account
                 HttpContext.Session.SetString("Reg_BusinessName",    BusinessName.Trim());
                 HttpContext.Session.SetString("Reg_BusinessType",    BusinessType.Trim());
                 HttpContext.Session.SetString("Reg_Plan",            SelectedPlan);
+                HttpContext.Session.SetString("Reg_Contact",         Contact.Trim());
+                HttpContext.Session.SetString("Reg_Cnic",            Cnic.Trim());
                 return RedirectToPage("/Account/Payment");
             }
 
@@ -107,19 +111,21 @@ namespace Retailio.Pages.Account
                 string startedAt = DateTime.UtcNow.ToString("yyyy-MM-dd");
                 string? expiresAt = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd");
 
-                // ── 1. Create user ───────────────────────────────────────────
+                // ── 1. Create user (business_id = 0 is allowed — no FK) ─────
                 var newUser = new users
                 {
-                    username = usernameTrimmed,
-                    email    = emailTrimmed,
-                    password = PaymentHelper.HashPassword(Password.Trim()),
-                    role_id  = 1,
-                    status   = (int)EntityStatus.Active
+                    name        = usernameTrimmed,
+                    email       = emailTrimmed,
+                    contact     = Contact.Trim(),
+                    cnic        = Cnic.Trim(),
+                    password    = PaymentHelper.HashPassword(Password.Trim()),
+                    business_id = 0,
+                    status      = (int)EntityStatus.Active
                 };
                 _context.users.Add(newUser);
                 await _context.SaveChangesAsync();
 
-                // ── 2. Business info ─────────────────────────────────────────
+                // ── 2. Create business (linked to user) ──────────────────────
                 var business = new Business
                 {
                     user_id       = newUser.id,
@@ -127,11 +133,12 @@ namespace Retailio.Pages.Account
                     business_type = BusinessType.Trim()
                 };
                 _context.businesses.Add(business);
+                await _context.SaveChangesAsync();
 
-                // ── 3. Subscription record ───────────────────────────────────
+                // ── 3. Subscription record (linked to business) ──────────────
                 var subscription = new Subscription
                 {
-                    business_id = newUser.id,
+                    business_id = business.id,
                     plan        = SelectedPlan,
                     started_at  = startedAt,
                     expires_at  = expiresAt,
@@ -139,14 +146,18 @@ namespace Retailio.Pages.Account
                 };
                 _context.subscriptions.Add(subscription);
 
+                // Link user back to their business
+                newUser.business_id = business.id;
+
                 await _context.SaveChangesAsync();
 
                 // ── Auto-login ─────────────────────────────────
-                HttpContext.Session.SetString("UserName",  newUser.username ?? newUser.email ?? "User");
+                HttpContext.Session.SetString("UserName",  newUser.name ?? newUser.email ?? "User");
                 HttpContext.Session.SetString("UserRole",  "Owner");
                 HttpContext.Session.SetString("UserEmail", newUser.email ?? "");
-                HttpContext.Session.SetInt32("UserRoleId", newUser.role_id);
-                HttpContext.Session.SetInt32("UserId",     newUser.id);
+                HttpContext.Session.SetInt32("UserRoleId", business.id);
+                HttpContext.Session.SetInt32("UserId",     business.id);
+                HttpContext.Session.SetInt32("UserAccountId", newUser.id);
 
                 TempData["Success"] = "Welcome to Retailio! Your account is ready.";
                 return RedirectToPage("/Index");

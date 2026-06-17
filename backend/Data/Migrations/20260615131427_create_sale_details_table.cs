@@ -34,9 +34,9 @@ namespace Retailio.backend.Data.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_sale_details_users_business_id",
+                        name: "FK_sale_details_businesses_business_id",
                         column: x => x.business_id,
-                        principalTable: "users",
+                        principalTable: "businesses",
                         principalColumn: "id");
                 });
 

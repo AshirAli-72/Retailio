@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Retailio.Data;
@@ -89,8 +89,8 @@ namespace Retailio.Pages.Admin
                 using var ctx = _dbFactory.CreateDbContext();
 
                 // ── Counts ─────────────────────────────────────
-                // Exclude SuperAdmin (role_id=1) — count only real app users
-                TotalUsers     = await ctx.users.AsNoTracking().CountAsync(u => u.role_id != 1);
+                // Exclude SuperAdmin (business_id=0) — count only real app users
+                TotalUsers     = await ctx.users.AsNoTracking().CountAsync(u => u.business_id != 0);
                 TotalCustomers = await ctx.customers.AsNoTracking().CountAsync();
                 ActiveCustomers= await ctx.customers.AsNoTracking().CountAsync(c => c.status == (int?)EntityStatus.Active);
                 TotalProducts  = await ctx.products_services.AsNoTracking().CountAsync();
@@ -154,9 +154,9 @@ namespace Retailio.Pages.Admin
                 AllUsers = await ctx.users.AsNoTracking()
                     .Select(u => new UserRow
                     {
-                        Username = u.username,
+                        Username = u.name,
                         Email    = u.email,
-                        Role     = u.role_id.ToString(),
+                        Role     = u.business_id.ToString(),
                         Status   = u.status == (int?)EntityStatus.Active ? "Active" : "Inactive"
                     })
                     .ToListAsync();

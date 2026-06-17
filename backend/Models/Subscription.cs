@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Retailio.Services;
 
@@ -31,6 +31,6 @@ namespace Retailio.Models
         public int? status { get; set; } = (int)EntityStatus.Active;
 
         [ForeignKey("business_id")]
-        public virtual users? User { get; set; }
+        public virtual Business? Business { get; set; }
     }
 }

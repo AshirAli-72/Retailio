@@ -36,6 +36,6 @@ namespace Retailio.Models
         public int? business_id { get; set; }
 
         [ForeignKey("business_id")]
-        public virtual users? User { get; set; }
+        public virtual Business? Business { get; set; }
     }
 }

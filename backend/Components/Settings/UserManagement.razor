@@ -33,7 +33,7 @@
                 <thead>
                     <tr>
                         <th style="padding-left: 1.5rem;">ID</th>
-                        <th>Username</th>
+                        <th>Name</th>
                         <th>Email</th>
                         <th>Security Role</th>
                         <th>Status</th>
@@ -56,13 +56,13 @@
                             <td class="font-bold" style="padding-left: 1.5rem;">#@user.id</td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
-                                    <span class="user-avatar-chip">@(user.username?.Length > 0 ? user.username[0].ToString().ToUpper() : "?")</span>
-                                    <div class="font-bold">@user.username</div>
+                                    <span class="user-avatar-chip">@(user.name?.Length > 0 ? user.name[0].ToString().ToUpper() : "?")</span>
+                                    <div class="font-bold">@user.name</div>
                                 </div>
                             </td>
                             <td class="text-muted" style="font-size:0.85rem;">@user.email</td>
                             <td>
-                                <span class="role-badge">Role @user.role_id</span>
+                                <span class="role-badge">ID @user.business_id</span>
                             </td>
                             <td>
                                 <span class="status-badge @(user.status == (int?)EntityStatus.Active ? "status-active" : "status-inactive")">
@@ -138,9 +138,9 @@
                     <DataAnnotationsValidator />
                     
                     <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <InputText @bind-Value="userModel.username" class="form-control" placeholder="e.g. john_doe" />
-                        <ValidationMessage For="@(() => userModel.username)" />
+                        <label class="form-label">Name</label>
+                        <InputText @bind-Value="userModel.name" class="form-control" placeholder="e.g. John Doe" />
+                        <ValidationMessage For="@(() => userModel.name)" />
                     </div>
 
                     <div class="form-group">
@@ -157,7 +157,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Role</label>
-                        <select @bind="userModel.role_id" class="form-control">
+                        <select @bind="userModel.business_id" class="form-control">
                             <option value="0" disabled selected hidden>-- Select Role --</option>
                             @foreach (var role in rolesList)
                             {
@@ -240,7 +240,7 @@
     {
         using var context = DbFactory.CreateDbContext();
         // Exclude SuperAdmin (role_id=1) — never show system account in POS user management
-        var query = context.users.Where(u => u.role_id != 1);
+        var query = context.users.Where(u => u.id != 1);
         totalCount = await query.CountAsync();
         userList = await query
             .OrderByDescending(u => u.id)
@@ -277,7 +277,7 @@
     private async Task ShowAddForm()
     {
         await LoadRoles();
-        userModel = new users { status = (int?)EntityStatus.Active, role_id = rolesList.FirstOrDefault()?.Id ?? 0 };
+        userModel = new users { status = (int?)EntityStatus.Active, business_id = rolesList.FirstOrDefault()?.Id ?? 0 };
         editingUser = null;
         showForm = true;
     }
@@ -290,9 +290,9 @@
         {
             id = user.id,
             email = user.email,
-            username = user.username,
+            name = user.name,
             password = user.password,
-            role_id = user.role_id,
+            business_id = user.business_id,
             status = user.status
         };
         showForm = true;

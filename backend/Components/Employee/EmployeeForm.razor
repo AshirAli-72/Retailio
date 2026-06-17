@@ -35,7 +35,7 @@
                         <th>Mobile</th>
                         <th>Address</th>
                         <th>Email</th>
-                        <th>Salary</th>
+
                         <th>Status</th>
                         <th class="text-right" style="padding-right: 1.5rem;">Actions</th>
                     </tr>
@@ -44,12 +44,11 @@
                     @foreach (var emp in employeeList)
                     {
                         <tr>
-                            <td class="font-bold" style="padding-left: 1.5rem;">@emp.full_name</td>
+                            <td class="font-bold" style="padding-left: 1.5rem;">@emp.name</td>
                             <td class="text-muted">@emp.cnic</td>
-                            <td>@emp.mobile_no</td>
+                            <td>@emp.contact</td>
                             <td class="text-muted font-sm" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@emp.address</td>
                             <td class="font-sm">@emp.email</td>
-                            <td class="font-bold">@emp.salary.ToString("N2")</td>
                             <td>
                                 <span class="status-badge @(emp.status == (int?)EntityStatus.Active ? "status-active" : "status-inactive")">
                                     @PaymentHelper.GetEntityStatusName(emp.status)
@@ -70,7 +69,7 @@
                     @if (!employeeList.Any())
                     {
                         <tr>
-                            <td colspan="8" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 <i class="ph-users-three empty-state-icon"></i>
                                 <p>No employees found. Add your first employee to get started.</p>
                             </td>
@@ -141,8 +140,8 @@
 
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <InputText @bind-Value="employeeModel.full_name" class="form-control" placeholder="Enter full name" />
-                        <ValidationMessage For="@(() => employeeModel.full_name)" />
+                        <InputText @bind-Value="employeeModel.name" class="form-control" placeholder="Enter full name" />
+                        <ValidationMessage For="@(() => employeeModel.name)" />
                     </div>
 
                     <div class="form-group">
@@ -153,8 +152,8 @@
 
                     <div class="form-group">
                         <label class="form-label">Mobile Number</label>
-                        <InputText @bind-Value="employeeModel.mobile_no" class="form-control" placeholder="e.g. 0300-XXXXXXX" />
-                        <ValidationMessage For="@(() => employeeModel.mobile_no)" />
+                        <InputText @bind-Value="employeeModel.contact" class="form-control" placeholder="e.g. 0300-XXXXXXX" />
+                        <ValidationMessage For="@(() => employeeModel.contact)" />
                     </div>
 
                     <div class="form-group">
@@ -167,18 +166,6 @@
                         <label class="form-label">Residential Address</label>
                         <InputTextArea @bind-Value="employeeModel.address" class="form-control" rows="2" placeholder="Enter full address" />
                         <ValidationMessage For="@(() => employeeModel.address)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Monthly Salary</label>
-                        <InputNumber @bind-Value="employeeModel.salary" class="form-control" placeholder="0.00" />
-                        <ValidationMessage For="@(() => employeeModel.salary)" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Joining Date</label>
-                        <input type="date" value="@FormatDateForInput(employeeModel.date)" @onchange="@(e => employeeModel.date = FormatDateFromInput(e.Value?.ToString()))" class="form-control" />
-                        <ValidationMessage For="@(() => employeeModel.date)" />
                     </div>
 
                     <div class="form-group">
@@ -200,14 +187,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Role</label>
-                        <InputSelect @bind-Value="loginRoleId" class="form-control">
-                            <option value="0" disabled>-- Select Role --</option>
+                        <label class="form-label">Roles</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem;">
                             @foreach (var role in rolesList)
                             {
-                                <option value="@role.Id">@role.RoleTitle</option>
+                                bool isChecked = selectedRoleIds.Contains(role.Id);
+                                <label style="display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; border-radius: 8px; border: 1.5px solid #e2e8f0; cursor: pointer; @(isChecked ? "background: var(--primary-glow); border-color: var(--primary);" : "")">
+                                    <input type="checkbox" checked="@isChecked" @onchange="(e) => ToggleRole(role.Id, (bool)(e.Value ?? false))" style="accent-color: var(--primary);" />
+                                    <span style="font-size: 0.85rem; font-weight: 500;">@role.RoleTitle</span>
+                                </label>
                             }
-                        </InputSelect>
+                        </div>
                     </div>
 
                     <!-- Profile Image Section -->
@@ -274,7 +264,7 @@
 
     // Login credential fields
     private string? loginPassword;
-    private int loginRoleId = 0;
+    private HashSet<int> selectedRoleIds = new();
     private List<Role> rolesList = new();
 
     // Pagination state
@@ -354,33 +344,29 @@
         selectedFile = null;
         imgUrl = null;
         loginPassword = null;
-        loginRoleId = rolesList.FirstOrDefault()?.Id ?? 0;
+        selectedRoleIds.Clear();
         showForm = true;
         
         employeeModel = new Employee 
         { 
-            date = DateTime.Now.ToString("d-M-yyyy"),
             status = (int?)EntityStatus.Active
         };
     }
 
-    private void EditEmployee(Employee item)
+    private async Task EditEmployee(Employee item)
     {
         editingEmployee = item;
         employeeModel = new Employee
         {
             id         = item.id,
-            full_name  = item.full_name,
+            name       = item.name,
             cnic       = item.cnic,
             email      = item.email,
-            mobile_no  = item.mobile_no,
+            contact    = item.contact,
             address    = item.address,
             image_path = item.image_path,
-            salary     = item.salary,
-            date       = item.date,
             status     = item.status,
             password   = item.password,
-            role_id    = item.role_id,
             business_id    = item.business_id
         };
         errorMessage = null;
@@ -393,15 +379,45 @@
         if (linkedUser != null)
         {
             loginPassword = linkedUser.password; // stored hash; user can overwrite
-            loginRoleId = linkedUser.role_id;
+            await TryLoadEmployeeRoles(linkedUser.id);
         }
         else
         {
             loginPassword = item.password;
-            loginRoleId = item.role_id ?? (rolesList.FirstOrDefault()?.Id ?? 0);
+            selectedRoleIds.Clear();
         }
 
         showForm = true;
+    }
+
+    private void ToggleRole(int roleId, bool isChecked)
+    {
+        if (isChecked) selectedRoleIds.Add(roleId);
+        else selectedRoleIds.Remove(roleId);
+    }
+
+    private async Task TryLoadEmployeeRoles(int userId)
+    {
+        selectedRoleIds.Clear();
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var rpIds = await context.user_has_roles
+                .Where(e => e.UserId == userId)
+                .Select(e => e.RolesHasPermissionId)
+                .ToListAsync();
+            if (rpIds.Any())
+            {
+                var roleIds = await context.roles_has_permissions
+                    .Where(rp => rpIds.Contains(rp.Id))
+                    .Select(rp => rp.RoleId)
+                    .Distinct()
+                    .ToListAsync();
+                foreach (var rid in roleIds)
+                    selectedRoleIds.Add(rid);
+            }
+        }
+        catch { }
     }
 
     private void HideForm()
@@ -433,7 +449,7 @@
 
     private async Task SaveEmployee()
     {
-        if (string.IsNullOrWhiteSpace(employeeModel.full_name)) { errorMessage = "Full name is required."; return; }
+        if (string.IsNullOrWhiteSpace(employeeModel.name)) { errorMessage = "Full name is required."; return; }
 
         isSubmitting = true;
         try
@@ -460,26 +476,111 @@
 
             if (editingEmployee == null)
             {
-                // ── New employee: save ONLY in employee table ───────────
-                employeeModel.password = !string.IsNullOrWhiteSpace(loginPassword)
+                // ── New employee: create user + employee + roles ────────
+                var passwordHash = !string.IsNullOrWhiteSpace(loginPassword)
                     ? PaymentHelper.HashPassword(loginPassword)
                     : string.Empty;
-                employeeModel.business_id = UserId;
-                employeeModel.role_id = loginRoleId > 0 ? loginRoleId : null;
 
+                var newUser = new users
+                {
+                    name = employeeModel.name,
+                    contact = employeeModel.contact,
+                    cnic = employeeModel.cnic,
+                    email = employeeModel.email,
+                    password = passwordHash,
+                    business_id = UserId ?? 0,
+                    status = (int)EntityStatus.Active
+                };
+                context.users.Add(newUser);
+                await context.SaveChangesAsync();
+
+                employeeModel.password = passwordHash;
+                employeeModel.business_id = UserId;
+                employeeModel.user_id = newUser.id;
                 context.employees.Add(employeeModel);
                 await context.SaveChangesAsync();
+
+                // Save user_has_roles for selected roles
+                if (selectedRoleIds.Any())
+                {
+                    var rpLinks = await context.roles_has_permissions
+                        .Where(rp => selectedRoleIds.Contains(rp.RoleId))
+                        .ToListAsync();
+                    foreach (var rp in rpLinks)
+                    {
+                        context.user_has_roles.Add(new UserHasRoles
+                        {
+                            UserId = newUser.id,
+                            RolesHasPermissionId = rp.Id,
+                            business_id = UserId
+                        });
+                    }
+                    await context.SaveChangesAsync();
+                }
             }
             else
             {
-                // ── Edit employee: update only in employee table ─────────
+                // ── Edit employee: update user + employee + roles ────────
+                var linkedUser = await context.users.FirstOrDefaultAsync(u => u.id == editingEmployee.user_id || u.email == editingEmployee.email);
+                if (linkedUser != null)
+                {
+                    linkedUser.name = employeeModel.name;
+                    linkedUser.contact = employeeModel.contact;
+                    linkedUser.cnic = employeeModel.cnic;
+                    linkedUser.email = employeeModel.email;
+                    if (!string.IsNullOrWhiteSpace(loginPassword) && loginPassword != linkedUser.password)
+                    {
+                        linkedUser.password = PaymentHelper.HashPassword(loginPassword);
+                    }
+                }
+                else
+                {
+                    // Create user record if missing (e.g. legacy employee)
+                    linkedUser = new users
+                    {
+                        name = employeeModel.name,
+                        contact = employeeModel.contact,
+                        cnic = employeeModel.cnic,
+                        email = employeeModel.email,
+                        password = !string.IsNullOrWhiteSpace(loginPassword)
+                            ? PaymentHelper.HashPassword(loginPassword)
+                            : employeeModel.password,
+                        business_id = UserId ?? 0,
+                        status = (int)EntityStatus.Active
+                    };
+                    context.users.Add(linkedUser);
+                }
+                await context.SaveChangesAsync();
+
                 if (!string.IsNullOrWhiteSpace(loginPassword) && loginPassword != employeeModel.password)
                 {
                     employeeModel.password = PaymentHelper.HashPassword(loginPassword);
                 }
-                employeeModel.role_id = loginRoleId > 0 ? loginRoleId : null;
-
+                employeeModel.user_id = linkedUser.id;
                 context.employees.Update(employeeModel);
+                await context.SaveChangesAsync();
+
+                // Re-sync user_has_roles
+                var existingUhr = await context.user_has_roles
+                    .Where(u => u.UserId == linkedUser.id)
+                    .ToListAsync();
+                context.user_has_roles.RemoveRange(existingUhr);
+
+                if (selectedRoleIds.Any())
+                {
+                    var rpLinks = await context.roles_has_permissions
+                        .Where(rp => selectedRoleIds.Contains(rp.RoleId))
+                        .ToListAsync();
+                    foreach (var rp in rpLinks)
+                    {
+                        context.user_has_roles.Add(new UserHasRoles
+                        {
+                            UserId = linkedUser.id,
+                            RolesHasPermissionId = rp.Id,
+                            business_id = UserId
+                        });
+                    }
+                }
                 await context.SaveChangesAsync();
             }
 

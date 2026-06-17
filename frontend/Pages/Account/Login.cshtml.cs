@@ -56,41 +56,94 @@ namespace Retailio.Pages.Account
 
                 if (user != null && PaymentHelper.VerifyPassword(inputPass, user.password))
                 {
-                    string roleTitle = user.id == 1 ? "SuperAdmin" : "Owner";
+                    // Check if this user has role assignments (employee via user_has_roles)
+                    var hasRoles = await _context.user_has_roles
+                        .AnyAsync(e => e.UserId == user.id);
 
-                    HttpContext.Session.SetString("UserName",  user.username ?? user.email ?? "User");
-                    HttpContext.Session.SetString("UserRole",  roleTitle);
-                    HttpContext.Session.SetString("UserEmail", user.email ?? "");
-                    HttpContext.Session.SetInt32("UserRoleId", user.role_id);
-                    HttpContext.Session.SetInt32("UserId",     user.id);
+                    if (hasRoles)
+                    {
+                        // ── Employee login (has role assignments) ────────────
+                        var rpIds = await _context.user_has_roles
+                            .Where(e => e.UserId == user.id)
+                            .Select(e => e.RolesHasPermissionId)
+                            .ToListAsync();
 
-                    TempData["Success"] = "Welcome back! Login successful.";
+                        string roleTitle = "Employee";
+                        int roleId = 0;
 
-                    return PaymentHelper.HasAdminPanelAccess(roleTitle)
-                        ? RedirectToPage("/Admin/AdminPanel")
-                        : RedirectToPage("/Index");
+                        if (rpIds.Any())
+                        {
+                            var roleIds = await _context.roles_has_permissions
+                                .Where(rp => rpIds.Contains(rp.Id))
+                                .Select(rp => rp.RoleId)
+                                .Distinct()
+                                .ToListAsync();
+
+                            if (roleIds.Any())
+                            {
+                                var roleTitles = await _context.roles
+                                    .Where(r => roleIds.Contains(r.Id))
+                                    .Select(r => r.RoleTitle)
+                                    .ToListAsync();
+
+                                if (roleTitles.Any())
+                                {
+                                    roleTitle = string.Join(", ", roleTitles);
+                                    roleId = roleIds.First();
+                                }
+                            }
+                        }
+
+                        // Find corresponding employee record
+                        var employee = await _context.employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e => e.email == inputEmail);
+
+                        HttpContext.Session.SetString("UserName", user.name ?? user.email ?? "Employee");
+                        HttpContext.Session.SetString("UserRole", roleTitle);
+                        HttpContext.Session.SetString("UserEmail", user.email ?? "");
+                        HttpContext.Session.SetInt32("UserRoleId", roleId);
+                        HttpContext.Session.SetInt32("UserId", user.business_id);
+                        HttpContext.Session.SetInt32("UserAccountId", user.id);
+                        HttpContext.Session.SetInt32("EmployeeId", employee?.id ?? 0);
+
+                        TempData["Success"] = "Welcome back! Login successful.";
+                        return RedirectToPage("/Index");
+                    }
+                    else
+                    {
+                        // ── Admin / Owner login (no role assignments — full access) ──
+                        string roleTitle = user.id == 1 ? "SuperAdmin" : "Owner";
+
+                        HttpContext.Session.SetString("UserName", user.name ?? user.email ?? "User");
+                        HttpContext.Session.SetString("UserRole", roleTitle);
+                        HttpContext.Session.SetString("UserEmail", user.email ?? "");
+                        HttpContext.Session.SetInt32("UserRoleId", user.business_id);
+                        HttpContext.Session.SetInt32("UserId", user.business_id);
+                        HttpContext.Session.SetInt32("UserAccountId", user.id);
+
+                        TempData["Success"] = "Welcome back! Login successful.";
+
+                        return PaymentHelper.HasAdminPanelAccess(roleTitle)
+                            ? RedirectToPage("/Admin/AdminPanel")
+                            : RedirectToPage("/Index");
+                    }
                 }
 
-                // ── Check employee table for login ──────────────────────────
-                var employee = await _context.employees
+                // ── Legacy: check employee table directly (employees without users record) ──
+                var legacyEmp = await _context.employees
                     .AsNoTracking()
                     .FirstOrDefaultAsync(e => e.email == inputEmail);
 
-                if (employee != null && !string.IsNullOrEmpty(employee.password)
-                    && PaymentHelper.VerifyPassword(inputPass, employee.password))
+                if (legacyEmp != null && !string.IsNullOrEmpty(legacyEmp.password)
+                    && PaymentHelper.VerifyPassword(inputPass, legacyEmp.password))
                 {
-                    var employeeRole = employee.role_id.HasValue
-                        ? await _context.roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == employee.role_id.Value)
-                        : null;
-                    string roleTitle = employeeRole?.RoleTitle ?? "Employee";
-
-                    // Employee login — business_id is the admin who created this employee
-                    HttpContext.Session.SetString("UserName",  employee.full_name ?? employee.email ?? "Employee");
-                    HttpContext.Session.SetString("UserRole",  roleTitle);
-                    HttpContext.Session.SetString("UserEmail", employee.email ?? "");
-                    HttpContext.Session.SetInt32("UserRoleId", employee.role_id ?? 0);
-                    HttpContext.Session.SetInt32("UserId",     employee.business_id ?? 0); // admin's business_id
-                    HttpContext.Session.SetInt32("EmployeeId", employee.id);
+                    HttpContext.Session.SetString("UserName", legacyEmp.name ?? legacyEmp.email ?? "Employee");
+                    HttpContext.Session.SetString("UserRole", "Employee");
+                    HttpContext.Session.SetString("UserEmail", legacyEmp.email ?? "");
+                    HttpContext.Session.SetInt32("UserRoleId", 0);
+                    HttpContext.Session.SetInt32("UserId", legacyEmp.business_id ?? 0);
+                    HttpContext.Session.SetInt32("EmployeeId", legacyEmp.id);
 
                     TempData["Success"] = "Welcome back! Login successful.";
                     return RedirectToPage("/Index");

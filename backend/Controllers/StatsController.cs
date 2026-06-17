@@ -1,4 +1,4 @@
-﻿using Retailio.Data;
+using Retailio.Data;
 using Retailio.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,9 +23,9 @@ namespace Retailio.Controllers
             {
                 using var context = _dbFactory.CreateDbContext();
 
-                // Count all registered users (exclude SuperAdmin role_id=1)
+                // Count all registered users (exclude SuperAdmin business_id=0)
                 var activeUsers = await context.users
-                    .Where(u => u.role_id != 1)
+                    .Where(u => u.business_id != 0)
                     .CountAsync();
 
                 // Sum of all net_payable from sales headers (total revenue generated)

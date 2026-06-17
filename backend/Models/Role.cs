@@ -14,6 +14,9 @@ namespace Retailio.Models
         [MaxLength(100)]
         public string RoleTitle { get; set; } = string.Empty;
 
+        [Column("description")]
+        public string? Description { get; set; }
+
         [Column("business_id")]
         public int business_id { get; set; }
 

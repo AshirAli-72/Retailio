@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Retailio.Models;
 using Retailio.Services;
 
@@ -23,7 +23,7 @@ namespace Retailio.Data
         public DbSet<Role> roles { get; set; }
         public DbSet<Permission> permissions { get; set; }
         public DbSet<RolesHasPermission> roles_has_permissions { get; set; }
-        public DbSet<UserHasRoles> employee_has_roles { get; set; }
+        public DbSet<UserHasRoles> user_has_roles { get; set; }
         public DbSet<StoreConfiguration> store_configurations { get; set; }
         public DbSet<StockDetail> stock_details { get; set; }
         public DbSet<stock_history> stock_history { get; set; }
@@ -36,6 +36,7 @@ namespace Retailio.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -71,9 +72,7 @@ namespace Retailio.Data
 
             modelBuilder.Entity<Employee>(entity =>
             {
-                entity.Property(e => e.salary).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.password).HasColumnType("nvarchar(max)");
-                entity.Property(e => e.role_id).HasColumnType("int");
                 entity.Property(e => e.business_id).HasColumnType("int");
             });
 
@@ -165,10 +164,9 @@ namespace Retailio.Data
                 new users
                 {
                     id       = 1,
-                    username = "superadmin",
                     password = "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae",
                     email    = "superadmin@gmail.com",
-                    role_id  = 0,
+                    business_id  = 0,
                     status   = (int)EntityStatus.Active
                 }
             );

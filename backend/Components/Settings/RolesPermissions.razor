@@ -20,479 +20,443 @@
                 </div>
             </div>
             <div class="page-header-actions">
+                <button class="rp-btn-primary" @onclick="OpenAddRoleModal">
+                    <i class="ph-plus"></i> Add Role
+                </button>
                 <a href="/settings" class="btn-back-hub">
                     <i class="ph-arrow-left"></i> Back to Settings
                 </a>
             </div>
         </div>
 
-        <div style="padding: 1.5rem;">
-
-    <!-- Top Role Selector Bar -->
-    <div class="rp-topbar">
-        <div class="rp-role-group">
-            <label class="rp-role-label">Select Role:</label>
-            <div class="rp-role-select-wrapper">
-                <select class="rp-role-select force-primary-border" @onchange="OnRoleChangedInternal">
-                    @foreach (var role in rolesList)
-                    {
-                        <option value="@role.RoleTitle" selected="@(role.RoleTitle == selectedRole)">@role.RoleTitle</option>
-                    }
-                </select>
-            </div>
-            
-            <div class="rp-role-controls">
-                <button class="rp-control-btn btn-add" @onclick="OpenAddRoleModal" title="Manage Roles">
-                    <i class="ph-plus" style="font-weight:bold; font-size: 1.2rem;"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- SECTION 1: SYSTEM AUTHORITIES -->
-    <div class="rp-section">
-        <div class="rp-section-header">
-            <span class="rp-section-title">SYSTEM AUTHORITIES:</span>
-            <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
-                   checked="@AllSystemChecked"
-                   @onchange="ToggleAllSystem" />
-        </div>
-        <div class="rp-check-grid">
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Dashboard" />
-                <span class="rp-check-box @(currentPermissions.Dashboard ? "checked" : "")">
-                    @if (currentPermissions.Dashboard) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Dashboard</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Customers" />
-                <span class="rp-check-box @(currentPermissions.Customers ? "checked" : "")">
-                    @if (currentPermissions.Customers) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Customers</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Products" />
-                <span class="rp-check-box @(currentPermissions.Products ? "checked" : "")">
-                    @if (currentPermissions.Products) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Products</span>
-            </label>
-             <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Sales" />
-                <span class="rp-check-box @(currentPermissions.Sales ? "checked" : "")">
-                    @if (currentPermissions.Sales) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Sales / POS</span>
-            </label>
-
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Settings" />
-                <span class="rp-check-box @(currentPermissions.Settings ? "checked" : "")">
-                    @if (currentPermissions.Settings) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Settings</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Inventory" />
-                <span class="rp-check-box @(currentPermissions.Inventory ? "checked" : "")">
-                    @if (currentPermissions.Inventory) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Inventory</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Employees" />
-                <span class="rp-check-box @(currentPermissions.Employees ? "checked" : "")">
-                    @if (currentPermissions.Employees) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Employees</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Reports" />
-                <span class="rp-check-box @(currentPermissions.Reports ? "checked" : "")">
-                    @if (currentPermissions.Reports) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Reports</span>
-            </label>
-            <label class="rp-check-item">
-                <input type="checkbox" @bind="currentPermissions.Recovery" />
-                <span class="rp-check-box @(currentPermissions.Recovery ? "checked" : "")">
-                    @if (currentPermissions.Recovery) { <i class="ph-check-bold"></i> }
-                </span>
-                <span class="rp-check-label">Recovery</span>
-            </label>
-        </div>
-    </div>
-    <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--primary);">
-            <button class="rp-btn-primary" @onclick="SavePermissions" disabled="@isSaving" style="padding: 0.625rem 1.4rem;">
-                @if (isSaving)
-                {
-                    <i class="ph-spinner ph-spin"></i> <span>Saving...</span>
-                }
-                else
-                {
-                    <i class="ph-floppy-disk"></i> <span>Save Permissions</span>
-                }
-            </button>
-        </div>
-
-    <!-- SECTION 2: EMPLOYEE ROLE ASSIGNMENT -->
-    <div class="rp-section" style="margin-top: 2rem;">
-        <div class="rp-section-header">
-            <span class="rp-section-title">EMPLOYEE ROLE ASSIGNMENT:</span>
-        </div>
-        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; padding: 1rem 0;">
-            <div class="form-group-custom" style="flex: 1; min-width: 200px;">
-                <label>Select Employee</label>
-                <select class="form-control-custom" value="@selectedEmployeeId" @onchange="OnEmployeeChanged">
-                    <option value="0">-- Choose Employee --</option>
-                    @foreach (var emp in employeeList)
-                    {
-                        <option value="@emp.id">@emp.full_name (@emp.email)</option>
-                    }
-                </select>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="styled-table" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 1.5rem;">Role Name</th>
+                            <th>Description</th>
+                            <th>Permissions</th>
+                            <th style="width: 120px; padding-right: 1.5rem;" class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (rolesList.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    <i class="ph-shield-check empty-state-icon"></i>
+                                    <p>No roles found. Click "Add Role" to create one.</p>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var role in rolesList)
+                        {
+                            <tr>
+                                <td class="font-bold" style="padding-left: 1.5rem;">@role.RoleTitle</td>
+                                <td class="text-muted" style="font-size:0.85rem;">@(string.IsNullOrEmpty(role.Description) ? "-" : role.Description)</td>
+                                <td>
+                                    @{
+                                        var rolePerms = GetRolePermissions(role.Id);
+                                    }
+                                    @if (rolePerms.Count == 0)
+                                    {
+                                        <span class="text-muted" style="font-size:0.8rem;">No permissions</span>
+                                    }
+                                    else
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                                            @foreach (var perm in rolePerms)
+                                            {
+                                                <span class="role-badge">@perm</span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-right" style="padding-right: 1.5rem;">
+                                    <div class="actions-container actions-right">
+                                        <button class="btn-icon-sm btn-edit" @onclick="() => EditRole(role)" title="Edit">
+                                            <i class="ph-pencil"></i>
+                                        </button>
+                                        <button class="btn-icon-sm btn-delete" @onclick="() => ConfirmDeleteRole(role)" title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
-        @if (selectedEmployeeId > 0)
+
+        @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="rp-check-grid">
-                @foreach (var role in rolesList)
-                {
-                    bool isChecked = employeeAssignedRoles.Contains(role.RoleTitle);
-                    <label class="rp-check-item">
-                        <input type="checkbox" checked="@isChecked" @onchange="(e) => ToggleEmployeeRole(role.RoleTitle, (bool)(e.Value ?? false))" />
-                        <span class="rp-check-box @(isChecked ? "checked" : "")">
-                            @if (isChecked) { <i class="ph-check-bold"></i> }
-                        </span>
-                        <span class="rp-check-label">@role.RoleTitle</span>
-                    </label>
-                }
+            <div style="padding: 1rem 1.5rem;">
+                <div style="padding: 0.75rem; background: #fee2e2; border-radius: 8px; color: #b91c1c; font-size: 0.85rem;">
+                    @errorMessage
+                </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                <button class="rp-btn-primary" @onclick="SaveEmployeeRoleAssignment" disabled="@isSavingEmployeeRole">
-                    @if (isSavingEmployeeRole) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
-                    else { <i class="ph-floppy-disk"></i><span>Save Role Assignments</span> }
-                </button>
-            </div>
-        }
-        @if (!string.IsNullOrEmpty(employeeRoleMessage))
-        {
-            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--primary);">@employeeRoleMessage</div>
         }
     </div>
 </div>
-</div>
-</div>
 
-<!-- Add Role Modal -->
-@if (showAddRoleModal)
+<!-- Add/Edit Role Modal -->
+@if (showModal)
 {
-    <div class="modal-overlay" @onclick="CloseAddRoleModal">
-        <div class="modal-content" @onclick:stopPropagation>
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation style="max-width: 640px;">
             <div class="form-panel-header">
                 <div class="form-panel-title">
-                    <i class="ph-shield-plus" style="color: var(--primary);"></i> Manage Roles
+                    <i class="ph-shield-plus" style="color: var(--primary);"></i> @(isEditing ? "Edit Role" : "Add Role")
                 </div>
-                <button type="button" class="form-panel-close" @onclick="CloseAddRoleModal"><i class="ph-x"></i></button>
+                <button type="button" class="form-panel-close" @onclick="CloseModal"><i class="ph-x"></i></button>
             </div>
-            
+
             <div class="form-panel-body">
-                @if (isDeleteConfirmMode)
-                {
-                    <div style="background: #fee2e2; padding: 1.25rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 0;">
-                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                            <i class="ph-warning-fill" style="color: #dc2626; font-size: 1.5rem;"></i>
-                            <div>
-                                <strong style="color: #991b1b; display: block; margin-bottom: 0.25rem;">Confirm Deletion</strong>
-                                <p style="margin: 0; font-size: 0.9rem; color: #b91c1c;">Are you sure you want to delete role <strong>"@editingRole?.RoleTitle"</strong>?</p>
-                            </div>
-                        </div>
+                <div class="form-group-custom">
+                    <label>Role Name</label>
+                    <input type="text" class="form-control-custom" @bind="modalRoleName" @bind:event="oninput" placeholder="e.g. Manager" />
+                </div>
+                <div class="form-group-custom">
+                    <label>Description</label>
+                    <input type="text" class="form-control-custom" @bind="modalDescription" @bind:event="oninput" placeholder="Brief description of this role" />
+                </div>
+
+                <hr style="margin: 1rem 0; opacity: 0.2;" />
+
+                <div class="rp-section" style="margin-bottom: 0;">
+                    <div class="rp-section-header">
+                        <span class="rp-section-title">PERMISSIONS:</span>
+                        <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
+                               checked="@AllPermissionsChecked"
+                               @onchange="ToggleAllPermissions" />
                     </div>
-                }
-                else
-                {
-                    <div class="form-group-custom">
-                        <label>Role Name</label>
-                        <div style="position: relative;">
-                            <input type="text" class="form-control-custom" @bind="roleManagementInput" @bind:event="oninput" placeholder="e.g. Manager" />
-                            <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                @foreach (var role in rolesList)
+
+                    @foreach (var category in PermissionCategories)
+                    {
+                        <div style="margin-bottom: 1rem;">
+                            <div style="padding: 0.5rem; background: #f1f5f9; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 700; font-size: 0.9rem;">@category.Label</span>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding-left: 1.5rem;">
+                                @foreach (var perm in category.Permissions)
                                 {
-                                    <span class="role-badge" style="cursor:pointer; @(editingRole?.Id == role.Id ? "border-color: var(--primary); background: var(--primary-glow); color: var(--primary);" : "")" 
-                                          @onclick="() => { roleManagementInput = role.RoleTitle; editingRole = role; }">
-                                        @role.RoleTitle
-                                    </span>
+                                    bool isChecked = modalSelectedSlugs.Contains(perm.Slug);
+                                    <label class="rp-check-item" style="margin: 0;">
+                                        <input type="checkbox" checked="@isChecked" @onchange="(e) => ToggleModalPermission(perm.Slug, (bool)(e.Value ?? false))" />
+                                        <span class="rp-check-box @(isChecked ? "checked" : "")">
+                                            @if (isChecked) { <i class="ph-check-bold"></i> }
+                                        </span>
+                                        <span class="rp-check-label">@perm.Name</span>
+                                    </label>
                                 }
                             </div>
                         </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: #fee2e2; border-radius: 8px; color: #b91c1c; font-size: 0.85rem;">
+                        @modalError
                     </div>
                 }
             </div>
 
             <div class="form-panel-footer">
-                @if (isDeleteConfirmMode)
+                @if (isEditing)
                 {
-                    <button type="button" class="btn-cancel" @onclick="CancelDelete">Cancel</button>
-                    <button type="button" class="btn-save" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSubmitting">
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Deleting...</span> }
-                        else { <span>Confirm Delete</span> }
+                    <button type="button" class="btn-cancel" @onclick="() => ConfirmDeleteRole(editingRole!)" style="margin-right: auto;">
+                        <i class="ph-trash"></i> Delete
                     </button>
                 }
-                else
-                {
-                    <button type="button" class="btn-cancel" @onclick="DeleteRole" title="Delete Role"><i class="ph-trash"></i> Delete</button>
-                    <button type="button" class="btn-cancel" @onclick="UpdateRole" disabled="@isSubmitting">Update</button>
-                    <button type="button" class="btn-save" @onclick="SaveNewRole" disabled="@isSubmitting">
-                        @if (isSubmitting) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
-                        else { <span>Save New</span> }
-                    </button>
-                }
+                <button type="button" class="btn-cancel" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn-save" @onclick="SaveRole" disabled="@isSaving">
+                    @if (isSaving) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
+                    else { <span>@(isEditing ? "Update" : "Save")</span> }
+                </button>
             </div>
         </div>
     </div>
 }
 
-
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="CancelDelete">
+        <div class="modal-content" @onclick:stopPropagation style="max-width: 420px;">
+            <div class="form-panel-header">
+                <div class="form-panel-title">
+                    <i class="ph-warning-fill" style="color: #dc2626;"></i> Confirm Deletion
+                </div>
+                <button type="button" class="form-panel-close" @onclick="CancelDelete"><i class="ph-x"></i></button>
+            </div>
+            <div class="form-panel-body">
+                <p>Are you sure you want to delete role <strong>"@deletingRole?.RoleTitle"</strong>?</p>
+                <p class="text-muted" style="font-size: 0.85rem;">This action cannot be undone. All permissions assigned to this role will also be removed.</p>
+            </div>
+            <div class="form-panel-footer">
+                <button type="button" class="btn-cancel" @onclick="CancelDelete">Cancel</button>
+                <button type="button" class="btn-save" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSaving">
+                    @if (isSaving) { <i class="ph-spinner ph-spin"></i><span>Deleting...</span> }
+                    else { <span>Confirm Delete</span> }
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    [Parameter] public int? AdminUserId { get; set; }
-
-    private string selectedRole = "";
-    private bool isSaving = false;
-    private bool isSubmitting = false;
-    private string? errorMessage;
+    [Parameter] public int? UserId { get; set; }
 
     private List<Role> rolesList = new();
-    private bool showAddRoleModal = false;
-    
-    private string _roleManagementInput = "";
-    private string roleManagementInput 
-    {
-        get => _roleManagementInput;
-        set 
-        {
-            _roleManagementInput = value;
-            var matchedRole = rolesList.FirstOrDefault(r => r.RoleTitle.Equals(value, StringComparison.OrdinalIgnoreCase));
-            if (matchedRole != null)
-            {
-                editingRole = matchedRole;
-            }
-        }
-    }
-    
+    private Dictionary<int, List<string>> rolePermissionsMap = new();
+    private bool isSaving = false;
+    private string? errorMessage;
+
+    private bool showModal = false;
+    private bool isEditing = false;
+    private string modalRoleName = "";
+    private string modalDescription = "";
+    private HashSet<string> modalSelectedSlugs = new();
+    private string? modalError;
     private Role? editingRole = null;
-    private bool isDeleteConfirmMode = false;
 
-    private PermissionViewModel currentPermissions = new();
+    private bool showDeleteConfirm = false;
+    private Role? deletingRole = null;
 
-    private bool AllSystemChecked => currentPermissions.Dashboard && currentPermissions.Customers && currentPermissions.Products && currentPermissions.Sales && currentPermissions.Employees && currentPermissions.Reports && currentPermissions.Settings && currentPermissions.Inventory;
+    private class PermissionInfo
+    {
+        public string Slug { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
 
-    private List<Employee> employeeList = new();
-    private int selectedEmployeeId;
-    private HashSet<string> employeeAssignedRoles = new();
-    private bool isSavingEmployeeRole;
-    private string? employeeRoleMessage;
+    private class PermissionCategory
+    {
+        public string Label { get; set; } = "";
+        public PermissionInfo[] Permissions { get; set; } = Array.Empty<PermissionInfo>();
+    }
+
+    private static readonly PermissionCategory[] PermissionCategories = new[]
+    {
+        new PermissionCategory
+        {
+            Label = "Dashboard",
+            Permissions = new[] { new PermissionInfo { Slug = "dashboard", Name = "Dashboard Access" } }
+        },
+        new PermissionCategory
+        {
+            Label = "Customers",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "customers", Name = "Customer Access" },
+                new PermissionInfo { Slug = "customer_create", Name = "Create Customer" },
+                new PermissionInfo { Slug = "customer_edit", Name = "Edit Customer" },
+                new PermissionInfo { Slug = "customer_delete", Name = "Delete Customer" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Products",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "products", Name = "Product Access" },
+                new PermissionInfo { Slug = "product_create", Name = "Create Product" },
+                new PermissionInfo { Slug = "product_edit", Name = "Edit Product" },
+                new PermissionInfo { Slug = "product_delete", Name = "Delete Product" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Sales",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "sales", Name = "Sales Access" },
+                new PermissionInfo { Slug = "sale_create", Name = "Create Sale" },
+                new PermissionInfo { Slug = "sale_edit", Name = "Edit Sale" },
+                new PermissionInfo { Slug = "sale_delete", Name = "Delete Sale" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Employees",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "employees", Name = "Employee Access" },
+                new PermissionInfo { Slug = "employee_create", Name = "Create Employee" },
+                new PermissionInfo { Slug = "employee_edit", Name = "Edit Employee" },
+                new PermissionInfo { Slug = "employee_delete", Name = "Delete Employee" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Reports",
+            Permissions = new[] { new PermissionInfo { Slug = "reports", Name = "Reports Access" } }
+        },
+        new PermissionCategory
+        {
+            Label = "Settings",
+            Permissions = new[] { new PermissionInfo { Slug = "settings", Name = "Settings Access" } }
+        },
+        new PermissionCategory
+        {
+            Label = "Inventory",
+            Permissions = new[] { new PermissionInfo { Slug = "inventory", Name = "Inventory Access" } }
+        },
+        new PermissionCategory
+        {
+            Label = "Recovery",
+            Permissions = new[] { new PermissionInfo { Slug = "recovery", Name = "Recovery Access" } }
+        }
+    };
+
+    private static readonly HashSet<string> AllSlugs = new(PermissionCategories.SelectMany(c => c.Permissions.Select(p => p.Slug)));
+
+    private bool AllPermissionsChecked => modalSelectedSlugs.Count == AllSlugs.Count;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadRoles();
-        await LoadPermissions();
-        await LoadEmployees();
+        await LoadData();
     }
 
-    private async Task LoadEmployees()
+    private async Task LoadData()
     {
         try
         {
             using var context = DbFactory.CreateDbContext();
-            employeeList = await context.employees
-                .OrderBy(e => e.full_name)
-                .ToListAsync();
-        }
-        catch { }
-    }
 
-    private async Task OnEmployeeChanged(ChangeEventArgs e)
-    {
-        selectedEmployeeId = int.TryParse(e.Value?.ToString(), out var id) ? id : 0;
-        await LoadEmployeeRoles();
-        StateHasChanged();
-    }
-
-    private void ToggleEmployeeRole(string roleTitle, bool isChecked)
-    {
-        if (isChecked) employeeAssignedRoles.Add(roleTitle);
-        else employeeAssignedRoles.Remove(roleTitle);
-    }
-
-    private async Task LoadEmployeeRoles()
-    {
-        employeeAssignedRoles.Clear();
-        if (selectedEmployeeId <= 0) return;
-
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-            var rpIds = await context.employee_has_roles
-                .Where(e => e.UserId == selectedEmployeeId)
-                .Select(e => e.RolesHasPermissionId)
-                .ToListAsync();
-
-            if (rpIds.Any())
-            {
-                var roleIds = await context.roles_has_permissions
-                    .Where(rp => rpIds.Contains(rp.Id))
-                    .Select(rp => rp.RoleId)
-                    .Distinct()
-                    .ToListAsync();
-
-                var roleTitles = await context.roles
-                    .Where(r => roleIds.Contains(r.Id))
-                    .Select(r => r.RoleTitle)
-                    .ToListAsync();
-
-                foreach (var title in roleTitles)
-                    employeeAssignedRoles.Add(title);
-            }
-        }
-        catch { }
-    }
-
-    private async Task LoadRoles()
-    {
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
             rolesList = await context.roles
-                .Where(r => r.RoleTitle != "SuperAdmin" && r.RoleTitle != "Admin")
+                .Where(r => r.RoleTitle != "SuperAdmin")
                 .OrderBy(r => r.Id)
                 .ToListAsync();
 
-            if (string.IsNullOrEmpty(selectedRole) || !rolesList.Any(r => r.RoleTitle == selectedRole))
-            {
-                selectedRole = rolesList.FirstOrDefault()?.RoleTitle ?? "";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error loading roles: " + ex.Message;
-        }
-    }
-
-    private async Task OnRoleChanged(ChangeEventArgs e)
-    {
-        selectedRole = e.Value?.ToString() ?? "";
-        await LoadPermissions();
-    }
-
-    private async Task LoadPermissions()
-    {
-        errorMessage = null;
-        currentPermissions = new PermissionViewModel();
-
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-            var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
-            if (role != null)
-            {
-                var permissionSlugs = await context.roles_has_permissions
-                    .Where(rp => rp.RoleId == role.Id)
-                    .Join(context.permissions,
-                        rp => rp.PermissionId,
-                        p => p.Id,
-                        (rp, p) => p.Slugs)
-                    .ToListAsync();
-
-                foreach (var slug in permissionSlugs)
-                {
-                    switch (slug)
-                    {
-                        case "dashboard":  currentPermissions.Dashboard = true; break;
-                        case "customers":  currentPermissions.Customers = true; break;
-                        case "products":   currentPermissions.Products = true; break;
-                        case "sales":      currentPermissions.Sales = true; break;
-                        case "settings":   currentPermissions.Settings = true; break;
-                        case "inventory":  currentPermissions.Inventory = true; break;
-                        case "employees":  currentPermissions.Employees = true; break;
-                        case "reports":    currentPermissions.Reports = true; break;
-                        case "recovery":   currentPermissions.Recovery = true; break;
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error loading permissions: " + ex.Message;
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task SavePermissions()
-    {
-        isSaving = true;
-        errorMessage = null;
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            if (selectedRole == "Admin")
-            {
-                errorMessage = "Admin accounts have full POS access. Permissions apply to employee roles only.";
-                return;
-            }
-
-            using var context = DbFactory.CreateDbContext();
-            var role = await context.roles.FirstOrDefaultAsync(r => r.RoleTitle == selectedRole);
-            if (role == null)
-            {
-                errorMessage = "Role not found in the roles table.";
-                return;
-            }
-
-            var existingLinks = await context.roles_has_permissions
-                .Where(rp => rp.RoleId == role.Id)
+            var allRolePerms = await context.roles_has_permissions
+                .Join(context.permissions,
+                    rp => rp.PermissionId,
+                    p => p.Id,
+                    (rp, p) => new { rp.RoleId, PermName = p.Names ?? p.Slugs ?? "" })
                 .ToListAsync();
-            context.roles_has_permissions.RemoveRange(existingLinks);
 
-            var allPerms = await context.permissions.ToListAsync();
-            var slugPropMap = new Dictionary<string, bool>
-            {
-                ["dashboard"] = currentPermissions.Dashboard,
-                ["customers"] = currentPermissions.Customers,
-                ["products"] = currentPermissions.Products,
-                ["sales"] = currentPermissions.Sales,
-                ["settings"] = currentPermissions.Settings,
-                ["inventory"] = currentPermissions.Inventory,
-                ["employees"] = currentPermissions.Employees,
-                ["reports"] = currentPermissions.Reports,
-                ["recovery"] = currentPermissions.Recovery,
-            };
-
-            foreach (var perm in allPerms)
-            {
-                if (slugPropMap.TryGetValue(perm.Slugs ?? "", out var enabled) && enabled)
-                {
-                    context.roles_has_permissions.Add(new RolesHasPermission
-                    {
-                        RoleId = role.Id,
-                        PermissionId = perm.Id,
-                        business_id = AdminUserId
-                    });
-                }
-            }
-
-            await context.SaveChangesAsync();
-            await JS.InvokeVoidAsync("showToast", "Success", $"Permissions for '{selectedRole}' saved successfully!", "success");
+            rolePermissionsMap = allRolePerms
+                .GroupBy(x => x.RoleId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.PermName).ToList());
         }
         catch (Exception ex)
         {
-            errorMessage = "Error saving: " + (ex.InnerException?.Message ?? ex.Message);
-            await JS.InvokeVoidAsync("showToast", "Error", errorMessage, "error");
+            errorMessage = "Error loading data: " + ex.Message;
+        }
+    }
+
+    private List<string> GetRolePermissions(int roleId)
+    {
+        return rolePermissionsMap.TryGetValue(roleId, out var perms) ? perms : new List<string>();
+    }
+
+    private void OpenAddRoleModal()
+    {
+        isEditing = false;
+        editingRole = null;
+        modalRoleName = "";
+        modalDescription = "";
+        modalSelectedSlugs.Clear();
+        modalError = null;
+        showDeleteConfirm = false;
+        showModal = true;
+    }
+
+    private void EditRole(Role role)
+    {
+        isEditing = true;
+        editingRole = role;
+        modalRoleName = role.RoleTitle;
+        modalDescription = role.Description ?? "";
+        modalError = null;
+        showDeleteConfirm = false;
+        _ = LoadRolePermissionsForEdit(role.Id);
+        showModal = true;
+    }
+
+    private async Task LoadRolePermissionsForEdit(int roleId)
+    {
+        modalSelectedSlugs.Clear();
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var slugs = await context.roles_has_permissions
+                .Where(rp => rp.RoleId == roleId)
+                .Join(context.permissions,
+                    rp => rp.PermissionId,
+                    p => p.Id,
+                    (rp, p) => p.Slugs ?? "")
+                .ToListAsync();
+
+            foreach (var slug in slugs)
+            {
+                if (!string.IsNullOrEmpty(slug))
+                    modalSelectedSlugs.Add(slug);
+            }
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        showDeleteConfirm = false;
+        editingRole = null;
+        deletingRole = null;
+        modalRoleName = "";
+        modalDescription = "";
+        modalSelectedSlugs.Clear();
+        modalError = null;
+    }
+
+    private void ConfirmDeleteRole(Role role)
+    {
+        deletingRole = role;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        deletingRole = null;
+    }
+
+    private async Task DeleteRole()
+    {
+        if (deletingRole == null) return;
+
+        var roleToDelete = deletingRole;
+        isSaving = true;
+        modalError = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            var links = await context.roles_has_permissions
+                .Where(rp => rp.RoleId == roleToDelete.Id)
+                .ToListAsync();
+            context.roles_has_permissions.RemoveRange(links);
+
+            var dbRole = await context.roles.FindAsync(roleToDelete.Id);
+            if (dbRole != null)
+            {
+                context.roles.Remove(dbRole);
+                await context.SaveChangesAsync();
+            }
+
+            await LoadData();
+            CloseModal();
+            await JS.InvokeVoidAsync("showToast", "Success", $"Role '{roleToDelete.RoleTitle}' deleted successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            modalError = "Error deleting role: " + (ex.InnerException?.Message ?? ex.Message);
         }
         finally
         {
@@ -501,272 +465,167 @@
         }
     }
 
-    private void ToggleAllSystem(ChangeEventArgs e)
+    private async Task SaveRole()
     {
-        var val = (bool)(e.Value ?? false);
-        currentPermissions.Dashboard = val;
-        currentPermissions.Customers = val;
-        currentPermissions.Products = val;
-        currentPermissions.Sales = val;
-        currentPermissions.Employees = val;
-        currentPermissions.Reports = val;
-        currentPermissions.Settings = val;
-        currentPermissions.Inventory = val;
-    }
-
-    private void OpenAddRoleModal()
-    {
-        editingRole = rolesList.FirstOrDefault(r => r.RoleTitle == selectedRole);
-        roleManagementInput = selectedRole;
-        isDeleteConfirmMode = false;
-        showAddRoleModal = true;
-    }
-
-    private void OpenRenameModal()
-    {
-        if (selectedRole == "Admin") return;
-        editingRole = rolesList.FirstOrDefault(r => r.RoleTitle == selectedRole);
-        roleManagementInput = selectedRole;
-        showAddRoleModal = true;
-    }
-
-    private async Task OnRoleChangedInternal(ChangeEventArgs e)
-    {
-        selectedRole = e.Value?.ToString() ?? "";
-        await OnRoleChanged(e);
-    }
-
-    private void CloseAddRoleModal()
-    {
-        showAddRoleModal = false;
-        roleManagementInput = "";
-        editingRole = null;
-        isDeleteConfirmMode = false;
-    }
-
-    private void CancelDelete()
-    {
-        isDeleteConfirmMode = false;
-        StateHasChanged();
-    }
-
-    private async Task SaveNewRole()
-    {
-        if (string.IsNullOrWhiteSpace(roleManagementInput))
+        if (string.IsNullOrWhiteSpace(modalRoleName))
         {
-            errorMessage = "Please enter a role name first.";
+            modalError = "Please enter a role name.";
             return;
         }
 
-        isSubmitting = true;
-        errorMessage = null; 
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-            
-            if (await context.roles.AnyAsync(r => r.RoleTitle.ToLower() == roleManagementInput.ToLower()))
-            {
-                errorMessage = $"'{roleManagementInput}' already exists!";
-                isSubmitting = false;
-                return;
-            }
-
-            var newRole = new Role { RoleTitle = roleManagementInput.Trim() };
-            context.roles.Add(newRole);
-            await context.SaveChangesAsync();
-
-            await LoadRoles();
-            CloseAddRoleModal();
-            await JS.InvokeVoidAsync("showToast", "Success", $"Role '{roleManagementInput}' created successfully!", "success");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error creating role: " + ex.Message;
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-
-    private async Task UpdateRole()
-    {
-        if (editingRole == null)
-        {
-            errorMessage = "Please select a role from the list first (or select it on the main page).";
-            return;
-        }
-
-        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
-        {
-            errorMessage = "The SuperAdmin role cannot be modified.";
-            return;
-        }
-
-        string newName = roleManagementInput.Trim();
-        if (string.IsNullOrWhiteSpace(newName))
-        {
-            errorMessage = "New role name cannot be empty.";
-            return;
-        }
-
-        if (newName.Equals(editingRole.RoleTitle, StringComparison.OrdinalIgnoreCase))
-        {
-            errorMessage = "New name is the same as the current name.";
-            return;
-        }
-
-        isSubmitting = true;
-        errorMessage = null; 
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-
-            if (await context.roles.AnyAsync(r => r.Id != editingRole.Id && r.RoleTitle.ToLower() == newName.ToLower()))
-            {
-                errorMessage = $"' {newName}' already exists!";
-                isSubmitting = false;
-                return;
-            }
-
-            var dbRole = await context.roles.FindAsync(editingRole.Id);
-            if (dbRole != null)
-            {
-                string oldTitle = dbRole.RoleTitle;
-                string newTitle = newName;
-                dbRole.RoleTitle = newTitle;
-                await context.SaveChangesAsync();
-                
-                selectedRole = newTitle;
-            }
-
-            await LoadRoles();
-            await LoadPermissions();
-            CloseAddRoleModal();
-            await JS.InvokeVoidAsync("showToast", "Success", $"Role renamed to '{newName}' successfully!", "success");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error updating role: " + ex.Message;
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-
-    private async Task DeleteRole()
-    {
-        if (editingRole == null)
-        {
-            errorMessage = "Select a role to delete first.";
-            return;
-        }
-
-        if (editingRole.RoleTitle.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
-        {
-            errorMessage = "The SuperAdmin role cannot be deleted.";
-            return;
-        }
-
-        if (!isDeleteConfirmMode)
-        {
-            isDeleteConfirmMode = true;
-            StateHasChanged();
-            return;
-        }
-
-        isSubmitting = true;
-        errorMessage = null; 
-        try
-        {
-            using var context = DbFactory.CreateDbContext();
-            
-            var roleLinks = await context.roles_has_permissions
-                .Where(rp => rp.RoleId == editingRole.Id)
-                .ToListAsync();
-            context.roles_has_permissions.RemoveRange(roleLinks);
-
-            var dbRole = await context.roles.FindAsync(editingRole.Id);
-            if (dbRole != null)
-            {
-                context.roles.Remove(dbRole);
-                await context.SaveChangesAsync();
-            }
-
-            await LoadRoles();
-            selectedRole = rolesList.FirstOrDefault()?.RoleTitle ?? "Admin";
-            await LoadPermissions();
-            CloseAddRoleModal();
-            await JS.InvokeVoidAsync("showToast", "Success", "Role deleted successfully!", "success");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error deleting role: " + ex.Message;
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-
-    private async Task SaveEmployeeRoleAssignment()
-    {
-        if (selectedEmployeeId <= 0)
-        {
-            employeeRoleMessage = "Please select an employee first.";
-            return;
-        }
-
-        isSavingEmployeeRole = true;
-        employeeRoleMessage = null;
+        isSaving = true;
+        modalError = null;
         await InvokeAsync(StateHasChanged);
 
         try
         {
             using var context = DbFactory.CreateDbContext();
 
-            // Remove existing role-permission assignments for this employee
-            var existing = await context.employee_has_roles
-                .Where(e => e.UserId == selectedEmployeeId)
-                .ToListAsync();
-            context.employee_has_roles.RemoveRange(existing);
-
-            // Assign all selected roles
-            foreach (var roleTitle in employeeAssignedRoles)
+            Role? role;
+            if (isEditing && editingRole != null)
             {
-                var role = await context.roles
-                    .FirstOrDefaultAsync(r => r.RoleTitle == roleTitle);
+                role = await context.roles.FindAsync(editingRole.Id);
                 if (role != null)
                 {
-                    var rolePerms = await context.roles_has_permissions
-                        .Where(rp => rp.RoleId == role.Id)
-                        .ToListAsync();
+                    role.RoleTitle = modalRoleName.Trim();
+                    role.Description = string.IsNullOrWhiteSpace(modalDescription) ? null : modalDescription.Trim();
+                }
+            }
+            else
+            {
+                if (await context.roles.AnyAsync(r => r.RoleTitle.ToLower() == modalRoleName.Trim().ToLower()))
+                {
+                    modalError = $"Role '{modalRoleName}' already exists.";
+                    isSaving = false;
+                    return;
+                }
 
-                    foreach (var rp in rolePerms)
+                role = new Role
+                {
+                    RoleTitle = modalRoleName.Trim(),
+                    Description = string.IsNullOrWhiteSpace(modalDescription) ? null : modalDescription.Trim(),
+                    business_id = UserId ?? 0
+                };
+                context.roles.Add(role);
+            }
+
+            await context.SaveChangesAsync();
+
+            if (role == null)
+            {
+                modalError = "Role not found.";
+                return;
+            }
+
+            var existingPerms = await context.permissions.ToListAsync();
+            foreach (var slug in AllSlugs)
+            {
+                if (!existingPerms.Any(p => p.Slugs == slug))
+                {
+                    var name = GetPermissionDisplayName(slug);
+                    context.permissions.Add(new Permission { Slugs = slug, Names = name });
+                }
+            }
+            await context.SaveChangesAsync();
+
+            var freshPerms = await context.permissions.ToListAsync();
+
+            var existingLinks = await context.roles_has_permissions
+                .Where(rp => rp.RoleId == role.Id)
+                .ToListAsync();
+            context.roles_has_permissions.RemoveRange(existingLinks);
+
+            foreach (var slug in modalSelectedSlugs)
+            {
+                var perm = freshPerms.FirstOrDefault(p => p.Slugs == slug);
+                if (perm != null)
+                {
+                    context.roles_has_permissions.Add(new RolesHasPermission
                     {
-                        context.employee_has_roles.Add(new UserHasRoles
-                        {
-                            UserId = selectedEmployeeId,
-                            RolesHasPermissionId = rp.Id,
-                            business_id = AdminUserId
-                        });
-                    }
+                        RoleId = role.Id,
+                        PermissionId = perm.Id,
+                        business_id = UserId
+                    });
                 }
             }
 
             await context.SaveChangesAsync();
-            var titles = string.Join(", ", employeeAssignedRoles);
-            employeeRoleMessage = $"Roles assigned: {titles}";
+
+            await LoadData();
+            CloseModal();
+            await JS.InvokeVoidAsync("showToast", "Success", $"Role '{role.RoleTitle}' saved successfully!", "success");
         }
         catch (Exception ex)
         {
-            employeeRoleMessage = "Error: " + (ex.InnerException?.Message ?? ex.Message);
+            modalError = "Error: " + (ex.InnerException?.Message ?? ex.Message);
         }
         finally
         {
-            isSavingEmployeeRole = false;
+            isSaving = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void ToggleAllPermissions(ChangeEventArgs e)
+    {
+        var val = (bool)(e.Value ?? false);
+        if (val)
+        {
+            foreach (var slug in AllSlugs)
+                modalSelectedSlugs.Add(slug);
+        }
+        else
+        {
+            modalSelectedSlugs.Clear();
+        }
+    }
+
+    private bool AreAllCategoryPermissionsChecked(PermissionCategory category)
+    {
+        return category.Permissions.All(p => modalSelectedSlugs.Contains(p.Slug));
+    }
+
+    private void ToggleCategory(PermissionCategory category, bool isChecked)
+    {
+        foreach (var perm in category.Permissions)
+        {
+            if (isChecked) modalSelectedSlugs.Add(perm.Slug);
+            else modalSelectedSlugs.Remove(perm.Slug);
+        }
+    }
+
+    private void ToggleModalPermission(string slug, bool isChecked)
+    {
+        if (isChecked) modalSelectedSlugs.Add(slug);
+        else modalSelectedSlugs.Remove(slug);
+    }
+
+    private static string GetPermissionDisplayName(string slug)
+    {
+        return slug switch
+        {
+            "dashboard" => "Dashboard Access",
+            "customers" => "Customer Access",
+            "customer_create" => "Create Customer",
+            "customer_edit" => "Edit Customer",
+            "customer_delete" => "Delete Customer",
+            "products" => "Product Access",
+            "product_create" => "Create Product",
+            "product_edit" => "Edit Product",
+            "product_delete" => "Delete Product",
+            "sales" => "Sales Access",
+            "sale_create" => "Create Sale",
+            "sale_edit" => "Edit Sale",
+            "sale_delete" => "Delete Sale",
+            "employees" => "Employee Access",
+            "employee_create" => "Create Employee",
+            "employee_edit" => "Edit Employee",
+            "employee_delete" => "Delete Employee",
+            "reports" => "Reports Access",
+            "settings" => "Settings Access",
+            "inventory" => "Inventory Access",
+            "recovery" => "Recovery Access",
+            _ => slug
+        };
     }
 }

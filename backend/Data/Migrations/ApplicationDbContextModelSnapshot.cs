@@ -34,15 +34,9 @@ namespace Retailio.backend.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
-                        .HasColumnName("brand_title");
+                        .HasColumnName("brand_title");
 
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("brands");
                 });
@@ -82,11 +76,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<string>("category_title")
                         .IsRequired()
@@ -94,9 +84,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("category_title");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("categories");
                 });
@@ -108,11 +96,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<int>("customer_id")
                         .HasColumnType("int")
@@ -147,9 +131,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_credit");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.HasIndex("customer_id");
 
@@ -167,11 +149,7 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<decimal>("amount")
                         .HasColumnType("decimal(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("amount");
 
                     b.Property<int>("credit_id")
                         .HasColumnType("int")
@@ -198,9 +176,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("status");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.HasIndex("credit_id");
 
@@ -214,11 +190,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<string>("code")
                         .HasColumnType("nvarchar(max)")
@@ -244,9 +216,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("symbol");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("currencies");
                 });
@@ -263,54 +233,41 @@ namespace Retailio.backend.Data.Migrations
                     b.Property<string>("address")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("address");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("address");
 
                     b.Property<string>("cnic")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("cnic");
 
-                    b.Property<string>("date")
+                    b.Property<string>("contact")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("date");
+                        .HasColumnName("contact");
 
                     b.Property<string>("email")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
-                    b.Property<string>("full_name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("full_name");
-
                     b.Property<string>("image_path")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("image_path");
 
-                    b.Property<string>("mobile_no")
+                    b.Property<string>("name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("mobile_no");
+                        .HasColumnName("name");
 
                     b.Property<string>("password")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password");
 
-                    b.Property<int?>("role_id")
-                        .HasColumnType("int")
-                        .HasColumnName("role_id");
-
-                    b.Property<decimal>("salary")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("salary");
-
                     b.Property<int?>("status")
                         .HasColumnType("int")
                         .HasColumnName("status");
+
+                    b.Property<int?>("user_id")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     b.HasKey("id");
 
@@ -332,15 +289,9 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<string>("Slugs")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("slugs");
+                        .HasColumnName("slugs");
 
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("Id");
 
                     b.ToTable("permissions");
                 });
@@ -360,11 +311,7 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<int?>("brand_id")
                         .HasColumnType("int")
-                        .HasColumnName("brand_id");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("brand_id");
 
                     b.Property<int?>("category_id")
                         .HasColumnType("int")
@@ -410,9 +357,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("unit");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("products_services");
                 });
@@ -424,11 +369,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<int?>("credit_id")
                         .HasColumnType("int")
@@ -463,9 +404,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_credit");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("recoveries");
                 });
@@ -478,11 +417,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnName("id")
                         .HasColumnOrder(0);
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("date")
                         .IsRequired()
@@ -522,9 +457,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("unit_price");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("Id");
 
                     b.ToTable("return_details", (string)null);
                 });
@@ -537,6 +470,10 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
 
                     b.Property<string>("RoleTitle")
                         .IsRequired()
@@ -568,19 +505,13 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<int>("RoleId")
                         .HasColumnType("int")
-                        .HasColumnName("role_id");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("role_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PermissionId");
 
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("business_id");
+                    b.HasIndex("RoleId");
 
                     b.ToTable("roles_has_permissions");
                 });
@@ -592,11 +523,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<int>("item_id")
                         .HasColumnType("int")
@@ -622,9 +549,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("unit_price");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.HasIndex("sale_id");
 
@@ -639,11 +564,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnName("id")
                         .HasColumnOrder(0);
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<int?>("customer_id")
                         .HasColumnType("int")
@@ -687,9 +608,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("status");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("sales", (string)null);
                 });
@@ -701,11 +620,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<string>("date_of_expiry")
                         .HasColumnType("nvarchar(max)")
@@ -743,9 +658,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("whole_sale_price");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("stock_details");
                 });
@@ -811,15 +724,9 @@ namespace Retailio.backend.Data.Migrations
                     b.Property<string>("ShopNo")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
-                        .HasColumnName("shop_no");
+                        .HasColumnName("shop_no");
 
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("Id");
 
                     b.ToTable("store_configurations");
                 });
@@ -853,9 +760,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("status");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("subscriptions", (string)null);
                 });
@@ -875,15 +780,11 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
-                        .HasColumnName("emp_id");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
-                    b.ToTable("employee_has_roles");
+                    b.ToTable("user_has_roles");
                 });
 
             modelBuilder.Entity("Retailio.Models.customers", b =>
@@ -897,11 +798,7 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Property<string>("address")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("address");
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                        .HasColumnName("address");
 
                     b.Property<string>("cnic")
                         .HasColumnType("nvarchar(max)")
@@ -927,9 +824,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("status");
 
-                    b.HasKey("id");
-
-                    b.HasIndex("business_id");
+                    b.HasKey("id");
 
                     b.ToTable("customers", (string)null);
                 });
@@ -941,11 +836,7 @@ namespace Retailio.backend.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<int?>("business_id")
-                        .HasColumnType("int")
-                        .HasColumnName("business_id");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<string>("date")
                         .HasColumnType("nvarchar(max)")
@@ -997,25 +888,33 @@ namespace Retailio.backend.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
+                    b.Property<int>("business_id")
+                        .HasColumnType("int")
+                        .HasColumnName("business_id");
+
+                    b.Property<string>("cnic")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("cnic");
+
+                    b.Property<string>("contact")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("contact");
+
                     b.Property<string>("email")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
+
+                    b.Property<string>("name")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("name");
 
                     b.Property<string>("password")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password");
 
-                    b.Property<int>("role_id")
-                        .HasColumnType("int")
-                        .HasColumnName("role_id");
-
                     b.Property<int?>("status")
                         .HasColumnType("int")
                         .HasColumnName("status");
-
-                    b.Property<string>("username")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("username");
 
                     b.HasKey("id");
 
@@ -1025,21 +924,20 @@ namespace Retailio.backend.Data.Migrations
                         new
                         {
                             id = 1,
+                            business_id = 0,
                             email = "superadmin@gmail.com",
                             password = "186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae",
-                            role_id = 0,
-                            status = 1,
-                            username = "superadmin"
+                            status = 1
                         });
                 });
 
             modelBuilder.Entity("Retailio.Models.Brand", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.Business", b =>
@@ -1055,16 +953,16 @@ namespace Retailio.backend.Data.Migrations
 
             modelBuilder.Entity("Retailio.Models.Category", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.Credit", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
@@ -1074,12 +972,12 @@ namespace Retailio.backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.CreditDetail", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
@@ -1089,19 +987,19 @@ namespace Retailio.backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.Currency", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
-                });
+                    b.Navigation("Business");
+                });
 
-            modelBuilder.Entity("Retailio.Models.Permission", b =>
+            modelBuilder.Entity("Retailio.Models.ProductService", b =>
                 {
                     b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
@@ -1110,31 +1008,22 @@ namespace Retailio.backend.Data.Migrations
                     b.Navigation("Business");
                 });
 
-            modelBuilder.Entity("Retailio.Models.ProductService", b =>
-                {
-                    b.HasOne("Retailio.Models.users", "User")
-                        .WithMany()
-                        .HasForeignKey("business_id");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Retailio.Models.Recovery", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.ReturnDetail", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.RolesHasPermission", b =>
@@ -1149,13 +1038,7 @@ namespace Retailio.backend.Data.Migrations
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Retailio.Models.Business", "Business")
-                        .WithMany()
-                        .HasForeignKey("business_id");
-
-                    b.Navigation("Business");
+                        .IsRequired();
 
                     b.Navigation("Permission");
 
@@ -1164,7 +1047,7 @@ namespace Retailio.backend.Data.Migrations
 
             modelBuilder.Entity("Retailio.Models.Sale", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
@@ -1176,54 +1059,54 @@ namespace Retailio.backend.Data.Migrations
 
                     b.Navigation("SaleHeader");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.SaleHeader", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.StockDetail", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.StoreConfiguration", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.Subscription", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.customers", b =>
                 {
-                    b.HasOne("Retailio.Models.users", "User")
+                    b.HasOne("Retailio.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("business_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Retailio.Models.SaleHeader", b =>

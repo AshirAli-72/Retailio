@@ -19,24 +19,12 @@ namespace Retailio.backend.Data.Migrations
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     names = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    slugs = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    business_id = table.Column<int>(type: "int", nullable: true)
+                    slugs = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_permissions", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_permissions_businesses_business_id",
-                        column: x => x.business_id,
-                        principalTable: "businesses",
-                        principalColumn: "id");
                 });
-
-           
-            migrationBuilder.CreateIndex(
-                name: "IX_permissions_business_id",
-                table: "permissions",
-                column: "business_id");
         }
 
         /// <inheritdoc />

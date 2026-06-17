@@ -31,9 +31,9 @@ namespace Retailio.backend.Data.Migrations
                 {
                     table.PrimaryKey("PK_return_details", x => x.id);
                     table.ForeignKey(
-                        name: "FK_return_details_users_business_id",
+                        name: "FK_return_details_businesses_business_id",
                         column: x => x.business_id,
-                        principalTable: "users",
+                        principalTable: "businesses",
                         principalColumn: "id");
                 });
 

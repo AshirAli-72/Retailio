@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -53,7 +53,7 @@
 
                 <div class="top-bar-right sale-terminal-profile">
                     @{
-                        var userName = Context.Session.GetString("UserName") ?? "User";
+                        var userName = Context.Session.GetString("name") ?? "User";
                         var userRole = Context.Session.GetString("UserRole") ?? "Staff";
                         var userEmail = Context.Session.GetString("UserEmail") ?? (userName + "@system.com");
                         var initial = userName.Length > 0 ? userName.Substring(0, 1).ToUpper() : "U";

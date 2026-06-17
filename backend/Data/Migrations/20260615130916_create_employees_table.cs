@@ -16,18 +16,16 @@ namespace Retailio.backend.Data.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    date = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    full_name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    cnic = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    business_id = table.Column<int>(type: "int", nullable: true),
+                    user_id = table.Column<int>(type: "int", nullable: true),
+                    name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    mobile_no = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    password = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    cnic = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    contact = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     image_path = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    salary = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    status = table.Column<int>(type: "int", nullable: true),
-                    password = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    role_id = table.Column<int>(type: "int", nullable: true),
-                    business_id = table.Column<int>(type: "int", nullable: true)
+                    status = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {

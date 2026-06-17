@@ -55,7 +55,7 @@
                     <option value="All">All Staff Members</option>
                     @foreach (var emp in allEmployeesForDropdown)
                     {
-                        <option value="@emp.id">@emp.full_name</option>
+                        <option value="@emp.id">@emp.name</option>
                     }
                 </select>
             </div>
@@ -102,7 +102,7 @@
                 <div class="stat-card-premium border-orange">
                     <div class="stat-info">
                         <span class="label">Total Payroll</span>
-                        <h2 class="value">@(isGenerated ? allEmployees.Sum(e => e.salary).ToString("N0") : "---")</h2>
+                        <h2 class="value">@(isGenerated ? "0" : "---")</h2>
                     </div>
                     <div class="stat-icon orange-glow"><i class="ph-money"></i></div>
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #f59e0b;"></div></div>
@@ -111,7 +111,7 @@
                 <div class="stat-card-premium border-blue">
                     <div class="stat-info">
                         <span class="label">Avg Salary</span>
-                        <h2 class="value">@(isGenerated && allEmployees.Any() ? (allEmployees.Average(e => e.salary)).ToString("N0") : "---")</h2>
+                        <h2 class="value">@(isGenerated ? "---" : "---")</h2>
                     </div>
                     <div class="stat-icon blue-glow"><i class="ph-trend-up"></i></div>
                     <div class="stat-progress"><div class="bar" style="width: @(isGenerated ? "100%" : "0%"); background: #3b82f6;"></div></div>
@@ -154,7 +154,7 @@
                                         <span class="prod-name">@emp.Name</span>
                                         <span class="prod-meta">@emp.Code</span>
                                     </div>
-                                    <div class="prod-value" style="color: #BC1823;">@emp.Salary.ToString("N0")</div>
+                                    <div class="prod-value" style="color: #BC1823;">@emp.Salary</div>
                                 </div>
                             }
                         }
@@ -220,8 +220,6 @@
                                     <th>Name</th>
                                     <th>Mobile No</th>
                                     <th>CNIC</th>
-                                    <th>Salary</th>
-                                    <th>Joining Date</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -229,11 +227,9 @@
                                 @foreach (var e in filteredEmployees)
                                 {
                                     <tr>
-                                        <td class="font-bold">@e.full_name</td>
-                                        <td>@e.mobile_no</td>
+                                        <td class="font-bold">@e.name</td>
+                                        <td>@e.contact</td>
                                         <td>@e.cnic</td>
-                                        <td>@e.salary.ToString("N0")</td>
-                                        <td class="td-date">@e.date</td>
                                         <td><span class="badge-status @(e.status == (int?)EntityStatus.Active ? "sale" : "return")">@PaymentHelper.GetEntityStatusName(e.status)</span></td>
                                     </tr>
                                 }
@@ -280,7 +276,7 @@
     private bool isGenerated = false;
     private StoreConfiguration storeInfo = new();
 
-    private class EarnerInsight { public string Name { get; set; } = ""; public string Code { get; set; } = ""; public decimal Salary { get; set; } }
+    private class EarnerInsight { public string Name { get; set; } = ""; public string Code { get; set; } = ""; public string Salary { get; set; } = "0"; }
     private List<EarnerInsight> earnerInsights = new();
 
     private class EmpStatusStat { public string Label { get; set; } = ""; public decimal Percent { get; set; } public string Color { get; set; } = ""; }
@@ -289,7 +285,7 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        allEmployeesForDropdown = await context.employees.AsNoTracking().ForTenant(UserId).OrderBy(x => x.full_name).ToListAsync();
+        allEmployeesForDropdown = await context.employees.AsNoTracking().ForTenant(UserId).OrderBy(x => x.name).ToListAsync();
         var config = await context.store_configurations.AsNoTracking().ForTenant(UserId).FirstOrDefaultAsync();
         if (config != null) storeInfo = config;
     }
@@ -302,7 +298,7 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            allEmployees = await context.employees.AsNoTracking().ForTenant(UserId).OrderByDescending(x => x.salary).ToListAsync();
+            allEmployees = await context.employees.AsNoTracking().ForTenant(UserId).OrderByDescending(x => x.id).ToListAsync();
             
             filteredEmployees = allEmployees.Where(e => 
                 (selectedEmployeeId == "All" || e.id.ToString() == selectedEmployeeId) &&
@@ -313,7 +309,7 @@
             if (config != null) storeInfo = config;
 
             // Insights
-            earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.full_name, Code = e.mobile_no ?? "", Salary = e.salary }).ToList();
+            earnerInsights = allEmployees.Select(e => new EarnerInsight { Name = e.name, Code = e.contact ?? "", Salary = "0" }).ToList();
 
             var statuses = allEmployees.GroupBy(e => PaymentHelper.GetEntityStatusName(e.status))
                 .Select(g => new { Label = g.Key, Count = g.Count() })
@@ -327,7 +323,7 @@
             }).ToList();
 
             // Chart Data (Salary Spread)
-            var groups = allEmployees.GroupBy(e => (e.salary / 5000) * 5000)
+            var groups = allEmployees.GroupBy(e => (e.id / 5000) * 5000)
                 .Select(g => new { Range = $"{g.Key:N0} - {g.Key + 5000:N0}", Count = g.Count() })
                 .OrderBy(g => g.Range)
                 .ToList();
@@ -347,8 +343,8 @@
     {
         var term = searchTerm.ToLower();
         filteredEmployees = allEmployees.Where(e => 
-            ((e.full_name?.ToLower().Contains(term) ?? false) || 
-             (e.mobile_no?.ToLower().Contains(term) ?? false) || 
+            ((e.name?.ToLower().Contains(term) ?? false) || 
+             (e.contact?.ToLower().Contains(term) ?? false) || 
              (e.cnic?.ToLower().Contains(term) ?? false)) &&
             (selectedStatus == "All" || PaymentHelper.GetEntityStatusName(e.status) == selectedStatus)
         ).ToList();
