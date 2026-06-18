@@ -105,81 +105,112 @@
 @if (showModal)
 {
     <div class="modal-overlay" @onclick="CloseModal">
-        <div class="modal-content" @onclick:stopPropagation style="max-width: 640px;">
-            <div class="form-panel-header">
-                <div class="form-panel-title">
-                    <i class="ph-shield-plus" style="color: var(--primary);"></i> @(isEditing ? "Edit Role" : "Add Role")
+        <div class="rpm-shell" @onclick:stopPropagation>
+
+            <!-- Header -->
+            <div class="rpm-header">
+                <div class="rpm-header-left">
+                    <div class="rpm-icon-badge"><i class="ph-shield-check"></i></div>
+                    <div>
+                        <div class="rpm-title">@(isEditing ? "Edit Role" : "Add New Role")</div>
+                        <div class="rpm-subtitle">Configure role access permissions</div>
+                    </div>
                 </div>
-                <button type="button" class="form-panel-close" @onclick="CloseModal"><i class="ph-x"></i></button>
+                <button class="rpm-close-btn" type="button" @onclick="CloseModal"><i class="ph-x"></i></button>
             </div>
 
-            <div class="form-panel-body">
-                <div class="form-group-custom">
-                    <label>Role Name</label>
-                    <input type="text" class="form-control-custom" @bind="modalRoleName" @bind:event="oninput" placeholder="e.g. Manager" />
-                </div>
-                <div class="form-group-custom">
-                    <label>Description</label>
-                    <input type="text" class="form-control-custom" @bind="modalDescription" @bind:event="oninput" placeholder="Brief description of this role" />
-                </div>
+            <!-- Body -->
+            <div class="rpm-body">
 
-                <hr style="margin: 1rem 0; opacity: 0.2;" />
-
-                <div class="rp-section" style="margin-bottom: 0;">
-                    <div class="rp-section-header">
-                        <span class="rp-section-title">PERMISSIONS:</span>
-                        <input type="checkbox" class="rp-check-all" title="Select/Deselect All"
-                               checked="@AllPermissionsChecked"
-                               @onchange="ToggleAllPermissions" />
+                <!-- Role Info Row -->
+                <div class="rpm-fields-row">
+                    <div class="rpm-field">
+                        <label class="rpm-field-label">Role Name</label>
+                        <input class="rpm-field-input" type="text" @bind="modalRoleName" @bind:event="oninput" placeholder="e.g. Manager" />
                     </div>
+                    <div class="rpm-field rpm-field-wide">
+                        <label class="rpm-field-label">Description</label>
+                        <input class="rpm-field-input" type="text" @bind="modalDescription" @bind:event="oninput" placeholder="Brief description of this role" />
+                    </div>
+                </div>
 
-                    @foreach (var category in PermissionCategories)
+                <!-- Permissions Header -->
+                <div class="rpm-perm-header">
+                    <div class="rpm-perm-divider"><span>PERMISSIONS</span></div>
+                    <div class="rpm-select-all-wrap" @onclick="ToggleAllPermissions2">
+                        <div class="rpm-toggle-sm @(AllPermissionsChecked ? "rpm-toggle-on" : "")"><div class="rpm-toggle-knob"></div></div>
+                        <span class="rpm-select-all-text">Select All</span>
+                        <span class="rpm-sel-count">@modalSelectedSlugs.Count / @AllSlugs.Count</span>
+                    </div>
+                </div>
+
+                <!-- Category Filter Pills -->
+                <div class="rpm-pills-row">
+                    <button type="button" class="rpm-pill @(activeCategory == null ? "rpm-pill-on" : "")" @onclick='() => activeCategory = null'>
+                        <i class="ph-squares-four"></i> All
+                    </button>
+                    @foreach (var cat in PermissionCategories)
                     {
-                        <div style="margin-bottom: 1rem;">
-                            <div style="padding: 0.5rem; background: #f1f5f9; border-radius: 8px; margin-bottom: 0.5rem;">
-                                <span style="font-weight: 700; font-size: 0.9rem;">@category.Label</span>
+                        int selCount = cat.Permissions.Count(p => modalSelectedSlugs.Contains(p.Slug));
+                        <button type="button" class="rpm-pill @(activeCategory == cat.Label ? "rpm-pill-on" : "")" @onclick="() => activeCategory = cat.Label">
+                            <i class="@GetCategoryIcon(cat.Label)"></i> @cat.Label
+                            @if (selCount > 0) { <span class="rpm-pill-dot"></span> }
+                        </button>
+                    }
+                </div>
+
+                <!-- Permission Cards Grid -->
+                <div class="rpm-cards-grid">
+                    @foreach (var cat in PermissionCategories)
+                    {
+                        if (activeCategory != null && activeCategory != cat.Label) continue;
+                        foreach (var perm in cat.Permissions)
+                        {
+                            bool on = modalSelectedSlugs.Contains(perm.Slug);
+                            <div class="rpm-card @(on ? "rpm-card-on" : "")" @onclick="() => ToggleModalPermission(perm.Slug, !on)">
+                                <div class="rpm-card-body">
+                                    <div class="rpm-card-icon"><i class="@GetCategoryIcon(cat.Label)"></i></div>
+                                    <div class="rpm-card-text">
+                                        <span class="rpm-card-name">@perm.Name</span>
+                                        <span class="rpm-card-cat">@cat.Label</span>
+                                    </div>
+                                </div>
+                                <div class="rpm-toggle-sm @(on ? "rpm-toggle-on" : "")"><div class="rpm-toggle-knob"></div></div>
                             </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding-left: 1.5rem;">
-                                @foreach (var perm in category.Permissions)
-                                {
-                                    bool isChecked = modalSelectedSlugs.Contains(perm.Slug);
-                                    <label class="rp-check-item" style="margin: 0;">
-                                        <input type="checkbox" checked="@isChecked" @onchange="(e) => ToggleModalPermission(perm.Slug, (bool)(e.Value ?? false))" />
-                                        <span class="rp-check-box @(isChecked ? "checked" : "")">
-                                            @if (isChecked) { <i class="ph-check-bold"></i> }
-                                        </span>
-                                        <span class="rp-check-label">@perm.Name</span>
-                                    </label>
-                                }
-                            </div>
-                        </div>
+                        }
                     }
                 </div>
 
                 @if (!string.IsNullOrEmpty(modalError))
                 {
-                    <div style="margin-top: 1rem; padding: 0.75rem; background: #fee2e2; border-radius: 8px; color: #b91c1c; font-size: 0.85rem;">
-                        @modalError
-                    </div>
+                    <div class="rpm-error-bar"><i class="ph-warning-circle"></i> @modalError</div>
                 }
+
             </div>
 
-            <div class="form-panel-footer">
+            <!-- Footer -->
+            <div class="rpm-footer">
                 @if (isEditing)
                 {
-                    <button type="button" class="btn-cancel" @onclick="() => ConfirmDeleteRole(editingRole!)" style="margin-right: auto;">
-                        <i class="ph-trash"></i> Delete
+                    <button class="rpm-btn-del" type="button" @onclick="() => ConfirmDeleteRole(editingRole!)">
+                        <i class="ph-trash"></i> Delete Role
                     </button>
                 }
-                <button type="button" class="btn-cancel" @onclick="CloseModal">Cancel</button>
-                <button type="button" class="btn-save" @onclick="SaveRole" disabled="@isSaving">
-                    @if (isSaving) { <i class="ph-spinner ph-spin"></i><span>Saving...</span> }
-                    else { <span>@(isEditing ? "Update" : "Save")</span> }
-                </button>
+                <div class="rpm-footer-right">
+                    <button class="rpm-btn-cancel" type="button" @onclick="CloseModal">Cancel</button>
+                    <button class="rpm-btn-save" type="button" @onclick="SaveRole" disabled="@isSaving">
+                        @if (isSaving) { <i class="ph-spinner ph-spin"></i><span>Saving…</span> }
+                        else { <span>@(isEditing ? "Update Role" : "Save Role")</span> }
+                    </button>
+                </div>
             </div>
+
         </div>
     </div>
 }
+
+
+
 
 <!-- Delete Confirmation Modal -->
 @if (showDeleteConfirm)
@@ -199,8 +230,15 @@
             <div class="form-panel-footer">
                 <button type="button" class="btn-cancel" @onclick="CancelDelete">Cancel</button>
                 <button type="button" class="btn-save" style="background: #dc2626;" @onclick="DeleteRole" disabled="@isSaving">
-                    @if (isSaving) { <i class="ph-spinner ph-spin"></i><span>Deleting...</span> }
-                    else { <span>Confirm Delete</span> }
+                    @if (isSaving)
+                    {
+                        <i class="ph-spinner ph-spin"></i><span>Deleting...</span>
+                    }
+                    else
+                    {
+
+                        <span>Confirm Delete</span>
+                    }
                 </button>
             </div>
         </div>
@@ -208,6 +246,7 @@
 }
 
 @code {
+    // (unchanged — full @code block from your original)
     [Parameter] public int? UserId { get; set; }
 
     private List<Role> rolesList = new();
@@ -225,6 +264,7 @@
 
     private bool showDeleteConfirm = false;
     private Role? deletingRole = null;
+    private string? activeCategory = null;
 
     private class PermissionInfo
     {
@@ -361,6 +401,7 @@
         modalDescription = "";
         modalSelectedSlugs.Clear();
         modalError = null;
+        activeCategory = null;
         showDeleteConfirm = false;
         showModal = true;
     }
@@ -411,6 +452,16 @@
         modalDescription = "";
         modalSelectedSlugs.Clear();
         modalError = null;
+        activeCategory = null;
+    }
+
+    private void ToggleAllPermissions2()
+    {
+        if (AllPermissionsChecked)
+            modalSelectedSlugs.Clear();
+        else
+            foreach (var slug in AllSlugs)
+                modalSelectedSlugs.Add(slug);
     }
 
     private void ConfirmDeleteRole(Role role)
@@ -599,6 +650,20 @@
         if (isChecked) modalSelectedSlugs.Add(slug);
         else modalSelectedSlugs.Remove(slug);
     }
+
+    private static string GetCategoryIcon(string label) => label switch
+    {
+        "Dashboard"  => "ph-squares-four",
+        "Customers"  => "ph-users",
+        "Products"   => "ph-package",
+        "Sales"      => "ph-receipt",
+        "Employees"  => "ph-identification-badge",
+        "Reports"    => "ph-chart-bar",
+        "Settings"   => "ph-gear",
+        "Inventory"  => "ph-warehouse",
+        "Recovery"   => "ph-arrow-counter-clockwise",
+        _            => "ph-circle"
+    };
 
     private static string GetPermissionDisplayName(string slug)
     {
