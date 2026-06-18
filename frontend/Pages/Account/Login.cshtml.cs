@@ -138,12 +138,19 @@ namespace Retailio.Pages.Account
                 if (legacyEmp != null && !string.IsNullOrEmpty(legacyEmp.password)
                     && PaymentHelper.VerifyPassword(inputPass, legacyEmp.password))
                 {
+                    // Try to find a linked user record by email
+                    var legacyUser = await _context.users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.email == inputEmail);
+
                     HttpContext.Session.SetString("UserName", legacyEmp.name ?? legacyEmp.email ?? "Employee");
                     HttpContext.Session.SetString("UserRole", "Employee");
                     HttpContext.Session.SetString("UserEmail", legacyEmp.email ?? "");
                     HttpContext.Session.SetInt32("UserRoleId", 0);
                     HttpContext.Session.SetInt32("UserId", legacyEmp.business_id ?? 0);
                     HttpContext.Session.SetInt32("EmployeeId", legacyEmp.id);
+                    if (legacyUser != null)
+                        HttpContext.Session.SetInt32("UserAccountId", legacyUser.id);
 
                     TempData["Success"] = "Welcome back! Login successful.";
                     return RedirectToPage("/Index");

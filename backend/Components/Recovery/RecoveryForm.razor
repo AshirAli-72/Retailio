@@ -15,7 +15,7 @@
                 <i class="ph-receipt page-header-icon"></i>
                 <h2 class="page-header-title">Recovery Management</h2>
             </div>
-            <button type="button" class="btn-primary" @onclick="ShowAddForm">
+            <button type="button" class="btn-primary" @onclick="ShowAddForm" disabled="@(!CanCreate)" style="@(!CanCreate ? "opacity:0.5;cursor:not-allowed;" : "")">
                 <i class="ph-user-plus"></i> Recovery
             </button>
         </div>
@@ -76,7 +76,9 @@
                                     <div class="actions-container actions-right">
                                         <button class="btn-icon-sm btn-delete"
                                                 @onclick="() => DeleteRecovery(item.id)"
-                                                title="Delete">
+                                                title="Delete"
+                                                disabled="@(!CanDelete)"
+                                                style="@(!CanDelete ? "opacity:0.4;cursor:not-allowed;" : "")">
                                             <i class="ph-trash"></i>
                                         </button>
                                     </div>
@@ -240,6 +242,8 @@
 @code {
     [Parameter] public string? UserName { get; set; }
     [Parameter] public int? UserId { get; set; }
+    [Parameter] public bool CanCreate { get; set; } = true;
+    [Parameter] public bool CanDelete { get; set; } = true;
 
     private List<RecoveryDisplayItem> recoveryList = new();
     private List<customers> customerList = new();

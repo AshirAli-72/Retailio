@@ -11,11 +11,13 @@ namespace Retailio.Pages.Sale
     {
         private readonly ApplicationDbContext _context;
         private readonly Services.CurrencyService _currencyService;
+        private readonly PermissionService _permService;
 
-        public IndexModel(ApplicationDbContext context, Services.CurrencyService currencyService)
+        public IndexModel(ApplicationDbContext context, Services.CurrencyService currencyService, PermissionService permService)
         {
             _context = context;
             _currencyService = currencyService;
+            _permService = permService;
         }
 
         public IList<SaleDisplayItem> Sales { get; set; } = new List<SaleDisplayItem>();
@@ -48,6 +50,11 @@ namespace Retailio.Pages.Sale
         public string Tab { get; set; } = "sales";
 
         public string? ErrorMessage { get; set; }
+
+        // ── Permission flags ──────────────────────────────────────
+        public bool CanCreate { get; set; }
+        public bool CanEdit   { get; set; }
+        public bool CanDelete { get; set; }
 
         public class SaleDisplayItem
         {
@@ -111,6 +118,18 @@ namespace Retailio.Pages.Sale
                 return RedirectToPage("/Account/Login");
 
             var userId = HttpContext.Session.GetInt32("UserId");
+
+            // ── Permission check ──────────────────────────────────
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+
+            // Sales has no standalone view_ slug — any action permission grants access
+            if (!isOwner && !PermissionSlugs.HasAnySale(perms))
+                return RedirectToPage("/Index");
+
+            CanCreate = isOwner || perms.Contains(PermissionSlugs.CreateSale);
+            CanEdit   = isOwner || perms.Contains(PermissionSlugs.EditSale);
+            CanDelete = isOwner || perms.Contains(PermissionSlugs.DeleteSale);
 
             try
             {
@@ -182,8 +201,7 @@ namespace Retailio.Pages.Sale
                 CreditTotalPages = (int)Math.Ceiling(CreditTotalCount / (double)CreditPageSize);
                 if (CreditPageNumber < 1) CreditPageNumber = 1;
                 if (CreditTotalPages > 0 && CreditPageNumber > CreditTotalPages) CreditPageNumber = CreditTotalPages;
-                
-                // Load Credit Table items (main credit table)
+
                 CreditTableItems = await creditTableQuery
                     .OrderByDescending(c => c.id)
                     .Skip((CreditPageNumber - 1) * CreditPageSize)
@@ -220,6 +238,11 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+            if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
+                return Forbid();
+
             var sale = await _context.SalesHeader.FindAsync(id);
             if (sale != null)
             {
@@ -233,6 +256,11 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteReturnAsync(int id)
         {
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+            if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
+                return Forbid();
+
             var returnRecord = await _context.returns.FindAsync(id);
             if (returnRecord != null)
             {
@@ -244,6 +272,11 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteCreditAsync(int id)
         {
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+            if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
+                return Forbid();
+
             var credit = await _context.credits_details.FindAsync(id);
             if (credit != null)
             {

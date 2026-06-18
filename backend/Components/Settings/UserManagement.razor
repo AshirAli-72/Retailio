@@ -5,6 +5,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject PermissionService PermService
 @using Microsoft.AspNetCore.Components.Web
 @rendermode RenderMode.InteractiveServer
 
@@ -19,6 +20,12 @@
                 <h2 class="page-header-title">User Management</h2>
             </div>
             <div class="page-header-actions">
+                @if (canCreate)
+                {
+                    <button class="btn-primary" @onclick="ShowAddForm">
+                        <i class="ph-plus"></i> Add User
+                    </button>
+                }
                 <a href="/settings" class="btn-secondary">
                     <i class="ph-arrow-left"></i> Back to Settings
                 </a>
@@ -71,12 +78,18 @@
                             </td>
                             <td class="text-right" style="padding-right: 1.5rem;">
                                 <div class="actions-container actions-right">
-                                    <button class="btn-icon-sm btn-edit" @onclick="() => EditUser(user)" title="Edit">
-                                        <i class="ph-pencil"></i>
-                                    </button>
-                                    <button class="btn-icon-sm btn-delete" @onclick="() => DeleteUser(user.id)" title="Delete">
-                                        <i class="ph-trash"></i>
-                                    </button>
+                                    @if (canEdit)
+                                    {
+                                        <button class="btn-icon-sm btn-edit" @onclick="() => EditUser(user)" title="Edit">
+                                            <i class="ph-pencil"></i>
+                                        </button>
+                                    }
+                                    @if (canDelete)
+                                    {
+                                        <button class="btn-icon-sm btn-delete" @onclick="() => DeleteUser(user.id)" title="Delete">
+                                            <i class="ph-trash"></i>
+                                        </button>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -177,7 +190,7 @@
             </div>
 
             <div class="form-panel-footer">
-                @if (editingUser != null)
+                @if (editingUser != null && canDelete)
                 {
                     <button type="button" @onclick="() => DeleteUser(editingUser.id)" class="btn-delete" style="margin-right: auto;" disabled="@isSubmitting">
                         <i class="ph-trash"></i> Delete
@@ -210,6 +223,11 @@
     private bool isSubmitting = false;
     private string? errorMessage;
 
+    // Permission flags
+    private bool canCreate = false;
+    private bool canEdit   = false;
+    private bool canDelete = false;
+
     // Pagination state
     private int currentPage = 1;
     private int pageSize = 10;
@@ -218,6 +236,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Resolve permissions once on load
+        var isOwner = PermService.IsOwnerOrAdmin();
+        var perms   = await PermService.GetUserPermissionsAsync();
+
+        canCreate = isOwner || perms.Contains(PermissionSlugs.CreateUser);
+        canEdit   = isOwner || perms.Contains(PermissionSlugs.EditUser);
+        canDelete = isOwner || perms.Contains(PermissionSlugs.DeleteUser);
+
         await LoadRoles();
         await LoadUsers();
     }

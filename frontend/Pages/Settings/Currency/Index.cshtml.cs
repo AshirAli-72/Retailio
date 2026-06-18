@@ -1,36 +1,47 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Retailio.Data;
-using Retailio.Models;
 using Microsoft.EntityFrameworkCore;
-using Retailio.Services; // Ensure CurrencyService is accessible
+using Retailio.Data;
+using Retailio.Services;
+using CurrencyModel = Retailio.Models.Currency;
 
 namespace Retailio.Pages.Settings.Currency
 {
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly PermissionService _permService;
 
-        public IndexModel(ApplicationDbContext context)
+        public IndexModel(ApplicationDbContext context, PermissionService permService)
         {
             _context = context;
+            _permService = permService;
         }
 
-        public IList<Retailio.Models.Currency> Currencies { get; set; } = default!;
+        public IList<CurrencyModel> Currencies { get; set; } = default!;
 
         [BindProperty]
-        public Retailio.Models.Currency EditCurrency { get; set; } = new Retailio.Models.Currency();
+        public CurrencyModel EditCurrency { get; set; } = new CurrencyModel();
+
+        public bool CanManageCurrency { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
-            {
                 return RedirectToPage("/Account/Login");
-            }
-            
+
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms = await _permService.GetUserPermissionsAsync();
+
+            if (!isOwner && !perms.Contains(PermissionSlugs.ViewCurrency))
+                return RedirectToPage("/Index");
+
+            CanManageCurrency = isOwner || perms.Contains(PermissionSlugs.ManageCurrency);
+
             Currencies = await _context.currencies.OrderBy(c => c.name).ToListAsync();
             return Page();
         }
+
 
         public async Task<IActionResult> OnPostSaveAsync()
         {
@@ -74,7 +85,7 @@ namespace Retailio.Pages.Settings.Currency
             if (existing == null)
             {
                 await _context.Database.ExecuteSqlRawAsync("UPDATE currencies SET is_active = 0");
-                var newCurrency = new Retailio.Models.Currency 
+                var newCurrency = new CurrencyModel 
                 { 
                     name = name, 
                     code = code, 

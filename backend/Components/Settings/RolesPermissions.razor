@@ -2,9 +2,13 @@
 @using Retailio.Data
 @using Microsoft.EntityFrameworkCore
 @using System.Text.Json
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Server
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JS
 @rendermode RenderMode.InteractiveServer
+
 
 <link href="/css/settings/user.css" rel="stylesheet" />
 <link href="/css/settings/index.css" rel="stylesheet" />
@@ -45,7 +49,7 @@
                         {
                             <tr>
                                 <td colspan="4" class="empty-state">
-                                    <i class="ph-shield-check empty-state-icon"></i>
+                                <i class="ph-shield-check empty-state-icon"></i>
                                     <p>No roles found. Click "Add Role" to create one.</p>
                                 </td>
                             </tr>
@@ -101,13 +105,11 @@
     </div>
 </div>
 
-<!-- Add/Edit Role Modal -->
 @if (showModal)
 {
     <div class="modal-overlay" @onclick="CloseModal">
         <div class="rpm-shell" @onclick:stopPropagation>
 
-            <!-- Header -->
             <div class="rpm-header">
                 <div class="rpm-header-left">
                     <div class="rpm-icon-badge"><i class="ph-shield-check"></i></div>
@@ -119,10 +121,7 @@
                 <button class="rpm-close-btn" type="button" @onclick="CloseModal"><i class="ph-x"></i></button>
             </div>
 
-            <!-- Body -->
             <div class="rpm-body">
-
-                <!-- Role Info Row -->
                 <div class="rpm-fields-row">
                     <div class="rpm-field">
                         <label class="rpm-field-label">Role Name</label>
@@ -134,7 +133,6 @@
                     </div>
                 </div>
 
-                <!-- Permissions Header -->
                 <div class="rpm-perm-header">
                     <div class="rpm-perm-divider"><span>PERMISSIONS</span></div>
                     <div class="rpm-select-all-wrap" @onclick="ToggleAllPermissions2">
@@ -144,7 +142,6 @@
                     </div>
                 </div>
 
-                <!-- Category Filter Pills -->
                 <div class="rpm-pills-row">
                     <button type="button" class="rpm-pill @(activeCategory == null ? "rpm-pill-on" : "")" @onclick='() => activeCategory = null'>
                         <i class="ph-squares-four"></i> All
@@ -159,7 +156,6 @@
                     }
                 </div>
 
-                <!-- Permission Cards Grid -->
                 <div class="rpm-cards-grid">
                     @foreach (var cat in PermissionCategories)
                     {
@@ -185,10 +181,8 @@
                 {
                     <div class="rpm-error-bar"><i class="ph-warning-circle"></i> @modalError</div>
                 }
-
             </div>
 
-            <!-- Footer -->
             <div class="rpm-footer">
                 @if (isEditing)
                 {
@@ -209,10 +203,6 @@
     </div>
 }
 
-
-
-
-<!-- Delete Confirmation Modal -->
 @if (showDeleteConfirm)
 {
     <div class="modal-overlay" @onclick="CancelDelete">
@@ -236,7 +226,6 @@
                     }
                     else
                     {
-
                         <span>Confirm Delete</span>
                     }
                 </button>
@@ -246,7 +235,6 @@
 }
 
 @code {
-    // (unchanged — full @code block from your original)
     [Parameter] public int? UserId { get; set; }
 
     private List<Role> rolesList = new();
@@ -278,22 +266,24 @@
         public PermissionInfo[] Permissions { get; set; } = Array.Empty<PermissionInfo>();
     }
 
+    // Aligned with PermissionSlugs.cs — obsolete view_* slugs for CRUD sections removed.
+    // view_customer, view_product, view_sale, view_inventory, view_employee, view_recovery
+    // are NOT in the system. Having any CRUD permission grants section access.
     private static readonly PermissionCategory[] PermissionCategories = new[]
     {
         new PermissionCategory
         {
             Label = "Dashboard",
-            Permissions = new[] { new PermissionInfo { Slug = "dashboard", Name = "Dashboard Access" } }
+            Permissions = new[] { new PermissionInfo { Slug = "view_dashboard", Name = "Dashboard Access" } }
         },
         new PermissionCategory
         {
             Label = "Customers",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "customers", Name = "Customer Access" },
-                new PermissionInfo { Slug = "customer_create", Name = "Create Customer" },
-                new PermissionInfo { Slug = "customer_edit", Name = "Edit Customer" },
-                new PermissionInfo { Slug = "customer_delete", Name = "Delete Customer" }
+                new PermissionInfo { Slug = "create_customer", Name = "Create Customer" },
+                new PermissionInfo { Slug = "edit_customer",   Name = "Edit Customer" },
+                new PermissionInfo { Slug = "delete_customer", Name = "Delete Customer" }
             }
         },
         new PermissionCategory
@@ -301,10 +291,9 @@
             Label = "Products",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "products", Name = "Product Access" },
-                new PermissionInfo { Slug = "product_create", Name = "Create Product" },
-                new PermissionInfo { Slug = "product_edit", Name = "Edit Product" },
-                new PermissionInfo { Slug = "product_delete", Name = "Delete Product" }
+                new PermissionInfo { Slug = "create_product", Name = "Create Product" },
+                new PermissionInfo { Slug = "edit_product",   Name = "Edit Product" },
+                new PermissionInfo { Slug = "delete_product", Name = "Delete Product" }
             }
         },
         new PermissionCategory
@@ -312,10 +301,9 @@
             Label = "Sales",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "sales", Name = "Sales Access" },
-                new PermissionInfo { Slug = "sale_create", Name = "Create Sale" },
-                new PermissionInfo { Slug = "sale_edit", Name = "Edit Sale" },
-                new PermissionInfo { Slug = "sale_delete", Name = "Delete Sale" }
+                new PermissionInfo { Slug = "create_sale", Name = "Create Sale" },
+                new PermissionInfo { Slug = "edit_sale",   Name = "Edit Sale" },
+                new PermissionInfo { Slug = "delete_sale", Name = "Delete Sale" }
             }
         },
         new PermissionCategory
@@ -323,31 +311,79 @@
             Label = "Employees",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "employees", Name = "Employee Access" },
-                new PermissionInfo { Slug = "employee_create", Name = "Create Employee" },
-                new PermissionInfo { Slug = "employee_edit", Name = "Edit Employee" },
-                new PermissionInfo { Slug = "employee_delete", Name = "Delete Employee" }
+                new PermissionInfo { Slug = "create_employee", Name = "Create Employee" },
+                new PermissionInfo { Slug = "edit_employee",   Name = "Edit Employee" },
+                new PermissionInfo { Slug = "delete_employee", Name = "Delete Employee" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Inventory",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "edit_inventory", Name = "Edit Inventory" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Recovery",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "create_recovery", Name = "Create Recovery" },
+                new PermissionInfo { Slug = "delete_recovery", Name = "Delete Recovery" }
             }
         },
         new PermissionCategory
         {
             Label = "Reports",
-            Permissions = new[] { new PermissionInfo { Slug = "reports", Name = "Reports Access" } }
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "view_report",  Name = "View Reports" },
+                new PermissionInfo { Slug = "print_report", Name = "Print Reports" }
+            }
         },
         new PermissionCategory
         {
             Label = "Settings",
-            Permissions = new[] { new PermissionInfo { Slug = "settings", Name = "Settings Access" } }
+            Permissions = new[] { new PermissionInfo { Slug = "view_settings", Name = "Settings Access" } }
         },
         new PermissionCategory
         {
-            Label = "Inventory",
-            Permissions = new[] { new PermissionInfo { Slug = "inventory", Name = "Inventory Access" } }
+            Label = "Users",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "view_users",   Name = "View Users" },
+                new PermissionInfo { Slug = "create_user",  Name = "Create User" },
+                new PermissionInfo { Slug = "edit_user",    Name = "Edit User" },
+                new PermissionInfo { Slug = "delete_user",  Name = "Delete User" }
+            }
         },
         new PermissionCategory
         {
-            Label = "Recovery",
-            Permissions = new[] { new PermissionInfo { Slug = "recovery", Name = "Recovery Access" } }
+            Label = "Roles",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "view_roles",   Name = "View Roles" },
+                new PermissionInfo { Slug = "manage_roles", Name = "Manage Roles" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "Currency",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "view_currency",   Name = "View Currency" },
+                new PermissionInfo { Slug = "manage_currency", Name = "Manage Currency" }
+            }
+        },
+        new PermissionCategory
+        {
+            Label = "About",
+            Permissions = new[]
+            {
+                new PermissionInfo { Slug = "view_about", Name = "View About Store" },
+                new PermissionInfo { Slug = "edit_about", Name = "Edit About Store" }
+            }
         }
     };
 
@@ -355,10 +391,7 @@
 
     private bool AllPermissionsChecked => modalSelectedSlugs.Count == AllSlugs.Count;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-    }
+    protected override async Task OnInitializedAsync() => await LoadData();
 
     private async Task LoadData()
     {
@@ -375,7 +408,7 @@
                 .Join(context.permissions,
                     rp => rp.PermissionId,
                     p => p.Id,
-                    (rp, p) => new { rp.RoleId, PermName = p.Names ?? p.Slugs ?? "" })
+                    (rp, p) => new { rp.RoleId, PermName = p.Slugs ?? p.Slugs ?? "" })
                 .ToListAsync();
 
             rolePermissionsMap = allRolePerms
@@ -388,10 +421,7 @@
         }
     }
 
-    private List<string> GetRolePermissions(int roleId)
-    {
-        return rolePermissionsMap.TryGetValue(roleId, out var perms) ? perms : new List<string>();
-    }
+    private List<string> GetRolePermissions(int roleId) => rolePermissionsMap.TryGetValue(roleId, out var perms) ? perms : new List<string>();
 
     private void OpenAddRoleModal()
     {
@@ -433,12 +463,10 @@
                 .ToListAsync();
 
             foreach (var slug in slugs)
-            {
-                if (!string.IsNullOrEmpty(slug))
-                    modalSelectedSlugs.Add(slug);
-            }
+                if (!string.IsNullOrEmpty(slug)) modalSelectedSlugs.Add(slug);
         }
         catch { }
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -492,6 +520,7 @@
             var links = await context.roles_has_permissions
                 .Where(rp => rp.RoleId == roleToDelete.Id)
                 .ToListAsync();
+
             context.roles_has_permissions.RemoveRange(links);
 
             var dbRole = await context.roles.FindAsync(roleToDelete.Id);
@@ -658,10 +687,14 @@
         "Products"   => "ph-package",
         "Sales"      => "ph-receipt",
         "Employees"  => "ph-identification-badge",
-        "Reports"    => "ph-chart-bar",
-        "Settings"   => "ph-gear",
         "Inventory"  => "ph-warehouse",
         "Recovery"   => "ph-arrow-counter-clockwise",
+        "Reports"    => "ph-chart-bar",
+        "Settings"   => "ph-gear",
+        "Users"      => "ph-user-circle",
+        "Roles"      => "ph-shield-check",
+        "Currency"   => "ph-currency-circle-dollar",
+        "About"      => "ph-info",
         _            => "ph-circle"
     };
 
@@ -669,27 +702,35 @@
     {
         return slug switch
         {
-            "dashboard" => "Dashboard Access",
-            "customers" => "Customer Access",
-            "customer_create" => "Create Customer",
-            "customer_edit" => "Edit Customer",
-            "customer_delete" => "Delete Customer",
-            "products" => "Product Access",
-            "product_create" => "Create Product",
-            "product_edit" => "Edit Product",
-            "product_delete" => "Delete Product",
-            "sales" => "Sales Access",
-            "sale_create" => "Create Sale",
-            "sale_edit" => "Edit Sale",
-            "sale_delete" => "Delete Sale",
-            "employees" => "Employee Access",
-            "employee_create" => "Create Employee",
-            "employee_edit" => "Edit Employee",
-            "employee_delete" => "Delete Employee",
-            "reports" => "Reports Access",
-            "settings" => "Settings Access",
-            "inventory" => "Inventory Access",
-            "recovery" => "Recovery Access",
+            "view_dashboard"   => "View Dashboard",
+            "create_customer"  => "Create Customer",
+            "edit_customer"    => "Edit Customer",
+            "delete_customer"  => "Delete Customer",
+            "create_product"   => "Create Product",
+            "edit_product"     => "Edit Product",
+            "delete_product"   => "Delete Product",
+            "create_sale"      => "Create Sale",
+            "edit_sale"        => "Edit Sale",
+            "delete_sale"      => "Delete Sale",
+            "edit_inventory"   => "Edit Inventory",
+            "create_employee"  => "Create Employee",
+            "edit_employee"    => "Edit Employee",
+            "delete_employee"  => "Delete Employee",
+            "create_recovery"  => "Create Recovery",
+            "delete_recovery"  => "Delete Recovery",
+            "view_report"      => "View Reports",
+            "print_report"     => "Print Reports",
+            "view_settings"    => "View Settings",
+            "view_users"       => "View Users",
+            "create_user"      => "Create User",
+            "edit_user"        => "Edit User",
+            "delete_user"      => "Delete User",
+            "view_roles"       => "View Roles",
+            "manage_roles"     => "Manage Roles",
+            "view_currency"    => "View Currency",
+            "manage_currency"  => "Manage Currency",
+            "view_about"       => "View About Store",
+            "edit_about"       => "Edit About Store",
             _ => slug
         };
     }

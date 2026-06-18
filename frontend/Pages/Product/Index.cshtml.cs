@@ -11,11 +11,13 @@ namespace Retailio.Pages.Product
     {
         private readonly ApplicationDbContext _context;
         private readonly Services.CurrencyService _currencyService;
+        private readonly PermissionService _permService;
 
-        public IndexModel(ApplicationDbContext context, Services.CurrencyService currencyService)
+        public IndexModel(ApplicationDbContext context, Services.CurrencyService currencyService, PermissionService permService)
         {
             _context = context;
             _currencyService = currencyService;
+            _permService = permService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -30,21 +32,39 @@ namespace Retailio.Pages.Product
         public string? UserEmail { get; set; }
         public int? UserId { get; set; }
 
+        // ── Permission flags ──────────────────────────────────────
+        public bool CanCreate { get; set; }
+        public bool CanEdit   { get; set; }
+        public bool CanDelete { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
 
-            UserName = HttpContext.Session.GetString("UserName");
+            UserName  = HttpContext.Session.GetString("UserName");
             UserEmail = HttpContext.Session.GetString("UserEmail");
-            UserId = HttpContext.Session.GetInt32("UserId");
+            UserId    = HttpContext.Session.GetInt32("UserId");
 
             await _currencyService.GetSymbolAsync();
+
+            // ── Permission check ──────────────────────────────────
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+
+            if (!isOwner && !perms.Contains(PermissionSlugs.CreateProduct)
+                        && !perms.Contains(PermissionSlugs.EditProduct)
+                        && !perms.Contains(PermissionSlugs.DeleteProduct))
+                return RedirectToPage("/Index");
+
+            CanCreate = isOwner || perms.Contains(PermissionSlugs.CreateProduct);
+            CanEdit   = isOwner || perms.Contains(PermissionSlugs.EditProduct);
+            CanDelete = isOwner || perms.Contains(PermissionSlugs.DeleteProduct);
 
             IQueryable<ProductService> query = _context.products_services.AsNoTracking().ForTenant(UserId);
             TotalCount = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-            
+
             if (PageNumber < 1) PageNumber = 1;
             if (TotalPages > 0 && PageNumber > TotalPages) PageNumber = TotalPages;
 
@@ -52,24 +72,26 @@ namespace Retailio.Pages.Product
                 .Skip((PageNumber - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
-                
+
             return Page();
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+            if (!isOwner && !perms.Contains(PermissionSlugs.DeleteProduct))
+                return Forbid();
+
             var product = await _context.products_services.FindAsync(id);
             if (product != null)
             {
-                // Optionally delete image file
                 if (!string.IsNullOrEmpty(product.pic))
                 {
                     string storagePath = @"D:\netcore\Retailio\bin\Debug\images";
                     string filePath = Path.Combine(storagePath, product.pic);
                     if (System.IO.File.Exists(filePath))
-                    {
                         System.IO.File.Delete(filePath);
-                    }
                 }
 
                 _context.products_services.Remove(product);

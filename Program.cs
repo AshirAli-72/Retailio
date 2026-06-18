@@ -13,6 +13,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpContextAccessor();
 
+// Permission resolver for Blazor components
+builder.Services.AddScoped<Retailio.Services.PermissionService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowMarketingSite", policy =>
@@ -61,7 +64,11 @@ builder.Services.AddResponseCompression(options =>
 
 var app = builder.Build();
 
-
+// Run seeders
+using (var scope = app.Services.CreateScope())
+{
+    Retailio.backend.Data.Seeders.PermissionSeeder.Seed(scope.ServiceProvider);
+}
 
 if (!app.Environment.IsDevelopment())
 {

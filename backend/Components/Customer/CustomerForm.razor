@@ -16,7 +16,7 @@
                 <i class="ph-users page-header-icon"></i>
                 <h2 class="page-header-title">Customer Management</h2>
             </div>
-            <button class="btn-primary" @onclick="ShowAddForm">
+            <button class="btn-primary" @onclick="ShowAddForm" disabled="@(!CanCreate)" style="@(!CanCreate ? "opacity:0.5;cursor:not-allowed;" : "")">
                 <i class="ph-user-plus"></i> Add New Customer
             </button>
         </div>
@@ -72,20 +72,24 @@
                                 <td class="text-right" style="padding-right: 1.5rem;">
                                     <div class="actions-container actions-right">
 
-                                        <select class="form-control" style="width: auto; padding: 0.2rem 1.5rem 0.2rem 0.5rem; height: 32px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: inline-block; margin-right: 0.5rem;" @onchange="(e) => ChangeCustomerStatus(item, e.Value?.ToString())">
+                                        <select class="form-control" style="width: auto; padding: 0.2rem 1.5rem 0.2rem 0.5rem; height: 32px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; display: inline-block; margin-right: 0.5rem;" @onchange="(e) => ChangeCustomerStatus(item, e.Value?.ToString())" disabled="@(!CanEdit)">
                                             <option value="@((int)EntityStatus.Active)" selected="@(item.status == (int)EntityStatus.Active)">Enable</option>
                                             <option value="@((int)EntityStatus.Inactive)" selected="@(item.status != (int)EntityStatus.Active)">Disable</option>
                                         </select>
 
                                         <button class="btn-icon-sm btn-edit"
                                                 @onclick="() => EditCustomer(item)"
-                                                title="Edit">
+                                                title="Edit"
+                                                disabled="@(!CanEdit)"
+                                                style="@(!CanEdit ? "opacity:0.4;cursor:not-allowed;" : "")">
                                             <i class="ph-pencil"></i>
                                         </button>
 
                                         <button class="btn-icon-sm btn-delete"
                                                 @onclick="() => DeleteCustomer(item.id)"
-                                                title="Delete">
+                                                title="Delete"
+                                                disabled="@(!CanDelete)"
+                                                style="@(!CanDelete ? "opacity:0.4;cursor:not-allowed;" : "")">
                                             <i class="ph-trash"></i>
                                         </button>
 
@@ -225,6 +229,9 @@
 @code {
     [Parameter] public string? UserName { get; set; }
     [Parameter] public int? UserId { get; set; }
+    [Parameter] public bool CanCreate { get; set; } = true;
+    [Parameter] public bool CanEdit { get; set; } = true;
+    [Parameter] public bool CanDelete { get; set; } = true;
 
     private List<customers> customerList = new();
     private customers customerModel = new();

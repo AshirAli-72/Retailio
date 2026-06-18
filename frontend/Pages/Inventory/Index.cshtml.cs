@@ -10,10 +10,12 @@ namespace Retailio.Pages.Inventory
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly PermissionService _permService;
 
-        public IndexModel(ApplicationDbContext context)
+        public IndexModel(ApplicationDbContext context, PermissionService permService)
         {
             _context = context;
+            _permService = permService;
         }
 
         public List<InventoryItem> Products { get; set; } = new();
@@ -22,6 +24,9 @@ namespace Retailio.Pages.Inventory
         public int PageSize { get; set; } = 10;
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
+
+        // ── Permission flags ──────────────────────────────────────
+        public bool CanEdit { get; set; }
 
         public class InventoryItem
         {
@@ -46,8 +51,17 @@ namespace Retailio.Pages.Inventory
                 return RedirectToPage("/Account/Login");
 
             PageNumber = pageNumber;
-
             var userId = HttpContext.Session.GetInt32("UserId");
+
+            // ── Permission check ──────────────────────────────────
+            var isOwner = _permService.IsOwnerOrAdmin();
+            var perms   = await _permService.GetUserPermissionsAsync();
+
+            // Inventory has no standalone view_ slug — any action permission grants access
+            if (!isOwner && !PermissionSlugs.HasAnyInventory(perms))
+                return RedirectToPage("/Index");
+
+            CanEdit = isOwner || perms.Contains(PermissionSlugs.EditInventory);
 
             IQueryable<ProductService> query = _context.products_services.AsNoTracking().ForTenant(userId);
 
@@ -61,23 +75,23 @@ namespace Retailio.Pages.Inventory
                 .ToListAsync();
 
             var categories = await _context.categories.AsNoTracking().ForTenant(userId).ToListAsync();
-            var brands = await _context.brands.AsNoTracking().ForTenant(userId).ToListAsync();
+            var brands     = await _context.brands.AsNoTracking().ForTenant(userId).ToListAsync();
 
             Products = products.Select(p => new InventoryItem
             {
-                id = p.id,
-                prod_name = p.prod_name,
-                barcode = p.barcode,
+                id         = p.id,
+                prod_name  = p.prod_name,
+                barcode    = p.barcode,
                 prod_state = p.prod_state,
-                unit = p.unit,
-                item_type = p.item_type,
-                size = p.size,
-                pic = p.pic,
-                status = PaymentHelper.GetEntityStatusName(p.status),
+                unit       = p.unit,
+                item_type  = p.item_type,
+                size       = p.size,
+                pic        = p.pic,
+                status     = PaymentHelper.GetEntityStatusName(p.status),
                 category_id = p.category_id,
-                brand_id = p.brand_id,
+                brand_id   = p.brand_id,
                 CategoryName = p.category_id != null ? categories.FirstOrDefault(c => c.id == p.category_id)?.category_title ?? "-" : "-",
-                BrandName = p.brand_id != null ? brands.FirstOrDefault(b => b.id == p.brand_id)?.brand_title ?? "-" : "-"
+                BrandName    = p.brand_id != null ? brands.FirstOrDefault(b => b.id == p.brand_id)?.brand_title ?? "-" : "-"
             }).ToList();
 
             return Page();

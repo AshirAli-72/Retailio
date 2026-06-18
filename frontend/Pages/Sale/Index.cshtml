@@ -18,9 +18,12 @@
                 <p class="text-muted font-sm" style="margin: 0;">A complete record of all sales transactions.</p>
             </div>
         </div>
-        <a href="/Sale/Create" class="btn-primary">
-            <i class="ph-plus-circle"></i> New Sale
-        </a>
+        @if (Model.CanCreate)
+        {
+            <a href="/Sale/Create" class="btn-primary">
+                <i class="ph-plus-circle"></i> New Sale
+            </a>
+        }
     </div>
 
 
@@ -99,12 +102,15 @@
                             </td>
                             <td class="text-right" style="padding-right: 1.5rem;">
                                 <div class="actions-container actions-right">
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@sale.id" onsubmit="return confirm('Delete this sale record?');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn-icon-sm btn-delete" title="Delete">
-                                            <i class="ph-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (Model.CanDelete)
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@sale.id" onsubmit="return confirm('Delete this sale record?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-icon-sm btn-delete" title="Delete">
+                                                <i class="ph-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -200,12 +206,15 @@
                             </td>
                             <td class="text-right" style="padding-right: 1.5rem;">
                                 <div class="actions-container actions-right">
-                                    <form method="post" asp-page-handler="DeleteReturn" asp-route-id="@ret.Id" onsubmit="return confirm('Delete this return record?');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn-icon-sm btn-delete" title="Delete">
-                                            <i class="ph-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (Model.CanDelete)
+                                    {
+                                        <form method="post" asp-page-handler="DeleteReturn" asp-route-id="@ret.Id" onsubmit="return confirm('Delete this return record?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-icon-sm btn-delete" title="Delete">
+                                                <i class="ph-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
