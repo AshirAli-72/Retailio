@@ -31,7 +31,7 @@ namespace Retailio.Pages.Employee
             UserId   = HttpContext.Session.GetInt32("UserId");
 
             // ── Permission check ──────────────────────────────────
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
             if (!isOwner && !perms.Contains(PermissionSlugs.CreateEmployee)

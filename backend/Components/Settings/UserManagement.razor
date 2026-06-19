@@ -1,4 +1,4 @@
-﻿@using Retailio.Models
+@using Retailio.Models
 @using Retailio.Data
 @using Microsoft.EntityFrameworkCore
 @using Retailio.Services
@@ -237,7 +237,7 @@
     protected override async Task OnInitializedAsync()
     {
         // Resolve permissions once on load
-        var isOwner = PermService.IsOwnerOrAdmin();
+        var isOwner = await PermService.IsOwnerOrAdminAsync();
         var perms   = await PermService.GetUserPermissionsAsync();
 
         canCreate = isOwner || perms.Contains(PermissionSlugs.CreateUser);

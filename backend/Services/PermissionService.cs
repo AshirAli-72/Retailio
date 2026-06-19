@@ -28,18 +28,37 @@ namespace Retailio.Services
         private ISession? Session => _httpContextAccessor.HttpContext?.Session;
 
         /// <summary>Returns true if the current user is an Owner or SuperAdmin (bypasses all permission checks).</summary>
-        public bool IsOwnerOrAdmin()
+        public async Task<bool> IsOwnerOrAdminAsync()
         {
             var role = Session?.GetString("UserRole") ?? "";
-            return role.Equals("Owner", StringComparison.OrdinalIgnoreCase)
+            if (role.Equals("Owner", StringComparison.OrdinalIgnoreCase)
                 || PaymentHelper.HasAdminPanelAccess(role)
-                || role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                || role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Also check database: if user is not in user_has_roles, treat as owner
+            var userAccountId = Session?.GetInt32("UserAccountId");
+            if (!userAccountId.HasValue)
+                return false;
+
+            try
+            {
+                using var ctx = _dbFactory.CreateDbContext();
+                var hasRoles = await ctx.user_has_roles.AnyAsync(uhr => uhr.UserId == userAccountId);
+                return !hasRoles;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>Loads all permission slugs for the current user (cached for 30 minutes).</summary>
         public async Task<HashSet<string>> GetUserPermissionsAsync()
         {
-            if (IsOwnerOrAdmin())
+            if (await IsOwnerOrAdminAsync())
                 return new HashSet<string>(PermissionSlugs.All, StringComparer.OrdinalIgnoreCase);
 
             var userAccountId = Session?.GetInt32("UserAccountId");

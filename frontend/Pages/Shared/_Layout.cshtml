@@ -58,17 +58,41 @@
                                     || Retailio.Services.PaymentHelper.HasAdminPanelAccess(userRole);
             bool isEmployee = Context.Session.GetInt32("EmployeeId").HasValue;
             bool isAdmin = isOwnerOrSuperAdmin || userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+            
+            // Check if user is in user_has_roles table (if not, they are owner with full access)
+            var userAccountId = Context.Session.GetInt32("UserAccountId");
+            bool userHasRoles = false;
+            if (userAccountId.HasValue && userAccountId.Value > 0)
+            {
+                try
+                {
+                    using var ctx = DbFactory.CreateDbContext();
+                    userHasRoles = ctx.user_has_roles.Any(uhr => uhr.UserId == userAccountId);
+                }
+                catch { }
+            }
+            
+            bool isFullAccess = isAdmin || !userHasRoles;
             HashSet<string>? userPerms = null;
 
-            if (isAdmin)
+            if (isFullAccess)
             {
-                // Owners / Admins — full access, load all slugs
+                // Owners / Admins / users not in user_has_roles — full access, load all slugs
                 userPerms = new HashSet<string>(Retailio.Services.PermissionSlugs.All, StringComparer.OrdinalIgnoreCase);
+                // Also add all view_* permissions for sidebar
+                userPerms.Add("view_dashboard");
+                userPerms.Add("view_customer");
+                userPerms.Add("view_product");
+                userPerms.Add("view_inventory");
+                userPerms.Add("view_sale");
+                userPerms.Add("view_recovery");
+                userPerms.Add("view_employee");
+                userPerms.Add("view_report");
+                userPerms.Add("view_settings");
             }
             else
             {
                 // Employee — load permissions via UserAccountId from session
-                var userAccountId = Context.Session.GetInt32("UserAccountId");
                 if (userAccountId.HasValue && userAccountId.Value > 0)
                 {
                     string cacheKey = "Perms_u_" + userAccountId.Value;

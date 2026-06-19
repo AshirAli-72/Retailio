@@ -49,7 +49,7 @@ namespace Retailio.Pages.Product
             await _currencyService.GetSymbolAsync();
 
             // ── Permission check ──────────────────────────────────
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
             if (!isOwner && !perms.Contains(PermissionSlugs.CreateProduct)
@@ -78,7 +78,7 @@ namespace Retailio.Pages.Product
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
             if (!isOwner && !perms.Contains(PermissionSlugs.DeleteProduct))
                 return Forbid();

@@ -255,3 +255,4 @@ D:\netcore\Retailio\obj\Debug\net10.0\Retailio.pdb
 D:\netcore\Retailio\obj\Debug\net10.0\Retailio.genruntimeconfig.cache
 D:\netcore\Retailio\obj\Debug\net10.0\ref\Retailio.dll
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\eh30waq2w7-{0}-hj3zqz7xrz-hj3zqz7xrz.gz
+D:\netcore\Retailio\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

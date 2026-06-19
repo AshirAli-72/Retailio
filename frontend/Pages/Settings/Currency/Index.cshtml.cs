@@ -30,7 +30,7 @@ namespace Retailio.Pages.Settings.Currency
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
                 return RedirectToPage("/Account/Login");
 
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms = await _permService.GetUserPermissionsAsync();
 
             if (!isOwner && !perms.Contains(PermissionSlugs.ViewCurrency))

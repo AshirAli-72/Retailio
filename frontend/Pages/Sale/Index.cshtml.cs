@@ -120,7 +120,7 @@ namespace Retailio.Pages.Sale
             var userId = HttpContext.Session.GetInt32("UserId");
 
             // ── Permission check ──────────────────────────────────
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
             // Sales has no standalone view_ slug — any action permission grants access
@@ -238,7 +238,7 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
             if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
                 return Forbid();
@@ -256,7 +256,7 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteReturnAsync(int id)
         {
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
             if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
                 return Forbid();
@@ -272,7 +272,7 @@ namespace Retailio.Pages.Sale
 
         public async Task<IActionResult> OnPostDeleteCreditAsync(int id)
         {
-            var isOwner = _permService.IsOwnerOrAdmin();
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
             if (!isOwner && !perms.Contains(PermissionSlugs.DeleteSale))
                 return Forbid();

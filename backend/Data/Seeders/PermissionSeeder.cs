@@ -5,107 +5,50 @@ using Retailio.Services;
 namespace Retailio.backend.Data.Seeders
 {
     /// <summary>
-    /// Seeds the permissions table from <see cref="PermissionSlugs.All"/> (single source of truth),
-    /// removes any obsolete slugs, and seeds two default system roles (Manager, Cashier)
-    /// with sensible default permission assignments.
+    /// Seeds ONLY the permissions table from <see cref="PermissionSlugs.All"/>.
+    /// No default roles are created — roles are managed entirely by the Owner
+    /// through the Roles &amp; Permissions UI.
     ///
-    /// Default roles use business_id = 0 (system-level) so they appear in every tenant.
-    /// Roles are only inserted once — existing rows are never modified by this seeder.
+    /// Also cleans up:
+    ///   - Obsolete permission slugs no longer in PermissionSlugs.All
+    ///   - Any system-seeded roles (business_id = 0) that were previously
+    ///     inserted by an old version of this seeder (Manager, Cashier, etc.)
     /// </summary>
     public static class PermissionSeeder
     {
-        // ── Default role definitions ──────────────────────────────────────────────────
-        private static readonly (string Title, string Description, string[] Slugs)[] DefaultRoles =
-        {
-            (
-                Title: "Manager",
-                Description: "Full access to daily operations. Cannot manage roles, delete users, or change system settings.",
-                Slugs: new[]
-                {
-                    // Dashboard
-                    PermissionSlugs.ViewDashboard,
-
-                    // Customers — full CRUD
-                    PermissionSlugs.CreateCustomer,
-                    PermissionSlugs.EditCustomer,
-                    PermissionSlugs.DeleteCustomer,
-
-                    // Products — full CRUD
-                    PermissionSlugs.CreateProduct,
-                    PermissionSlugs.EditProduct,
-                    PermissionSlugs.DeleteProduct,
-
-                    // Sales — full CRUD
-                    PermissionSlugs.CreateSale,
-                    PermissionSlugs.EditSale,
-                    PermissionSlugs.DeleteSale,
-
-                    // Inventory
-                    PermissionSlugs.EditInventory,
-
-                    // Employees — full CRUD
-                    PermissionSlugs.CreateEmployee,
-                    PermissionSlugs.EditEmployee,
-                    PermissionSlugs.DeleteEmployee,
-
-                    // Recovery
-                    PermissionSlugs.CreateRecovery,
-                    PermissionSlugs.DeleteRecovery,
-
-                    // Reports — view + print
-                    PermissionSlugs.ViewReport,
-                    PermissionSlugs.PrintReport,
-
-                    // Settings hub access
-                    PermissionSlugs.ViewSettings,
-
-                    // Users — view + create + edit (no delete)
-                    PermissionSlugs.ViewUsers,
-                    PermissionSlugs.CreateUser,
-                    PermissionSlugs.EditUser,
-
-                    // Roles — view only (no manage)
-                    PermissionSlugs.ViewRoles,
-
-                    // Currency — view only
-                    PermissionSlugs.ViewCurrency,
-
-                    // About Store — view + edit
-                    PermissionSlugs.ViewAbout,
-                    PermissionSlugs.EditAbout,
-                }
-            ),
-            (
-                Title: "Cashier",
-                Description: "POS operator. Can process sales, manage customers, and view reports.",
-                Slugs: new[]
-                {
-                    // Dashboard
-                    PermissionSlugs.ViewDashboard,
-
-                    // Customers — create + edit (no delete)
-                    PermissionSlugs.CreateCustomer,
-                    PermissionSlugs.EditCustomer,
-
-                    // Sales — create + edit (no delete)
-                    PermissionSlugs.CreateSale,
-                    PermissionSlugs.EditSale,
-
-                    // Reports — view only (no print)
-                    PermissionSlugs.ViewReport,
-                }
-            ),
-        };
-
-        // ─────────────────────────────────────────────────────────────────────────────
-
         public static void Seed(IServiceProvider serviceProvider)
         {
             try
             {
                 var db = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
-                // ── Step 1: Remove obsolete permission slugs ──────────────────────
+                // ── 1. Remove any system-seeded roles left over from old seeder ──
+                //      These are roles with business_id = 0 that were auto-created.
+                //      SuperAdmin (id = 1 or title = "SuperAdmin") is intentionally
+                //      excluded — only cleanup previously seeded template roles.
+                var systemRolesToRemove = db.roles
+                    .Where(r => r.business_id == 0 && r.RoleTitle != "SuperAdmin")
+                    .ToList();
+
+                if (systemRolesToRemove.Count > 0)
+                {
+                    // Remove their roles_has_permissions links first (FK constraint)
+                    var roleIds = systemRolesToRemove.Select(r => r.Id).ToList();
+                    var links = db.roles_has_permissions
+                        .Where(rp => roleIds.Contains(rp.RoleId))
+                        .ToList();
+
+                    if (links.Count > 0)
+                        db.roles_has_permissions.RemoveRange(links);
+
+                    db.roles.RemoveRange(systemRolesToRemove);
+                    db.SaveChanges();
+
+                    Console.WriteLine($"[PermissionSeeder] Removed {systemRolesToRemove.Count} stale " +
+                                      $"system role(s): {string.Join(", ", systemRolesToRemove.Select(r => r.RoleTitle))}");
+                }
+
+                // ── 2. Remove obsolete permission slugs ───────────────────────────
                 var validSlugs = new HashSet<string>(PermissionSlugs.All, StringComparer.OrdinalIgnoreCase);
 
                 var toDelete = db.permissions
@@ -121,7 +64,7 @@ namespace Retailio.backend.Data.Seeders
                                       string.Join(", ", toDelete.Select(p => p.Slugs)));
                 }
 
-                // ── Step 2: Insert missing permission rows ────────────────────────
+                // ── 3. Insert any missing permission rows ─────────────────────────
                 var existingSlugs = db.permissions
                     .Select(p => p.Slugs)
                     .AsEnumerable()
@@ -147,57 +90,7 @@ namespace Retailio.backend.Data.Seeders
                 }
                 else
                 {
-                    Console.WriteLine("[PermissionSeeder] Permissions are up-to-date.");
-                }
-
-                // ── Step 3: Load fresh permission map (slug → id) ─────────────────
-                var permMap = db.permissions
-                    .Where(p => p.Slugs != null)
-                    .AsEnumerable()
-                    .ToDictionary(p => p.Slugs!, p => p.Id, StringComparer.OrdinalIgnoreCase);
-
-                // ── Step 4: Seed default roles with their permission assignments ───
-                foreach (var (title, description, slugs) in DefaultRoles)
-                {
-                    // Only insert the role if it doesn't exist yet
-                    var existingRole = db.roles
-                        .FirstOrDefault(r => r.RoleTitle == title && r.business_id == 0);
-
-                    if (existingRole != null)
-                    {
-                        Console.WriteLine($"[PermissionSeeder] Role '{title}' already exists — skipping.");
-                        continue;
-                    }
-
-                    // Create the role
-                    var role = new Role
-                    {
-                        RoleTitle   = title,
-                        Description = description,
-                        business_id = 0  // system-level, available to all tenants
-                    };
-                    db.roles.Add(role);
-                    db.SaveChanges();
-
-                    // Link each slug → roles_has_permissions row
-                    var links = slugs
-                        .Where(slug => permMap.ContainsKey(slug))
-                        .Select(slug => new RolesHasPermission
-                        {
-                            RoleId       = role.Id,
-                            PermissionId = permMap[slug],
-                            business_id  = null  // system-level link
-                        })
-                        .ToList();
-
-                    if (links.Count > 0)
-                    {
-                        db.roles_has_permissions.AddRange(links);
-                        db.SaveChanges();
-                    }
-
-                    Console.WriteLine($"[PermissionSeeder] Created default role '{title}' " +
-                                      $"with {links.Count} permission(s).");
+                    Console.WriteLine("[PermissionSeeder] All permissions are up-to-date. Nothing to seed.");
                 }
             }
             catch (Exception ex)
