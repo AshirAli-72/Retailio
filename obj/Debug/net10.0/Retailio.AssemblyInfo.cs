@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Retailio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+59843c0c5bca38856b81f99cdbc31b063a991c33")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7682b18cf216f5069af31817ab4dfeed339af659")]
 [assembly: System.Reflection.AssemblyProductAttribute("Retailio")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Retailio")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

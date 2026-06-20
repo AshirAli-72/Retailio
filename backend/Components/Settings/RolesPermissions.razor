@@ -144,6 +144,12 @@
         color: white;
     }
 
+    .rp-perm-checkbox-checked {
+        background: #BC1823;
+        border-color: #BC1823;
+        color: white;
+    }
+
     .rp-perm-text {
         display: flex;
         flex-direction: column;
@@ -301,11 +307,16 @@
                                     <div class="rp-perm-accordion-icon">
                                         <i class="@GetCategoryIcon(cat.Label)"></i>
                                     </div>
-                                    <div>
-                                        <div class="rp-perm-accordion-title">@cat.Label</div>
-                                        <div class="rp-perm-accordion-count">
-                                            @selCount / @@cat.Permissions.Count selected
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="rp-perm-checkbox @(AreAllCategoryPermissionsChecked(cat) ? "rp-perm-checkbox-checked" : "")" 
+                                             @onclick:stopPropagation 
+                                             @onclick="() => ToggleCategory(cat, !AreAllCategoryPermissionsChecked(cat))">
+                                            @if (AreAllCategoryPermissionsChecked(cat))
+                                            {
+                                                <i class="ph-check" style="font-size: 0.9rem;"></i>
+                                            }
                                         </div>
+                                        <div class="rp-perm-accordion-title">@cat.Label</div>
                                     </div>
                                 </div>
                                 <div class="rp-perm-accordion-chevron">
