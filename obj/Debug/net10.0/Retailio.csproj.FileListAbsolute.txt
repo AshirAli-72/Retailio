@@ -240,7 +240,6 @@ D:\netcore\Retailio\obj\Debug\net10.0\compressed\eb2szxmxzv-{0}-mlv21k5csn-mlv21
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\ljnsfpccdm-{0}-ikzxugllo0-ikzxugllo0.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\2k74qhmqyp-{0}-yljdsi4zx5-yljdsi4zx5.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\9nluulrp6r-{0}-uqc05oyri6-uqc05oyri6.gz
-D:\netcore\Retailio\obj\Debug\net10.0\compressed\d4iag0g0wi-{0}-5y6flc7bet-5y6flc7bet.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\bjnqv2vdis-{0}-ne14ti1q68-ne14ti1q68.gz
 D:\netcore\Retailio\obj\Debug\net10.0\compressed\ccfyvie75p-{0}-ig5xotzpx5-ig5xotzpx5.gz
 D:\netcore\Retailio\obj\Debug\net10.0\staticwebassets.build.json

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Retailio.Data;
@@ -15,13 +15,15 @@ namespace Retailio.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly IMemoryCache _cache;
         private readonly Services.CurrencyService _currencyService;
+        private readonly PermissionService _permService;
 
-        public IndexModel(ILogger<IndexModel> logger, IDbContextFactory<ApplicationDbContext> dbFactory, IMemoryCache cache, Services.CurrencyService currencyService)
+        public IndexModel(ILogger<IndexModel> logger, IDbContextFactory<ApplicationDbContext> dbFactory, IMemoryCache cache, Services.CurrencyService currencyService, PermissionService permService)
         {
             _logger = logger;
             _dbFactory = dbFactory;
             _cache = cache;
             _currencyService = currencyService;
+            _permService = permService;
         }
 
         public class DashboardStats
@@ -76,6 +78,13 @@ namespace Retailio.Pages
             {
                 return RedirectToPage("/Account/Login");
             }
+
+            // ── Permission check ──────────────────────────────────
+            var isOwner = await _permService.IsOwnerOrAdminAsync();
+            var perms   = await _permService.GetUserPermissionsAsync();
+
+            if (!isOwner && !perms.Contains(PermissionSlugs.ViewDashboard))
+                return RedirectToPage("/Account/Login");
 
             Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";

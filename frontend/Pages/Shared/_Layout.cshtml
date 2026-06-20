@@ -39,7 +39,7 @@
         @inject IMemoryCache LayoutCache
         @{
             // ── Logo (scoped to logged-in admin tenant) ─────────────────────
-            string logoSrc = "/images/sata-logo.png";
+            string logoSrc = "/savepic/retailio.png";
             try
             {
                 var layoutUserId = Context.Session.GetInt32("UserId");
@@ -79,16 +79,6 @@
             {
                 // Owners / Admins / users not in user_has_roles — full access, load all slugs
                 userPerms = new HashSet<string>(Retailio.Services.PermissionSlugs.All, StringComparer.OrdinalIgnoreCase);
-                // Also add all view_* permissions for sidebar
-                userPerms.Add("view_dashboard");
-                userPerms.Add("view_customer");
-                userPerms.Add("view_product");
-                userPerms.Add("view_inventory");
-                userPerms.Add("view_sale");
-                userPerms.Add("view_recovery");
-                userPerms.Add("view_employee");
-                userPerms.Add("view_report");
-                userPerms.Add("view_settings");
             }
             else
             {
@@ -192,7 +182,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_customer") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnyCustomer(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/customer" class="nav-item @(_currentPage == "customer" ? "active" : "")">
                         <i class="ph-users nav-icon"></i>
@@ -200,7 +190,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_product") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnyProduct(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/product" class="nav-item @(_currentPage == "product" ? "active" : "")">
                         <i class="ph-package nav-icon"></i>
@@ -208,7 +198,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_inventory") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnyInventory(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/inventory" class="nav-item @(_currentPage == "inventory" ? "active" : "")">
                         <i class="ph-archive nav-icon"></i>
@@ -216,7 +206,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_sale") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnySale(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/sale" class="nav-item @(_currentPage == "sale" ? "active" : "")">
                         <i class="ph-shopping-cart nav-icon"></i>
@@ -224,7 +214,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_recovery") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnyRecovery(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/recovery" class="nav-item @(_currentPage == "recovery" ? "active" : "")">
                         <i class="ph-receipt nav-icon"></i>
@@ -232,7 +222,7 @@
                     </a>
                 }
 
-                @if (userPerms?.Contains("view_employee") ?? false)
+                @if (Retailio.Services.PermissionSlugs.HasAnyEmployee(userPerms ?? new HashSet<string>()))
                 {
                     <a href="/employee" class="nav-item @(_currentPage == "employee" ? "active" : "")">
                         <i class="ph-users-three nav-icon"></i>

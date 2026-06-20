@@ -34,7 +34,7 @@
                     @{
                         using var context = DbFactory.CreateDbContext();
                         var store = context.store_configurations.FirstOrDefault();
-                        string logoSrc = "/images/sata-logo.png";
+                        string logoSrc = "/savepic/retailio.png";
                         if (store != null && !string.IsNullOrEmpty(store.LogoPath))
                         {
                             try { logoSrc = "/store-logo/" + System.IO.Path.GetFileName(store.LogoPath); }

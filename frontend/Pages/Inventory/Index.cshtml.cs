@@ -57,7 +57,6 @@ namespace Retailio.Pages.Inventory
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            // Inventory has no standalone view_ slug — any action permission grants access
             if (!isOwner && !PermissionSlugs.HasAnyInventory(perms))
                 return RedirectToPage("/Index");
 

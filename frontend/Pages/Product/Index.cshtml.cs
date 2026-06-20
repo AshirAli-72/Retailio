@@ -52,7 +52,8 @@ namespace Retailio.Pages.Product
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            if (!isOwner && !perms.Contains(PermissionSlugs.CreateProduct)
+            if (!isOwner && !perms.Contains(PermissionSlugs.ViewProduct)
+                        && !perms.Contains(PermissionSlugs.CreateProduct)
                         && !perms.Contains(PermissionSlugs.EditProduct)
                         && !perms.Contains(PermissionSlugs.DeleteProduct))
                 return RedirectToPage("/Index");

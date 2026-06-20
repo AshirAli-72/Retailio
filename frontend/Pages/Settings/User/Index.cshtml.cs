@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Retailio.Data;
 using Retailio.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Retailio.Services;
 
 
@@ -26,7 +24,6 @@ namespace Retailio.Pages.Settings.User
         [BindProperty]
         public users EditUser { get; set; } = new users();
 
-        public bool CanCreateUser { get; set; }
         public bool CanEditUser { get; set; }
         public bool CanDeleteUser { get; set; }
 
@@ -41,7 +38,6 @@ namespace Retailio.Pages.Settings.User
             if (!isOwner && !perms.Contains(PermissionSlugs.ViewUsers))
                 return RedirectToPage("/Index");
 
-            CanCreateUser = isOwner || perms.Contains(PermissionSlugs.CreateUser);
             CanEditUser   = isOwner || perms.Contains(PermissionSlugs.EditUser);
             CanDeleteUser = isOwner || perms.Contains(PermissionSlugs.DeleteUser);
 

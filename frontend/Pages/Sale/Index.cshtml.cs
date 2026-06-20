@@ -123,7 +123,6 @@ namespace Retailio.Pages.Sale
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            // Sales has no standalone view_ slug — any action permission grants access
             if (!isOwner && !PermissionSlugs.HasAnySale(perms))
                 return RedirectToPage("/Index");
 

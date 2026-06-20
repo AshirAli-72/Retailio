@@ -1,0 +1,2 @@
+D:\netcore\Retailio\wwwroot\images\invoice-illustration.png
+D:\netcore\Retailio\wwwroot\images\login-bg.jpg

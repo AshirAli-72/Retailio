@@ -37,7 +37,6 @@ namespace Retailio.Pages.Recovery
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            // Recovery has no standalone view_ slug — any action permission grants access
             if (!isOwner && !PermissionSlugs.HasAnyRecovery(perms))
                 return RedirectToPage("/Index");
 

@@ -2,10 +2,6 @@ namespace Retailio.Services
 {
     /// <summary>
     /// Granular permission slugs used throughout the application.
-    /// "view_*" slugs are removed for CRUD sections — having any action permission
-    /// (create/edit/delete) grants access to that section's index page.
-    /// Exceptions: view_report (reports hub access), view_settings, view_dashboard,
-    /// view_users, view_roles, view_currency, view_about are kept as standalone gates.
     /// </summary>
     public static class PermissionSlugs
     {
@@ -13,29 +9,35 @@ namespace Retailio.Services
         public const string ViewDashboard   = "view_dashboard";
 
         // ── Customers ─────────────────────────────────────────────
+        public const string ViewCustomer    = "view_customer";
         public const string CreateCustomer  = "create_customer";
         public const string EditCustomer    = "edit_customer";
         public const string DeleteCustomer  = "delete_customer";
 
         // ── Products ──────────────────────────────────────────────
+        public const string ViewProduct     = "view_product";
         public const string CreateProduct   = "create_product";
         public const string EditProduct     = "edit_product";
         public const string DeleteProduct   = "delete_product";
 
         // ── Sales ─────────────────────────────────────────────────
+        public const string ViewSale        = "view_sale";
         public const string CreateSale      = "create_sale";
         public const string EditSale        = "edit_sale";
         public const string DeleteSale      = "delete_sale";
 
         // ── Inventory ─────────────────────────────────────────────
+        public const string ViewInventory   = "view_inventory";
         public const string EditInventory   = "edit_inventory";
 
         // ── Employees ─────────────────────────────────────────────
+        public const string ViewEmployee    = "view_employee";
         public const string CreateEmployee  = "create_employee";
         public const string EditEmployee    = "edit_employee";
         public const string DeleteEmployee  = "delete_employee";
 
         // ── Recovery ──────────────────────────────────────────────
+        public const string ViewRecovery    = "view_recovery";
         public const string CreateRecovery  = "create_recovery";
         public const string DeleteRecovery  = "delete_recovery";
 
@@ -48,7 +50,6 @@ namespace Retailio.Services
 
         // ── Settings > Users ──────────────────────────────────────
         public const string ViewUsers       = "view_users";
-        public const string CreateUser      = "create_user";
         public const string EditUser        = "edit_user";
         public const string DeleteUser      = "delete_user";
 
@@ -68,52 +69,57 @@ namespace Retailio.Services
         public static readonly string[] All =
         {
             ViewDashboard,
-            CreateCustomer,  EditCustomer,   DeleteCustomer,
-            CreateProduct,   EditProduct,    DeleteProduct,
-            CreateSale,      EditSale,       DeleteSale,
-            EditInventory,
-            CreateEmployee,  EditEmployee,   DeleteEmployee,
-            CreateRecovery,  DeleteRecovery,
+            ViewCustomer,    CreateCustomer,  EditCustomer,   DeleteCustomer,
+            ViewProduct,     CreateProduct,   EditProduct,    DeleteProduct,
+            ViewSale,        CreateSale,      EditSale,       DeleteSale,
+            ViewInventory,   EditInventory,
+            ViewEmployee,    CreateEmployee,  EditEmployee,   DeleteEmployee,
+            ViewRecovery,    CreateRecovery,  DeleteRecovery,
             ViewReport,      PrintReport,
             ViewSettings,
-            ViewUsers,       CreateUser,     EditUser,        DeleteUser,
+            ViewUsers,       EditUser,        DeleteUser,
             ViewRoles,       ManageRoles,
             ViewCurrency,    ManageCurrency,
             ViewAbout,       EditAbout
         };
 
         // ── Helper: does user have any permission for a given section? ──
-        public static bool HasAnyCustomer(HashSet<string> p)  => p.Contains(CreateCustomer) || p.Contains(EditCustomer)  || p.Contains(DeleteCustomer);
-        public static bool HasAnyProduct(HashSet<string> p)   => p.Contains(CreateProduct)  || p.Contains(EditProduct)   || p.Contains(DeleteProduct);
-        public static bool HasAnySale(HashSet<string> p)      => p.Contains(CreateSale)     || p.Contains(EditSale)      || p.Contains(DeleteSale);
-        public static bool HasAnyEmployee(HashSet<string> p)  => p.Contains(CreateEmployee) || p.Contains(EditEmployee)  || p.Contains(DeleteEmployee);
-        public static bool HasAnyRecovery(HashSet<string> p)  => p.Contains(CreateRecovery) || p.Contains(DeleteRecovery);
-        public static bool HasAnyInventory(HashSet<string> p) => p.Contains(EditInventory);
+        public static bool HasAnyCustomer(HashSet<string> p)  => p.Contains(ViewCustomer) || p.Contains(CreateCustomer) || p.Contains(EditCustomer)  || p.Contains(DeleteCustomer);
+        public static bool HasAnyProduct(HashSet<string> p)   => p.Contains(ViewProduct) || p.Contains(CreateProduct)  || p.Contains(EditProduct)   || p.Contains(DeleteProduct);
+        public static bool HasAnySale(HashSet<string> p)      => p.Contains(ViewSale) || p.Contains(CreateSale)     || p.Contains(EditSale)      || p.Contains(DeleteSale);
+        public static bool HasAnyEmployee(HashSet<string> p)  => p.Contains(ViewEmployee) || p.Contains(CreateEmployee) || p.Contains(EditEmployee)  || p.Contains(DeleteEmployee);
+        public static bool HasAnyRecovery(HashSet<string> p)  => p.Contains(ViewRecovery) || p.Contains(CreateRecovery) || p.Contains(DeleteRecovery);
+        public static bool HasAnyInventory(HashSet<string> p) => p.Contains(ViewInventory) || p.Contains(EditInventory);
 
         /// <summary>Human-readable display name for a slug.</summary>
         public static string GetDisplayName(string slug) => slug switch
         {
             ViewDashboard   => "View Dashboard",
+            ViewCustomer    => "View Customers",
             CreateCustomer  => "Create Customer",
             EditCustomer    => "Edit Customer",
             DeleteCustomer  => "Delete Customer",
+            ViewProduct     => "View Products",
             CreateProduct   => "Create Product",
             EditProduct     => "Edit Product",
             DeleteProduct   => "Delete Product",
+            ViewSale        => "View Sales",
             CreateSale      => "Create Sale",
             EditSale        => "Edit Sale",
             DeleteSale      => "Delete Sale",
+            ViewInventory   => "View Inventory",
             EditInventory   => "Edit Inventory",
+            ViewEmployee    => "View Employees",
             CreateEmployee  => "Create Employee",
             EditEmployee    => "Edit Employee",
             DeleteEmployee  => "Delete Employee",
+            ViewRecovery    => "View Recovery",
             CreateRecovery  => "Create Recovery",
             DeleteRecovery  => "Delete Recovery",
             ViewReport      => "View Reports",
             PrintReport     => "Print Reports",
             ViewSettings    => "View Settings",
             ViewUsers       => "View Users",
-            CreateUser      => "Create User",
             EditUser        => "Edit User",
             DeleteUser      => "Delete User",
             ViewRoles       => "View Roles",

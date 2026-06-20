@@ -13,6 +13,155 @@
 <link href="/css/settings/user.css" rel="stylesheet" />
 <link href="/css/settings/index.css" rel="stylesheet" />
 
+<style>
+    /* Accordion styling */
+    .rp-perm-accordion {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .rp-perm-accordion-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .rp-perm-accordion-header {
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        background: #f9fafb;
+        transition: all 0.2s;
+    }
+
+    .rp-perm-accordion-header:hover {
+        background: #e5e7eb;
+    }
+
+    .rp-perm-accordion-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .rp-perm-accordion-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #BC1823;
+        font-size: 1.1rem;
+    }
+
+    .rp-perm-accordion-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .rp-perm-accordion-count {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+
+    .rp-perm-accordion-chevron {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        transition: transform 0.2s;
+    }
+
+    .rp-perm-accordion-item.open .rp-perm-accordion-chevron {
+        transform: rotate(180deg);
+    }
+
+    .rp-perm-accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+        padding: 0;
+        background: white;
+    }
+
+    .rp-perm-accordion-item.open .rp-perm-accordion-content {
+        max-height: 500px;
+    }
+
+    .rp-perm-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .rp-perm-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0.875rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .rp-perm-item:hover {
+        background: #f9fafb;
+    }
+
+    .rp-perm-item.selected {
+        background: #fee2e2;
+        border-color: #BC1823;
+    }
+
+    .rp-perm-checkbox {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        border: 2px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+
+    .rp-perm-item.selected .rp-perm-checkbox {
+        background: #BC1823;
+        border-color: #BC1823;
+        color: white;
+    }
+
+    .rp-perm-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .rp-perm-name {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .rp-perm-slug {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+</style>
+
 <div class="management-container">
     <div class="card card-no-padding">
         <div class="page-header">
@@ -142,38 +291,49 @@
                     </div>
                 </div>
 
-                <div class="rpm-pills-row">
-                    <button type="button" class="rpm-pill @(activeCategory == null ? "rpm-pill-on" : "")" @onclick='() => activeCategory = null'>
-                        <i class="ph-squares-four"></i> All
-                    </button>
+                <div class="rp-perm-accordion">
                     @foreach (var cat in PermissionCategories)
                     {
                         int selCount = cat.Permissions.Count(p => modalSelectedSlugs.Contains(p.Slug));
-                        <button type="button" class="rpm-pill @(activeCategory == cat.Label ? "rpm-pill-on" : "")" @onclick="() => activeCategory = cat.Label">
-                            <i class="@GetCategoryIcon(cat.Label)"></i> @cat.Label
-                            @if (selCount > 0) { <span class="rpm-pill-dot"></span> }
-                        </button>
-                    }
-                </div>
-
-                <div class="rpm-cards-grid">
-                    @foreach (var cat in PermissionCategories)
-                    {
-                        if (activeCategory != null && activeCategory != cat.Label) continue;
-                        foreach (var perm in cat.Permissions)
-                        {
-                            bool on = modalSelectedSlugs.Contains(perm.Slug);
-                            <div class="rpm-card @(on ? "rpm-card-on" : "")" @onclick="() => ToggleModalPermission(perm.Slug, !on)">
-                                <div class="rpm-card-body">
-                                    <div class="rpm-card-icon"><i class="@GetCategoryIcon(cat.Label)"></i></div>
-                                    <div class="rpm-card-text">
-                                        <span class="rpm-card-name">@perm.Name</span>
-                                        <span class="rpm-card-cat">@cat.Label</span>
+                        <div class="rp-perm-accordion-item @(activeCategory == cat.Label ? "open" : "")">
+                            <div class="rp-perm-accordion-header" @onclick="() => ToggleCategoryAccordion(cat.Label)">
+                                <div class="rp-perm-accordion-header-left">
+                                    <div class="rp-perm-accordion-icon">
+                                        <i class="@GetCategoryIcon(cat.Label)"></i>
+                                    </div>
+                                    <div>
+                                        <div class="rp-perm-accordion-title">@cat.Label</div>
+                                        <div class="rp-perm-accordion-count">
+                                            @selCount / @@cat.Permissions.Count selected
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="rpm-toggle-sm @(on ? "rpm-toggle-on" : "")"><div class="rpm-toggle-knob"></div></div>
+                                <div class="rp-perm-accordion-chevron">
+                                    <i class="ph-chevron-down"></i>
+                                </div>
                             </div>
-                        }
+                            <div class="rp-perm-accordion-content">
+                                <div class="rp-perm-list">
+                                    @foreach (var perm in cat.Permissions)
+                                    {
+                                        var isSelected = modalSelectedSlugs.Contains(perm.Slug);
+                                        <div class="rp-perm-item @(isSelected ? "selected" : "")" 
+                                             @onclick="() => ToggleModalPermission(perm.Slug, !isSelected)">
+                                            <div class="rp-perm-checkbox">
+                                                @if (isSelected)
+                                                {
+                                                    <i class="ph-check" style="font-size: 0.9rem;"></i>
+                                                }
+                                            </div>
+                                            <div class="rp-perm-text">
+                                                <div class="rp-perm-name">@perm.Name</div>
+                                                <div class="rp-perm-slug">@cat.Label</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
 
@@ -266,23 +426,21 @@
         public PermissionInfo[] Permissions { get; set; } = Array.Empty<PermissionInfo>();
     }
 
-    // Aligned with PermissionSlugs.cs — obsolete view_* slugs for CRUD sections removed.
-    // view_customer, view_product, view_sale, view_inventory, view_employee, view_recovery
-    // are NOT in the system. Having any CRUD permission grants section access.
     private static readonly PermissionCategory[] PermissionCategories = new[]
     {
         new PermissionCategory
         {
             Label = "Dashboard",
-            Permissions = new[] { new PermissionInfo { Slug = "view_dashboard", Name = "Dashboard Access" } }
+            Permissions = new[] { new PermissionInfo { Slug = "view_dashboard", Name = "View Dashboard" } }
         },
         new PermissionCategory
         {
             Label = "Customers",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_customer", Name = "View Customers" },
                 new PermissionInfo { Slug = "create_customer", Name = "Create Customer" },
-                new PermissionInfo { Slug = "edit_customer",   Name = "Edit Customer" },
+                new PermissionInfo { Slug = "edit_customer", Name = "Edit Customer" },
                 new PermissionInfo { Slug = "delete_customer", Name = "Delete Customer" }
             }
         },
@@ -291,8 +449,9 @@
             Label = "Products",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_product", Name = "View Products" },
                 new PermissionInfo { Slug = "create_product", Name = "Create Product" },
-                new PermissionInfo { Slug = "edit_product",   Name = "Edit Product" },
+                new PermissionInfo { Slug = "edit_product", Name = "Edit Product" },
                 new PermissionInfo { Slug = "delete_product", Name = "Delete Product" }
             }
         },
@@ -301,8 +460,9 @@
             Label = "Sales",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_sale", Name = "View Sales" },
                 new PermissionInfo { Slug = "create_sale", Name = "Create Sale" },
-                new PermissionInfo { Slug = "edit_sale",   Name = "Edit Sale" },
+                new PermissionInfo { Slug = "edit_sale", Name = "Edit Sale" },
                 new PermissionInfo { Slug = "delete_sale", Name = "Delete Sale" }
             }
         },
@@ -311,8 +471,9 @@
             Label = "Employees",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_employee", Name = "View Employees" },
                 new PermissionInfo { Slug = "create_employee", Name = "Create Employee" },
-                new PermissionInfo { Slug = "edit_employee",   Name = "Edit Employee" },
+                new PermissionInfo { Slug = "edit_employee", Name = "Edit Employee" },
                 new PermissionInfo { Slug = "delete_employee", Name = "Delete Employee" }
             }
         },
@@ -321,6 +482,7 @@
             Label = "Inventory",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_inventory", Name = "View Inventory" },
                 new PermissionInfo { Slug = "edit_inventory", Name = "Edit Inventory" }
             }
         },
@@ -329,6 +491,7 @@
             Label = "Recovery",
             Permissions = new[]
             {
+                new PermissionInfo { Slug = "view_recovery", Name = "View Recovery" },
                 new PermissionInfo { Slug = "create_recovery", Name = "Create Recovery" },
                 new PermissionInfo { Slug = "delete_recovery", Name = "Delete Recovery" }
             }
@@ -338,7 +501,7 @@
             Label = "Reports",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "view_report",  Name = "View Reports" },
+                new PermissionInfo { Slug = "view_report", Name = "View Reports" },
                 new PermissionInfo { Slug = "print_report", Name = "Print Reports" }
             }
         },
@@ -352,10 +515,9 @@
             Label = "Users",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "view_users",   Name = "View Users" },
-                new PermissionInfo { Slug = "create_user",  Name = "Create User" },
-                new PermissionInfo { Slug = "edit_user",    Name = "Edit User" },
-                new PermissionInfo { Slug = "delete_user",  Name = "Delete User" }
+                new PermissionInfo { Slug = "view_users", Name = "View Users" },
+                new PermissionInfo { Slug = "edit_user", Name = "Edit User" },
+                new PermissionInfo { Slug = "delete_user", Name = "Delete User" }
             }
         },
         new PermissionCategory
@@ -363,7 +525,7 @@
             Label = "Roles",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "view_roles",   Name = "View Roles" },
+                new PermissionInfo { Slug = "view_roles", Name = "View Roles" },
                 new PermissionInfo { Slug = "manage_roles", Name = "Manage Roles" }
             }
         },
@@ -372,7 +534,7 @@
             Label = "Currency",
             Permissions = new[]
             {
-                new PermissionInfo { Slug = "view_currency",   Name = "View Currency" },
+                new PermissionInfo { Slug = "view_currency", Name = "View Currency" },
                 new PermissionInfo { Slug = "manage_currency", Name = "Manage Currency" }
             }
         },
@@ -674,6 +836,18 @@
         }
     }
 
+    private void ToggleCategoryAccordion(string label)
+    {
+        if (activeCategory == label)
+        {
+            activeCategory = null;
+        }
+        else
+        {
+            activeCategory = label;
+        }
+    }
+
     private void ToggleModalPermission(string slug, bool isChecked)
     {
         if (isChecked) modalSelectedSlugs.Add(slug);
@@ -703,26 +877,31 @@
         return slug switch
         {
             "view_dashboard"   => "View Dashboard",
+            "view_customer"    => "View Customers",
             "create_customer"  => "Create Customer",
             "edit_customer"    => "Edit Customer",
             "delete_customer"  => "Delete Customer",
+            "view_product"     => "View Products",
             "create_product"   => "Create Product",
             "edit_product"     => "Edit Product",
             "delete_product"   => "Delete Product",
+            "view_sale"        => "View Sales",
             "create_sale"      => "Create Sale",
             "edit_sale"        => "Edit Sale",
             "delete_sale"      => "Delete Sale",
+            "view_inventory"   => "View Inventory",
             "edit_inventory"   => "Edit Inventory",
+            "view_employee"    => "View Employees",
             "create_employee"  => "Create Employee",
             "edit_employee"    => "Edit Employee",
             "delete_employee"  => "Delete Employee",
+            "view_recovery"    => "View Recovery",
             "create_recovery"  => "Create Recovery",
             "delete_recovery"  => "Delete Recovery",
             "view_report"      => "View Reports",
             "print_report"     => "Print Reports",
             "view_settings"    => "View Settings",
             "view_users"       => "View Users",
-            "create_user"      => "Create User",
             "edit_user"        => "Edit User",
             "delete_user"      => "Delete User",
             "view_roles"       => "View Roles",

@@ -41,11 +41,12 @@ namespace Retailio.Pages.Customer
             UserName = HttpContext.Session.GetString("UserName");
             UserId   = HttpContext.Session.GetInt32("UserId");
 
-            // ── Permission check ──────────────────────────────────
+                // ── Permission check ──────────────────────────────────
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            if (!isOwner && !perms.Contains(PermissionSlugs.CreateCustomer)
+            if (!isOwner && !perms.Contains(PermissionSlugs.ViewCustomer)
+                        && !perms.Contains(PermissionSlugs.CreateCustomer)
                         && !perms.Contains(PermissionSlugs.EditCustomer)
                         && !perms.Contains(PermissionSlugs.DeleteCustomer))
                 return RedirectToPage("/Index");

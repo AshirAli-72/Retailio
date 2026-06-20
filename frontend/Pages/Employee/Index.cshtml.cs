@@ -34,7 +34,8 @@ namespace Retailio.Pages.Employee
             var isOwner = await _permService.IsOwnerOrAdminAsync();
             var perms   = await _permService.GetUserPermissionsAsync();
 
-            if (!isOwner && !perms.Contains(PermissionSlugs.CreateEmployee)
+            if (!isOwner && !perms.Contains(PermissionSlugs.ViewEmployee)
+                        && !perms.Contains(PermissionSlugs.CreateEmployee)
                         && !perms.Contains(PermissionSlugs.EditEmployee)
                         && !perms.Contains(PermissionSlugs.DeleteEmployee))
                 return RedirectToPage("/Index");

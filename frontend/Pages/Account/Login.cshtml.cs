@@ -107,7 +107,6 @@ namespace Retailio.Pages.Account
                         HttpContext.Session.SetInt32("UserAccountId", user.id);
                         HttpContext.Session.SetInt32("EmployeeId", employee?.id ?? 0);
 
-                        TempData["Success"] = "Welcome back! Login successful.";
                         return RedirectToPage("/Index");
                     }
                     else
@@ -121,8 +120,6 @@ namespace Retailio.Pages.Account
                         HttpContext.Session.SetInt32("UserRoleId", user.business_id);
                         HttpContext.Session.SetInt32("UserId", user.business_id);
                         HttpContext.Session.SetInt32("UserAccountId", user.id);
-
-                        TempData["Success"] = "Welcome back! Login successful.";
 
                         return PaymentHelper.HasAdminPanelAccess(roleTitle)
                             ? RedirectToPage("/Admin/AdminPanel")
@@ -152,7 +149,6 @@ namespace Retailio.Pages.Account
                     if (legacyUser != null)
                         HttpContext.Session.SetInt32("UserAccountId", legacyUser.id);
 
-                    TempData["Success"] = "Welcome back! Login successful.";
                     return RedirectToPage("/Index");
                 }
 

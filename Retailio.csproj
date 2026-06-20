@@ -26,6 +26,7 @@
   <ItemGroup>
     <Folder Include="frontend\" />
     <Folder Include="backend\" />
+    <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
 </Project>
